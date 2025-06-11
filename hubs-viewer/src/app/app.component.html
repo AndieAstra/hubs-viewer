@@ -1,0 +1,19 @@
+<h1>Virtual Farming System Viewer (Angular 17 + Three.js)</h1>
+
+<p>Upload your model here:
+<app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+</p>
+
+<p>Change your scene's lighting here:
+<app-lighting (lightAdded)="onLightAdded($event)"></app-lighting>
+</p>
+
+<p>Add notes here:
+<app-notes (noteAdded)="onNoteAdded($event)"></app-notes>
+</p>
+
+<app-project-manager></app-project-manager>
+
+<!-- Viewer area -->
+<p>This is where your 3D scene will render:</p>
+<app-viewer [glbFile]="selectedFile"></app-viewer>
