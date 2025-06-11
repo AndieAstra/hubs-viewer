@@ -17,6 +17,7 @@ template: `<div #rendererContainer class="viewer-container"></div>`,
     }
   `],
 })
+
 export class ViewerComponent implements AfterViewInit {
   @ViewChild('rendererContainer', { static: true }) rendererContainer!: ElementRef;
   @Input() glbFile?: File;

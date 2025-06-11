@@ -20,6 +20,9 @@ import { ProjectManagerComponent } from './components/project-manager/project-ma
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
+
+
+
 export class AppComponent {
   selectedFile?: File;
   lights: { color: string; intensity: number }[] = [];

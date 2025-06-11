@@ -1,0 +1,20 @@
+<!-- Optional: RouterOutlet (only if you're using routing) -->
+<!-- <router-outlet></router-outlet> -->
+
+<h1>Virtual Farming System 3D Viewer</h1>
+
+<app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+
+<app-lighting (lightAdded)="onLightAdded($event)"></app-lighting>
+
+<app-notes (noteAdded)="onNoteAdded($event)"></app-notes>
+
+<app-project-manager
+  [lights]="lights"
+  [notes]="notes"
+  [modelFile]="selectedFile"
+></app-project-manager>
+
+<app-viewer [glbFile]="selectedFile"></app-viewer>
+
+<router-outlet></router-outlet>
