@@ -20,6 +20,7 @@
     "@angular/pwa": "^17.3.17",
     "@angular/router": "^17.3.0",
     "cannon-es": "^0.20.0",
+    "lil-gui": "^0.20.0",
     "rxjs": "~7.8.0",
     "three": "^0.177.0",
     "three-stdlib": "^2.36.0",
