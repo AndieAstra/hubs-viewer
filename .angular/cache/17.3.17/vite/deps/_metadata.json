@@ -1,0 +1,67 @@
+{
+  "hash": "0e44fbf0",
+  "configHash": "f7738870",
+  "lockfileHash": "5372db89",
+  "browserHash": "5d392de8",
+  "optimized": {
+    "@angular/core": {
+      "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "75cc3e5d",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "fe29a428",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "05308e4a",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "f9420424",
+      "needsInterop": false
+    },
+    "cannon-es": {
+      "src": "../../../../../node_modules/cannon-es/dist/cannon-es.js",
+      "file": "cannon-es.js",
+      "fileHash": "33983a4d",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../../../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "9176fa7b",
+      "needsInterop": false
+    },
+    "three-stdlib": {
+      "src": "../../../../../node_modules/three-stdlib/index.js",
+      "file": "three-stdlib.js",
+      "fileHash": "73375ce4",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-7D54I3H6": {
+      "file": "chunk-7D54I3H6.js"
+    },
+    "chunk-QO25KOOG": {
+      "file": "chunk-QO25KOOG.js"
+    },
+    "chunk-3UTLGYSJ": {
+      "file": "chunk-3UTLGYSJ.js"
+    },
+    "chunk-STR4QQ5Q": {
+      "file": "chunk-STR4QQ5Q.js"
+    },
+    "chunk-XWLXMCJQ": {
+      "file": "chunk-XWLXMCJQ.js"
+    }
+  }
+}
