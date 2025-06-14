@@ -1,61 +1,61 @@
 {
-  "hash": "99b0cde3",
+  "hash": "b1880bee",
   "configHash": "5d7e00c7",
-  "lockfileHash": "a133c48c",
-  "browserHash": "f5004ed0",
+  "lockfileHash": "d7fb0d1d",
+  "browserHash": "3d880df2",
   "optimized": {
     "@angular/core": {
       "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
       "file": "@angular_core.js",
-      "fileHash": "0b1db456",
+      "fileHash": "b6698d33",
       "needsInterop": false
     },
     "@angular/forms": {
       "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
       "file": "@angular_forms.js",
-      "fileHash": "36ca4afd",
+      "fileHash": "341e1547",
       "needsInterop": false
     },
     "@angular/platform-browser": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
       "file": "@angular_platform-browser.js",
-      "fileHash": "b1a62c9b",
+      "fileHash": "ca22028c",
       "needsInterop": false
     },
     "@angular/router": {
       "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
       "file": "@angular_router.js",
-      "fileHash": "eae479cd",
+      "fileHash": "2187f261",
       "needsInterop": false
     },
     "lil-gui": {
       "src": "../../../../../node_modules/lil-gui/dist/lil-gui.esm.js",
       "file": "lil-gui.js",
-      "fileHash": "22b6e2ce",
+      "fileHash": "57e0cfe2",
       "needsInterop": false
     },
     "three": {
       "src": "../../../../../node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "232f2e06",
+      "fileHash": "ea9d07d7",
       "needsInterop": false
     },
     "three/examples/jsm/controls/PointerLockControls": {
       "src": "../../../../../node_modules/three/examples/jsm/controls/PointerLockControls.js",
       "file": "three_examples_jsm_controls_PointerLockControls.js",
-      "fileHash": "d9402c58",
+      "fileHash": "1297cfdf",
       "needsInterop": false
     },
     "three/examples/jsm/exporters/GLTFExporter": {
       "src": "../../../../../node_modules/three/examples/jsm/exporters/GLTFExporter.js",
       "file": "three_examples_jsm_exporters_GLTFExporter.js",
-      "fileHash": "bf8546d3",
+      "fileHash": "033e26e4",
       "needsInterop": false
     },
     "three/examples/jsm/loaders/GLTFLoader": {
       "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
       "file": "three_examples_jsm_loaders_GLTFLoader.js",
-      "fileHash": "96f79b51",
+      "fileHash": "a443db0a",
       "needsInterop": false
     }
   },

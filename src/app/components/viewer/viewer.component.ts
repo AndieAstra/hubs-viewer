@@ -51,8 +51,13 @@ export interface SceneData {
   styleUrls: ['./viewer.component.scss'],
 })
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @Input() glbFile?: File;
+
+  modelScale = 1;
+  modelHeight = 0;
+  uploadedModel: THREE.Object3D | null = null;
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
@@ -103,7 +108,49 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.initScene();
     if (this.glbFile) this.loadGLB(this.glbFile);
     this.animate();
+
+    this.renderer.domElement.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    });
+
+    this.renderer.domElement.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const file = event.dataTransfer?.files?.[0];
+      if (file && file.name.endsWith('.glb')) {
+        if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
+        this.clearScene();
+        this.loadGLB(file);
+      }
+    });
+
+    this.renderer.domElement.addEventListener('click', (event) => {
+      const mouse = new THREE.Vector2();
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.camera);
+      const intersects = raycaster.intersectObjects(this.scene.children, true);
+
+      if (intersects.length > 0) {
+        const selected = intersects[0].object;
+        console.log('Selected object:', selected.name || selected.uuid);
+        // Optional: highlight or transform
+      }
+    });
+
+    const saved = localStorage.getItem('autosavedScene');
+    if (saved) {
+      const confirmRestore = confirm('🕘 Restore previously saved scene?');
+      if (confirmRestore) {
+        this.uploadSceneFromFile(new File([saved], 'autosavedScene.json', { type: 'application/json' }));
+      }
+    }
+
   }
+
+  //********* UI Controls for the ThreeJS Scene *********/
 
   private initScene() {
     const container = this.containerRef.nativeElement;
@@ -159,6 +206,39 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     floor.userData['collidable'] = true;
     this.scene.add(floor);
     this.objects.push(floor);
+
+    const modelFolder = this.gui.addFolder('Model Controls');
+    modelFolder.add(this, 'modelScale', 0.1, 5, 0.1)
+      .name('Model Scale')
+      .onChange(() => this.updateModelTransform());
+    modelFolder.add(this, 'modelHeight', -10, 10, 0.1)
+      .name('Model Height')
+      .onChange(() => this.updateModelTransform());
+    modelFolder.open();
+
+    const gridHelper = new THREE.GridHelper(200, 200, 0x888888, 0x444444);
+    this.scene.add(gridHelper);
+
+    const axesHelper = new THREE.AxesHelper(5);
+    this.scene.add(axesHelper);
+
+
+  }
+
+//************* Update/Model Transform ******************* */
+
+  updateModelTransform(): void {
+    if (this.uploadedModel) {
+      this.uploadedModel.scale.setScalar(this.modelScale);
+      this.uploadedModel.position.y = this.modelHeight;
+    }
+  }
+
+  applyModelTransform(): void {
+    if (this.uploadedModel) {
+      this.uploadedModel.scale.setScalar(this.modelScale);
+      this.uploadedModel.position.y = this.modelHeight;
+    }
   }
 
 //************* Loading Models ******************* */
@@ -198,10 +278,12 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
           model.scale.set(1, 1, 1);
           model.position.set(0, 0, 0);
           this.sceneLoaded = true;
+          this.saveSceneToLocalStorage();
         });
       } catch {
         alert('❌ Error loading model. Please try again with a proper GLB format.');
       }
+
     };
     reader.onerror = () => {
       alert('❌ Failed to read file. Please try again.');
@@ -209,7 +291,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     reader.readAsArrayBuffer(file);
   }
 
-uploadSceneFromFile(file: File): void {
+  uploadSceneFromFile(file: File): void {
   const reader = new FileReader();
   reader.onload = async (event: ProgressEvent<FileReader>) => {
     this.clearScene(); // ✅ Clear previous scene fully
@@ -278,7 +360,11 @@ uploadSceneFromFile(file: File): void {
           }
         });
 
+        this.uploadedModel = loadedModel;
+        this.applyModelTransform();
         this.scene.add(loadedModel);
+        this.saveSceneToLocalStorage();
+
         URL.revokeObjectURL(url);
       } catch (error) {
         console.error(`Failed to load model: ${model.fileName}`, error);
@@ -289,11 +375,12 @@ uploadSceneFromFile(file: File): void {
   };
 
   reader.readAsText(file);
-}
+  }
 
 //************* Save/Clear Scene ******************* */
 
-saveScene(): void {
+//Exporting your scene
+  saveScene(): void {
   const sceneData: SceneData = {
     models: [],
     camera: {
@@ -385,6 +472,46 @@ saveScene(): void {
   };
 
   exportNextModel(0);
+  }
+
+//autosave??
+private saveSceneToLocalStorage(): void {
+  const sceneData: SceneData = {
+    models: this.scene.children
+      .filter(obj => obj.userData?.['isLoadedModel'])
+      .map((obj) => {
+        const model = obj as THREE.Object3D;
+        return {
+          name: model.name || '',
+          position: model.position,
+          rotation: model.rotation,
+          scale: model.scale,
+          fileName: model.userData['fileName'],
+          glbBase64: '' // Optional: skip storing full model to save space
+        };
+      }),
+    camera: {
+      position: this.camera.position,
+      rotation: this.camera.rotation
+    },
+    lighting: {
+      ambient: {
+        color: this.ambientLight.color.getHex(),
+        intensity: this.ambientLight.intensity
+      },
+      directional: {
+        color: this.dirLight.color.getHex(),
+        intensity: this.dirLight.intensity,
+        position: [
+          this.dirLight.position.x,
+          this.dirLight.position.y,
+          this.dirLight.position.z
+        ]
+      }
+    }
+  };
+
+  localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
 }
 
   private isColliding(position: THREE.Vector3): boolean {
@@ -407,11 +534,27 @@ clearScene(): void {
     obj.traverse((child: THREE.Object3D) => {
       if ((child as THREE.Mesh).isMesh) {
         const mesh = child as THREE.Mesh;
+
+        // Dispose geometry
         mesh.geometry?.dispose?.();
+
+        // Dispose materials and textures
+        const disposeMaterial = (material: THREE.Material | undefined) => {
+          if (!material) return;
+
+          const mat = material as any; // for accessing optional maps
+          ['map', 'lightMap', 'aoMap', 'emissiveMap', 'bumpMap', 'normalMap', 'displacementMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'envMap']
+            .forEach((prop) => {
+              if (mat[prop]?.dispose) mat[prop].dispose();
+            });
+
+          material.dispose?.();
+        };
+
         if (Array.isArray(mesh.material)) {
-          mesh.material.forEach(m => m?.dispose?.());
+          mesh.material.forEach(disposeMaterial);
         } else {
-          mesh.material?.dispose?.();
+          disposeMaterial(mesh.material);
         }
       }
     });
@@ -425,9 +568,10 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
+
 //************* Animation/ WSAD Keys ******************* */
 
-private animate = () => {
+  private animate = () => {
     requestAnimationFrame(this.animate);
     const delta = this.clock.getDelta();
     this.velocity.x -= this.velocity.x * 10.0 * delta;
