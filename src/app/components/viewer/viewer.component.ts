@@ -161,6 +161,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.objects.push(floor);
   }
 
+//************* Loading Models ******************* */
+
   private triggerSceneUpload() {
     const input = document.createElement('input');
     input.type = 'file';
@@ -210,10 +212,12 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 uploadSceneFromFile(file: File): void {
   const reader = new FileReader();
   reader.onload = async (event: ProgressEvent<FileReader>) => {
+    this.clearScene(); // ✅ Clear previous scene fully
+
     const contents = event.target?.result as string;
     const sceneData: SceneData = JSON.parse(contents);
 
-    // Restore lighting
+    // --- Restore lighting ---
     if (sceneData.lighting) {
       if (sceneData.lighting.ambient) {
         this.ambientLight.color.setHex(sceneData.lighting.ambient.color);
@@ -226,7 +230,7 @@ uploadSceneFromFile(file: File): void {
       }
     }
 
-    // Restore camera
+    // --- Restore camera ---
     if (sceneData.camera) {
       this.camera.position.set(
         sceneData.camera.position.x,
@@ -240,7 +244,7 @@ uploadSceneFromFile(file: File): void {
       );
     }
 
-    // Restore models
+    // --- Restore models ---
     for (const model of sceneData.models) {
       const gltfLoader = new GLTFLoader();
       const glbBinary = atob(model.glbBase64 ?? '');
@@ -270,11 +274,12 @@ uploadSceneFromFile(file: File): void {
         loadedModel.traverse((child: THREE.Object3D) => {
           if ((child as THREE.Mesh).isMesh) {
             child.userData['collidable'] = true;
-            this.objects.push(child); // For raycasting, interactions
+            this.objects.push(child);
           }
         });
 
         this.scene.add(loadedModel);
+        URL.revokeObjectURL(url);
       } catch (error) {
         console.error(`Failed to load model: ${model.fileName}`, error);
       }
@@ -286,6 +291,7 @@ uploadSceneFromFile(file: File): void {
   reader.readAsText(file);
 }
 
+//************* Save/Clear Scene ******************* */
 
 saveScene(): void {
   const sceneData: SceneData = {
@@ -393,15 +399,35 @@ saveScene(): void {
     return false;
   }
 
-  private clearScene() {
-    for (const obj of this.objects) {
-      this.scene.remove(obj);
-    }
-    this.objects = [];
-    this.sceneLoaded = false;
-  }
+clearScene(): void {
+  // Remove all previously loaded models
+  const toRemove = this.scene.children.filter(obj => obj.userData?.['isLoadedModel']);
+  toRemove.forEach(obj => {
+    this.scene.remove(obj);
+    obj.traverse((child: THREE.Object3D) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
+        mesh.geometry?.dispose?.();
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(m => m?.dispose?.());
+        } else {
+          mesh.material?.dispose?.();
+        }
+      }
+    });
+  });
 
-  private animate = () => {
+  // Clear interaction objects
+  this.objects = [];
+
+  // Optional: reset camera position/rotation
+  this.camera.position.set(0, 0, 5);
+  this.camera.rotation.set(0, 0, 0);
+}
+
+//************* Animation/ WSAD Keys ******************* */
+
+private animate = () => {
     requestAnimationFrame(this.animate);
     const delta = this.clock.getDelta();
     this.velocity.x -= this.velocity.x * 10.0 * delta;
