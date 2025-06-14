@@ -10,9 +10,9 @@ import {
   OnDestroy,
 } from '@angular/core';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import GUI from 'lil-gui';
 
 export interface SavedModel {
@@ -81,17 +81,18 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     right: false,
   };
 
-  ngOnInit() {
+ngOnInit() {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
+    this.loadSceneFromLocalStorage();
   }
 
-  ngOnDestroy() {
+ngOnDestroy() {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
   }
 
-  ngOnChanges(changes: SimpleChanges) {
+ngOnChanges(changes: SimpleChanges) {
     if (changes['glbFile'] && changes['glbFile'].currentValue) {
       if (this.sceneLoaded) {
         const confirmReplace = confirm('A scene is already loaded. Do you want to replace it with a new model?');
@@ -104,7 +105,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     }
   }
 
-  ngAfterViewInit() {
+ngAfterViewInit() {
     this.initScene();
     if (this.glbFile) this.loadGLB(this.glbFile);
     this.animate();
@@ -140,19 +141,21 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
       }
     });
 
-    const saved = localStorage.getItem('autosavedScene');
-    if (saved) {
-      const confirmRestore = confirm('🕘 Restore previously saved scene?');
-      if (confirmRestore) {
-        this.uploadSceneFromFile(new File([saved], 'autosavedScene.json', { type: 'application/json' }));
-      }
-    }
+    // Auto save TBA NOT FUNCTIONAL YET
+
+    // const saved = localStorage.getItem('autosavedScene');
+    // if (saved) {
+    //   const confirmRestore = confirm('🕘 Restore previously saved scene?');
+    //   if (confirmRestore) {
+    //     this.uploadSceneFromFile(new File([saved], 'autosavedScene.json', { type: 'application/json' }));
+    //   }
+    // }
 
   }
 
   //********* UI Controls for the ThreeJS Scene *********/
 
-  private initScene() {
+private initScene() {
     const container = this.containerRef.nativeElement;
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x111111);
@@ -227,14 +230,20 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
 //************* Update/Model Transform ******************* */
 
-  updateModelTransform(): void {
-    if (this.uploadedModel) {
-      this.uploadedModel.scale.setScalar(this.modelScale);
-      this.uploadedModel.position.y = this.modelHeight;
-    }
+updateModelTransform(): void {
+  if (this.uploadedModel) {
+    this.uploadedModel.scale.setScalar(this.modelScale);
+    this.uploadedModel.position.y = this.modelHeight;
   }
+}
 
-  applyModelTransform(): void {
+private setUploadedModel(model: THREE.Object3D): void {
+  this.uploadedModel = model;
+  this.modelScale = model.scale.x; // Sync GUI with actual values
+  this.modelHeight = model.position.y;
+}
+
+applyModelTransform(): void {
     if (this.uploadedModel) {
       this.uploadedModel.scale.setScalar(this.modelScale);
       this.uploadedModel.position.y = this.modelHeight;
@@ -243,7 +252,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
 //************* Loading Models ******************* */
 
-  private triggerSceneUpload() {
+private triggerSceneUpload() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -255,43 +264,59 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     input.click();
   }
 
-  private loadGLB(file: File) {
-    const loader = new GLTFLoader();
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
-          const model = gltf.scene;
-          model.traverse((child) => {
-            if ((child as THREE.Mesh).isMesh) {
-              (child as THREE.Mesh).geometry.computeBoundingBox();
-              this.objects.push(child);
-              child.userData['collidable'] = true;
-            }
-          });
+private loadGLB(file: File): void {
+  const loader = new GLTFLoader();
+  const reader = new FileReader();
 
-          model.userData['isLoadedModel'] = true;
-          model.userData['fileName'] = file.name;
-          model.userData['file'] = file;
+  reader.onload = () => {
+    try {
+      loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
+        const model = gltf.scene;
 
-          this.scene.add(model);
-          model.scale.set(1, 1, 1);
-          model.position.set(0, 0, 0);
-          this.sceneLoaded = true;
-          this.saveSceneToLocalStorage();
+        // Traverse the model and set collidable properties
+        model.traverse((child) => {
+          if ((child as THREE.Mesh).isMesh) {
+            (child as THREE.Mesh).geometry.computeBoundingBox();
+            this.objects.push(child);
+            child.userData['collidable'] = true;
+          }
         });
-      } catch {
-        alert('❌ Error loading model. Please try again with a proper GLB format.');
-      }
 
-    };
-    reader.onerror = () => {
-      alert('❌ Failed to read file. Please try again.');
-    };
-    reader.readAsArrayBuffer(file);
-  }
+        // Set metadata
+        model.userData['isLoadedModel'] = true;
+        model.userData['fileName'] = file.name;
+        model.userData['file'] = file;
 
-  uploadSceneFromFile(file: File): void {
+        // Add model to the scene
+        model.scale.setScalar(this.modelScale);
+        model.position.y = this.modelHeight;
+        this.scene.add(model);
+
+        // ✅ Track this as the active model for GUI control
+        this.setUploadedModel(model);
+
+        // Mark scene state and persist it
+        this.sceneLoaded = true;
+
+        // Auto Save - TBA NOT FUNCTIONAL YET
+        //this.saveSceneToLocalStorage();
+        //setInterval(() => this.saveSceneToLocalStorage(), 30000); // every 30s
+
+
+      });
+    } catch {
+      alert('❌ Error loading model. Please try again with a proper GLB format.');
+    }
+  };
+
+  reader.onerror = () => {
+    alert('❌ Failed to read file. Please try again.');
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+uploadSceneFromFile(file: File): void {
   const reader = new FileReader();
   reader.onload = async (event: ProgressEvent<FileReader>) => {
     this.clearScene(); // ✅ Clear previous scene fully
@@ -377,10 +402,89 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   reader.readAsText(file);
   }
 
+private loadSceneFromLocalStorage(): void {
+ const raw = localStorage.getItem('autosavedScene');
+  if (!raw) {
+    console.warn('No autosaved scene found in localStorage.');
+    return;
+  }
+
+  try {
+    const sceneData = JSON.parse(raw);
+
+    this.clearScene();
+
+    // Restore camera
+    if (sceneData.camera) {
+      const { position, rotation } = sceneData.camera;
+      this.camera.position.set(position.x, position.y, position.z);
+      this.camera.rotation.set(rotation.x, rotation.y, rotation.z);
+    }
+
+    // Restore lighting
+    if (sceneData.lighting) {
+      const { ambient, directional } = sceneData.lighting;
+      if (ambient) {
+        this.ambientLight.color.setHex(ambient.color);
+        this.ambientLight.intensity = ambient.intensity;
+      }
+      if (directional) {
+        this.dirLight.color.setHex(directional.color);
+        this.dirLight.intensity = directional.intensity;
+        this.dirLight.position.set(
+          directional.position.x,
+          directional.position.y,
+          directional.position.z
+        );
+      }
+    }
+
+    // Load models from base64 glb
+    if (sceneData.models && Array.isArray(sceneData.models)) {
+      const loader = new GLTFLoader();
+
+      sceneData.models.forEach((modelData: any) => {
+        if (!modelData.glbBase64) {
+          console.warn(`Model ${modelData.name} missing base64 data`);
+          return;
+        }
+
+        // Decode base64 to ArrayBuffer
+        const binaryString = atob(modelData.glbBase64);
+        const len = binaryString.length;
+        const arrayBuffer = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          arrayBuffer[i] = binaryString.charCodeAt(i);
+        }
+
+        loader.parse(arrayBuffer.buffer, '', (gltf) => {
+          const model = gltf.scene;
+          model.name = modelData.name || 'Loaded Model';
+          model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
+          model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+          model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+
+          model.userData['isLoadedModel'] = true;
+          model.userData['fileName'] = modelData.fileName || 'unknown.glb';
+
+          this.scene.add(model);
+          this.objects.push(model);
+        }, (error) => {
+          console.error('Error loading model from base64:', error);
+        });
+      });
+    }
+
+    console.log('Scene loaded from localStorage with base64 models.');
+  } catch (err) {
+    console.error('Failed to load scene from localStorage:', err);
+  }
+}
+
 //************* Save/Clear Scene ******************* */
 
 //Exporting your scene
-  saveScene(): void {
+saveScene(): void {
   const sceneData: SceneData = {
     models: [],
     camera: {
@@ -474,47 +578,69 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   exportNextModel(0);
   }
 
-//autosave??
+//autosave
 private saveSceneToLocalStorage(): void {
-  const sceneData: SceneData = {
-    models: this.scene.children
+  try {
+    const models = this.scene.children
       .filter(obj => obj.userData?.['isLoadedModel'])
-      .map((obj) => {
-        const model = obj as THREE.Object3D;
-        return {
-          name: model.name || '',
-          position: model.position,
-          rotation: model.rotation,
-          scale: model.scale,
-          fileName: model.userData['fileName'],
-          glbBase64: '' // Optional: skip storing full model to save space
-        };
-      }),
-    camera: {
-      position: this.camera.position,
-      rotation: this.camera.rotation
-    },
-    lighting: {
-      ambient: {
-        color: this.ambientLight.color.getHex(),
-        intensity: this.ambientLight.intensity
-      },
-      directional: {
-        color: this.dirLight.color.getHex(),
-        intensity: this.dirLight.intensity,
-        position: [
-          this.dirLight.position.x,
-          this.dirLight.position.y,
-          this.dirLight.position.z
-        ]
-      }
-    }
-  };
+      .map((obj) => ({
+        name: obj.name || '',
+        position: {
+          x: obj.position.x,
+          y: obj.position.y,
+          z: obj.position.z,
+        },
+        rotation: {
+          x: obj.rotation.x,
+          y: obj.rotation.y,
+          z: obj.rotation.z,
+        },
+        scale: {
+          x: obj.scale.x,
+          y: obj.scale.y,
+          z: obj.scale.z,
+        },
+        fileName: obj.userData['fileName'] || 'unknown.glb',
+      }));
 
-  localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
+    const sceneData = {
+      models,
+      camera: {
+        position: {
+          x: this.camera.position.x,
+          y: this.camera.position.y,
+          z: this.camera.position.z,
+        },
+        rotation: {
+          x: this.camera.rotation.x,
+          y: this.camera.rotation.y,
+          z: this.camera.rotation.z,
+        }
+      },
+      lighting: {
+        ambient: {
+          color: this.ambientLight.color.getHex(),
+          intensity: this.ambientLight.intensity,
+        },
+        directional: {
+          color: this.dirLight.color.getHex(),
+          intensity: this.dirLight.intensity,
+          position: {
+            x: this.dirLight.position.x,
+            y: this.dirLight.position.y,
+            z: this.dirLight.position.z,
+          }
+        }
+      }
+    };
+
+    localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
+  } catch (err) {
+    console.error('Failed to save scene to localStorage:', err);
+  }
 }
 
-  private isColliding(position: THREE.Vector3): boolean {
+private isColliding(position: THREE.Vector3): boolean {
     const playerBox = new THREE.Box3().setFromCenterAndSize(
       position.clone().setY(0.5),
       new THREE.Vector3(0.5, 1.6, 0.5)
@@ -568,10 +694,9 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
-
 //************* Animation/ WSAD Keys ******************* */
 
-  private animate = () => {
+private animate = () => {
     requestAnimationFrame(this.animate);
     const delta = this.clock.getDelta();
     this.velocity.x -= this.velocity.x * 10.0 * delta;
@@ -598,7 +723,7 @@ clearScene(): void {
     this.renderer.render(this.scene, this.camera);
   };
 
-  private onKeyDown = (event: KeyboardEvent) => {
+private onKeyDown = (event: KeyboardEvent) => {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
@@ -619,7 +744,7 @@ clearScene(): void {
     }
   };
 
-  private onKeyUp = (event: KeyboardEvent) => {
+private onKeyUp = (event: KeyboardEvent) => {
     switch (event.code) {
       case 'ArrowUp':
       case 'KeyW':
