@@ -1,0 +1,79 @@
+{
+  "hash": "99b0cde3",
+  "configHash": "5d7e00c7",
+  "lockfileHash": "a133c48c",
+  "browserHash": "f5004ed0",
+  "optimized": {
+    "@angular/core": {
+      "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
+      "file": "@angular_core.js",
+      "fileHash": "0b1db456",
+      "needsInterop": false
+    },
+    "@angular/forms": {
+      "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
+      "file": "@angular_forms.js",
+      "fileHash": "36ca4afd",
+      "needsInterop": false
+    },
+    "@angular/platform-browser": {
+      "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
+      "file": "@angular_platform-browser.js",
+      "fileHash": "b1a62c9b",
+      "needsInterop": false
+    },
+    "@angular/router": {
+      "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
+      "file": "@angular_router.js",
+      "fileHash": "eae479cd",
+      "needsInterop": false
+    },
+    "lil-gui": {
+      "src": "../../../../../node_modules/lil-gui/dist/lil-gui.esm.js",
+      "file": "lil-gui.js",
+      "fileHash": "22b6e2ce",
+      "needsInterop": false
+    },
+    "three": {
+      "src": "../../../../../node_modules/three/build/three.module.js",
+      "file": "three.js",
+      "fileHash": "232f2e06",
+      "needsInterop": false
+    },
+    "three/examples/jsm/controls/PointerLockControls": {
+      "src": "../../../../../node_modules/three/examples/jsm/controls/PointerLockControls.js",
+      "file": "three_examples_jsm_controls_PointerLockControls.js",
+      "fileHash": "d9402c58",
+      "needsInterop": false
+    },
+    "three/examples/jsm/exporters/GLTFExporter": {
+      "src": "../../../../../node_modules/three/examples/jsm/exporters/GLTFExporter.js",
+      "file": "three_examples_jsm_exporters_GLTFExporter.js",
+      "fileHash": "bf8546d3",
+      "needsInterop": false
+    },
+    "three/examples/jsm/loaders/GLTFLoader": {
+      "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
+      "file": "three_examples_jsm_loaders_GLTFLoader.js",
+      "fileHash": "96f79b51",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-XUIIYUNP": {
+      "file": "chunk-XUIIYUNP.js"
+    },
+    "chunk-CQCHV5RH": {
+      "file": "chunk-CQCHV5RH.js"
+    },
+    "chunk-LKVAI3R5": {
+      "file": "chunk-LKVAI3R5.js"
+    },
+    "chunk-SJMSC4T5": {
+      "file": "chunk-SJMSC4T5.js"
+    },
+    "chunk-WDMUDEB6": {
+      "file": "chunk-WDMUDEB6.js"
+    }
+  }
+}
