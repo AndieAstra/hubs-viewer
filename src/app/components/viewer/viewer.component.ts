@@ -654,7 +654,7 @@ private isColliding(position: THREE.Vector3): boolean {
 
 clearScene(): void {
   // Remove all previously loaded models
-  const toRemove = this.scene.children.filter(obj => obj.userData?.['isLoadedModel']);
+  const toRemove = this.scene.children.filter((obj: THREE.Object3D) => obj.userData?.['isLoadedModel']);
   toRemove.forEach(obj => {
     this.scene.remove(obj);
     obj.traverse((child: THREE.Object3D) => {

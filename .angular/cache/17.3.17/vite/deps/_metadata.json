@@ -1,61 +1,61 @@
 {
-  "hash": "b1880bee",
-  "configHash": "5d7e00c7",
-  "lockfileHash": "d7fb0d1d",
-  "browserHash": "3d880df2",
+  "hash": "2f80f47d",
+  "configHash": "b9d38ec4",
+  "lockfileHash": "aedfc008",
+  "browserHash": "bc889bb6",
   "optimized": {
     "@angular/core": {
       "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
       "file": "@angular_core.js",
-      "fileHash": "b6698d33",
+      "fileHash": "8dddfd8e",
       "needsInterop": false
     },
     "@angular/forms": {
       "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
       "file": "@angular_forms.js",
-      "fileHash": "341e1547",
+      "fileHash": "9479fd86",
       "needsInterop": false
     },
     "@angular/platform-browser": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
       "file": "@angular_platform-browser.js",
-      "fileHash": "ca22028c",
+      "fileHash": "719f6d55",
       "needsInterop": false
     },
     "@angular/router": {
       "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
       "file": "@angular_router.js",
-      "fileHash": "2187f261",
+      "fileHash": "b6c0fb0d",
       "needsInterop": false
     },
     "lil-gui": {
       "src": "../../../../../node_modules/lil-gui/dist/lil-gui.esm.js",
       "file": "lil-gui.js",
-      "fileHash": "57e0cfe2",
+      "fileHash": "c597a875",
       "needsInterop": false
     },
     "three": {
       "src": "../../../../../node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "ea9d07d7",
+      "fileHash": "28b385ef",
       "needsInterop": false
     },
-    "three/examples/jsm/controls/PointerLockControls": {
+    "three/examples/jsm/controls/PointerLockControls.js": {
       "src": "../../../../../node_modules/three/examples/jsm/controls/PointerLockControls.js",
-      "file": "three_examples_jsm_controls_PointerLockControls.js",
-      "fileHash": "1297cfdf",
+      "file": "three_examples_jsm_controls_PointerLockControls__js.js",
+      "fileHash": "7cf0d915",
       "needsInterop": false
     },
-    "three/examples/jsm/exporters/GLTFExporter": {
+    "three/examples/jsm/exporters/GLTFExporter.js": {
       "src": "../../../../../node_modules/three/examples/jsm/exporters/GLTFExporter.js",
-      "file": "three_examples_jsm_exporters_GLTFExporter.js",
-      "fileHash": "033e26e4",
+      "file": "three_examples_jsm_exporters_GLTFExporter__js.js",
+      "fileHash": "5a4978dc",
       "needsInterop": false
     },
-    "three/examples/jsm/loaders/GLTFLoader": {
+    "three/examples/jsm/loaders/GLTFLoader.js": {
       "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
-      "file": "three_examples_jsm_loaders_GLTFLoader.js",
-      "fileHash": "a443db0a",
+      "file": "three_examples_jsm_loaders_GLTFLoader__js.js",
+      "fileHash": "1d228cef",
       "needsInterop": false
     }
   },

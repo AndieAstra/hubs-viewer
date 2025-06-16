@@ -1,7 +1,8 @@
-<h1>Virtual Farm Viewer</h1>
+<h1>4H CLOVER Virtual Farming System Tools</h1>
 
-<app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-
-<app-viewer [glbFile]="selectedFile"></app-viewer>
+<nav>
+  <button (click)="navigateTo('/3dviewer')">3D Viewer</button>
+  <button (click)="navigateTo('/panorama')">Panorama Viewer</button>
+</nav>
 
 <router-outlet></router-outlet>

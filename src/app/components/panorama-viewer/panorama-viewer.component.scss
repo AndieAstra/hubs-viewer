@@ -1,0 +1,29 @@
+.viewer-container {
+  position: relative; /* enable z-index layering */
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+input[type='file'] {
+  z-index: 10; /* higher than renderer */
+  padding: 8px;
+  background: white;
+  border: 1px solid #ccc;
+  margin: 10px;
+  align-self: flex-start;
+  position: relative; /* keep it in flow but layered */
+  pointer-events: auto; /* input captures clicks */
+}
+
+.renderer {
+  position: relative;
+  z-index: 1; /* below input */
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  display: block;
+  pointer-events: auto; /* renderer captures clicks too */
+}
