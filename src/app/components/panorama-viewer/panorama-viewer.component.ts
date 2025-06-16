@@ -36,7 +36,8 @@ export class PanoramaViewerComponent implements OnInit, OnDestroy {
   panoNotes: PanoNote[] = [];
   placingNote = false;
   mouseScreen = { x: 0, y: 0 };
-
+  pointerX = 0;
+  pointerY = 0;
 
   constructor(private ngZone: NgZone) {}
 
@@ -215,6 +216,32 @@ onCanvasClick = (e: MouseEvent) => {
 
 prepareNotePlacement(): void {
   this.placingNote = true;
+}
+
+onPointerMove(e: MouseEvent) {
+  if (this.placingNote) {
+    this.pointerX = e.clientX;
+    this.pointerY = e.clientY;
+  }
+}
+
+placeNoteAtPointer() {
+  // The last mouse position in pointerX/Y is screen pixels.
+  // Convert to normalized device coords:
+  const rect = this.renderer.domElement.getBoundingClientRect();
+  const mouse = new THREE.Vector2(
+    ((this.pointerX - rect.left) / rect.width) * 2 - 1,
+    -((this.pointerY - rect.top) / rect.height) * 2 + 1
+  );
+
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(mouse, this.camera);
+
+  const intersects = raycaster.intersectObject(this.sphereMesh);
+  if (intersects.length > 0) {
+    this.addNoteAt(intersects[0].point);
+    this.placingNote = false;
+  }
 }
 
 addNoteAtCenter(): void {
