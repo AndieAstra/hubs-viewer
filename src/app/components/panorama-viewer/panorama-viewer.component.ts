@@ -1,5 +1,15 @@
-import { Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, HostListener } from '@angular/core';
+import {
+  Component, ElementRef, NgZone, OnDestroy, OnInit,
+  ViewChild, HostListener
+} from '@angular/core';
 import * as THREE from 'three';
+
+interface PanoNote {
+  position: THREE.Vector3;
+  title: string;
+  text: string;
+  element: HTMLDivElement;
+}
 
 @Component({
   selector: 'app-panorama-viewer',
@@ -17,214 +27,333 @@ export class PanoramaViewerComponent implements OnInit, OnDestroy {
   private sphereMesh!: THREE.Mesh;
 
   private keys = new Set<string>();
-
-  // Rotation angles
-  private yaw = 0;   // horizontal rotation
-  private pitch = 0; // vertical rotation
-  private ROTATION_SPEED = 0.02; // radians per frame
-
+  private yaw = 0; private pitch = 0;
+  private ROTATION_SPEED = 0.02;
   private isDragging = false;
-  private previousMouseX = 0;
-  private previousMouseY = 0;
+  private previousMouseX = 0; private previousMouseY = 0;
+
+  // Pano notes
+  panoNotes: PanoNote[] = [];
+  placingNote = false;
+  mouseScreen = { x: 0, y: 0 };
+
 
   constructor(private ngZone: NgZone) {}
+
+@HostListener('window:keydown', ['$event'])
+onKeyDown(e: KeyboardEvent) {
+  this.keys.add(e.key.toLowerCase());
+}
+
+@HostListener('window:keyup', ['$event'])
+onKeyUp(e: KeyboardEvent) {
+  this.keys.delete(e.key.toLowerCase());
+}
+
+@HostListener('document:keydown', ['$event'])
+blockArrowKeysWhenTyping(e: KeyboardEvent) {
+  const activeEl = document.activeElement;
+  if (
+    activeEl && (
+      activeEl.classList.contains('note-title') ||
+      activeEl.classList.contains('note-body')
+    )
+  ) {
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+      e.stopPropagation();
+    }
+  }
+}
 
 ngOnInit(): void {
   this.initThree();
   this.ngZone.runOutsideAngular(() => this.animate());
 
-  const canvas = this.renderer.domElement;
-  canvas.addEventListener('mousedown', this.onMouseDown);
-  canvas.addEventListener('mousemove', this.onMouseMove);
-  canvas.addEventListener('mouseup', this.onMouseUp);
-  canvas.addEventListener('mouseleave', this.onMouseUp);
+  const c = this.renderer.domElement;
 
-  canvas.addEventListener('touchstart', this.onTouchStart, { passive: false });
-  canvas.addEventListener('touchmove', this.onTouchMove, { passive: false });
-  canvas.addEventListener('touchend', this.onTouchEnd);
+  // Correct order: bind BEFORE adding as listener
+  this.onDoubleClick = this.onDoubleClick.bind(this);
+
+    c.addEventListener('mousedown', this.onMouseDown.bind(this));
+    c.addEventListener('mousemove', this.onMouseMove);
+    c.addEventListener('mouseup', this.onMouseUp);
+    c.addEventListener('mouseleave', this.onMouseLeave);
+
+  ['touchstart','touchmove','touchend'].forEach(ev =>
+    c.addEventListener(ev, (this as any)[`on${ev.charAt(0).toUpperCase()+ev.slice(1)}`], { passive: ev==='touchmove'?false:true })
+  );
+
+  // place hotspot via double-click/tap
+  c.addEventListener('dblclick', this.onDoubleClick);
+
+  this.renderer.domElement.addEventListener('mousemove', e => {
+  this.mouseScreen.x = e.clientX;
+  this.mouseScreen.y = e.clientY;
+
+  const circle = document.querySelector('.note-pointer-circle') as HTMLElement;
+    if (circle) {
+      circle.style.left = `${e.clientX}px`;
+      circle.style.top = `${e.clientY}px`;
+    }
+  });
+
+  this.renderer.domElement.addEventListener('click', this.onCanvasClick);
+
+  this.loadNotes();
 }
 
-ngOnDestroy(): void {
-  cancelAnimationFrame(this.animationFrameId);
-  this.renderer.dispose();
-  this.scene.clear();
-  this.keys.clear();
 
-  const canvas = this.renderer.domElement;
-  canvas.removeEventListener('mousedown', this.onMouseDown);
-  canvas.removeEventListener('mousemove', this.onMouseMove);
-  canvas.removeEventListener('mouseup', this.onMouseUp);
-  canvas.removeEventListener('mouseleave', this.onMouseUp);
+  ngOnDestroy(): void {
+    cancelAnimationFrame(this.animationFrameId);
+    this.renderer.dispose();
+    this.scene.clear();
+    this.keys.clear();
 
-  canvas.removeEventListener('touchstart', this.onTouchStart);
-  canvas.removeEventListener('touchmove', this.onTouchMove);
-  canvas.removeEventListener('touchend', this.onTouchEnd);
-}
+    const c = this.renderer.domElement;
+    ['mousedown','mousemove','mouseup','mouseleave','dblclick'].forEach(ev =>
+      c.removeEventListener(ev, (this as any)[`on${ev.charAt(0).toUpperCase()+ev.slice(1)}`])
+    );
+    ['touchstart','touchmove','touchend'].forEach(ev =>
+      c.removeEventListener(ev, (this as any)[`on${ev.charAt(0).toUpperCase()+ev.slice(1)}`])
+    );
+
+    this.renderer.domElement.removeEventListener('dblclick', this.onDoubleClick);
+    this.renderer.domElement.removeEventListener('click', this.onCanvasClick);
+  }
 
   initThree(): void {
-    const container = this.rendererContainer.nativeElement;
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
+    const el = this.rendererContainer.nativeElement as HTMLElement;
+    const width = el.clientWidth, height = el.clientHeight;
     this.scene = new THREE.Scene();
-
-    this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1100);
-    this.camera.position.set(0, 0, 0); // Fixed at center
-
+    this.camera = new THREE.PerspectiveCamera(75, width/height, 0.1, 1100);
+    this.camera.position.set(0,0,0);
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(width, height);
-    container.appendChild(this.renderer.domElement);
+    this.renderer.domElement.style.pointerEvents = 'all';
 
-    // Create inverted sphere for panorama
-    const geometry = new THREE.SphereGeometry(500, 60, 40);
-    geometry.scale(-1, 1, 1); // invert to look inside
-    const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    this.sphereMesh = new THREE.Mesh(geometry, material);
+    el.appendChild(this.renderer.domElement);
+
+    const geo = new THREE.SphereGeometry(500,60,40);
+    geo.scale(-1,1,1);
+    const mat = new THREE.MeshBasicMaterial({ color:0x000000 });
+    this.sphereMesh = new THREE.Mesh(geo, mat);
     this.scene.add(this.sphereMesh);
   }
 
-  private onMouseDown = (event: MouseEvent) => {
+  // --------------- Input handlers ---------------
+
+onMouseDown(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (target.closest('.pano-note')) return; // prevent dragging scene when clicking note
   this.isDragging = true;
-  this.previousMouseX = event.clientX;
-  this.previousMouseY = event.clientY;
-};
+  this.previousMouseX = e.clientX;
+  this.previousMouseY = e.clientY;
+}
 
-private onMouseMove = (event: MouseEvent) => {
-  if (!this.isDragging) return;
+  onMouseMove = (e: MouseEvent) => {
+    if (!this.isDragging) return;
+    const dx = e.clientX - this.previousMouseX;
+    const dy = e.clientY - this.previousMouseY;
+    this.previousMouseX = e.clientX;
+    this.previousMouseY = e.clientY;
+    this.yaw  -= dx * 0.002;
+    this.pitch-= dy * 0.002;
+    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI/2, Math.PI/2);
+  };
+  onMouseUp = () => this.isDragging = false;
+  onMouseLeave = () => this.isDragging = false;
 
-  const deltaX = event.clientX - this.previousMouseX;
-  const deltaY = event.clientY - this.previousMouseY;
+  onTouchStart = (e: TouchEvent) => {
+    if (e.touches.length===1) {
+      this.isDragging = true;
+      this.previousMouseX = e.touches[0].clientX;
+      this.previousMouseY = e.touches[0].clientY;
+    }
+  };
+  onTouchMove = (e: TouchEvent) => {
+    if (!this.isDragging || e.touches.length!==1) return;
+    const t = e.touches[0];
+    const dx = t.clientX - this.previousMouseX;
+    const dy = t.clientY - this.previousMouseY;
+    this.previousMouseX = t.clientX;
+    this.previousMouseY = t.clientY;
+    this.yaw  -= dx * 0.002;
+    this.pitch-= dy * 0.002;
+    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI/2, Math.PI/2);
+    e.preventDefault();
+  };
+  onTouchEnd = () => this.isDragging = false;
 
-  this.previousMouseX = event.clientX;
-  this.previousMouseY = event.clientY;
+  onDoubleClick = (e: MouseEvent) => {
+    const mouse = new THREE.Vector2(
+      (e.offsetX/this.renderer.domElement.clientWidth)*2-1,
+      -(e.offsetY/this.renderer.domElement.clientHeight)*2+1
+    );
+    const rc = new THREE.Raycaster();
+    rc.setFromCamera(mouse, this.camera);
+    const it = rc.intersectObject(this.sphereMesh);
+    if (it.length) this.addNoteAt(it[0].point);
+  };
 
-  this.yaw -= deltaX * 0.002;
-  this.pitch -= deltaY * 0.002;
-  this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI / 2, Math.PI / 2);
-};
+  // ---------------- Pano Notes -------------------
 
-private onMouseUp = () => {
-  this.isDragging = false;
-};
+onCanvasClick = (e: MouseEvent) => {
+  if (!this.placingNote) return;
 
-private onTouchStart = (event: TouchEvent) => {
-  if (event.touches.length === 1) {
-    this.isDragging = true;
-    this.previousMouseX = event.touches[0].clientX;
-    this.previousMouseY = event.touches[0].clientY;
+  const mouse = new THREE.Vector2(
+    (e.offsetX / this.renderer.domElement.clientWidth) * 2 - 1,
+    -(e.offsetY / this.renderer.domElement.clientHeight) * 2 + 1
+  );
+  const rc = new THREE.Raycaster();
+  rc.setFromCamera(mouse, this.camera);
+  const intersects = rc.intersectObject(this.sphereMesh);
+  if (intersects.length) {
+    this.addNoteAt(intersects[0].point);
+    this.placingNote = false;
   }
 };
 
-private onTouchMove = (event: TouchEvent) => {
-  if (!this.isDragging || event.touches.length !== 1) return;
+prepareNotePlacement(): void {
+  this.placingNote = true;
+}
 
-  const touch = event.touches[0];
-  const deltaX = touch.clientX - this.previousMouseX;
-  const deltaY = touch.clientY - this.previousMouseY;
+addNoteAtCenter(): void {
+  const dir = new THREE.Vector3(
+    Math.cos(this.pitch) * Math.sin(this.yaw),
+    Math.sin(this.pitch),
+    Math.cos(this.pitch) * Math.cos(this.yaw)
+  );
+  const notePosition = this.camera.position.clone().add(dir.multiplyScalar(10)); // 10 units in front
+  this.addNoteAt(notePosition);
+}
 
-  this.previousMouseX = touch.clientX;
-  this.previousMouseY = touch.clientY;
+addNoteAt(pos: THREE.Vector3) {
+  const container = this.rendererContainer.nativeElement as HTMLElement;
+  const el = document.createElement('div');
+  el.className = 'pano-note';
+  el.innerHTML = `
+    <div class="note-title">New Note</div>
+    <div class="note-body">Write text...</div>
+    <div class="note-controls">
+      <button class="note-edit">✎ Edit</button>
+      <button class="note-remove">✖ Delete</button>
+    </div>
+  `;
+  container.appendChild(el);
 
-  this.yaw -= deltaX * 0.002;
-  this.pitch -= deltaY * 0.002;
-  this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI / 2, Math.PI / 2);
+  const note: PanoNote = {
+    position: pos.clone(),
+    title: 'New Note',
+    text: 'Write text...',
+    element: el
+  };
+  this.panoNotes.push(note);
 
-  event.preventDefault(); // Prevent scrolling
-};
+  // Editable controls
+  const titleEl = el.querySelector('.note-title') as HTMLElement;
+  const bodyEl = el.querySelector('.note-body') as HTMLElement;
+  const editBtn = el.querySelector('.note-edit') as HTMLButtonElement;
 
-private onTouchEnd = () => {
-  this.isDragging = false;
-};
+  let editing = false;
+  editBtn.addEventListener('click', () => {
+    editing = !editing;
+    if (editing) {
+      titleEl.setAttribute('contenteditable', 'true');
+      bodyEl.setAttribute('contenteditable', 'true');
+      titleEl.focus();
+      editBtn.textContent = '💾 Save';
+    } else {
+      titleEl.removeAttribute('contenteditable');
+      bodyEl.removeAttribute('contenteditable');
+      editBtn.textContent = '✎ Edit';
+      this.saveNotes();
+    }
+  });
 
+  // Remove button
+  el.querySelector('.note-remove')!
+    .addEventListener('click', () => this.removeNote(note));
 
-animate = () => {
-  this.handleKeyLook(); // handle keyboard input
+  this.saveNotes();
+}
 
-  // Calculate direction vector from yaw and pitch
-  const direction = new THREE.Vector3();
-  direction.x = Math.cos(this.pitch) * Math.sin(this.yaw);
-  direction.y = Math.sin(this.pitch);
-  direction.z = Math.cos(this.pitch) * Math.cos(this.yaw);
+  removeNote(note: PanoNote) {
+    note.element.remove();
+    this.panoNotes = this.panoNotes.filter(n=>n!==note);
+    this.saveNotes();
+  }
 
-  // Apply the look direction — from camera center outward
-  this.camera.lookAt(this.camera.position.clone().add(direction));
+  saveNotes() {
+    const data = this.panoNotes.map(n=>({
+      pos: n.position.toArray(),
+      title: n.element.querySelector('.note-title')!.textContent,
+      text: n.element.querySelector('.note-body')!.textContent
+    }));
+    localStorage.setItem('panoNotes', JSON.stringify(data));
+  }
 
-  // Render scene
-  this.renderer.render(this.scene, this.camera);
-  this.animationFrameId = requestAnimationFrame(this.animate);
-};
+  loadNotes() {
+    const raw = localStorage.getItem('panoNotes');
+    if(!raw) return;
+    try {
+      const arr = JSON.parse(raw);
+      for(const o of arr) {
+        const vec = new THREE.Vector3().fromArray(o.pos);
+        this.addNoteAt(vec);
+        const note = this.panoNotes[this.panoNotes.length-1];
+        note.element.querySelector('.note-title')!.textContent = o.title;
+        note.element.querySelector('.note-body')!.textContent = o.text;
+      }
+    } catch(e) {}
+  }
 
+  // ---------------- Main animation loop ----------------
+
+  animate = () => {
+    this.handleKeyLook();
+
+    const dir = new THREE.Vector3(
+      Math.cos(this.pitch)*Math.sin(this.yaw),
+      Math.sin(this.pitch),
+      Math.cos(this.pitch)*Math.cos(this.yaw)
+    );
+    this.camera.lookAt(this.camera.position.clone().add(dir));
+
+    // project notes to 2D and position elements
+    this.panoNotes.forEach(n => {
+      const p = n.position.clone().project(this.camera);
+      const x = (p.x*0.5+0.5)*this.renderer.domElement.clientWidth;
+      const y = (-p.y*0.5+0.5)*this.renderer.domElement.clientHeight;
+      n.element.style.transform = `translate(-50%,-50%) translate(${x}px,${y}px)`;
+    });
+
+    this.renderer.render(this.scene, this.camera);
+    this.animationFrameId = requestAnimationFrame(this.animate);
+  };
+
+  handleKeyLook() {
+    if (this.keys.has('a')||this.keys.has('arrowleft')) this.yaw += this.ROTATION_SPEED;
+    if (this.keys.has('d')||this.keys.has('arrowright')) this.yaw -= this.ROTATION_SPEED;
+    if (this.keys.has('w')||this.keys.has('arrowup'))    this.pitch += this.ROTATION_SPEED;
+    if (this.keys.has('s')||this.keys.has('arrowdown'))  this.pitch -= this.ROTATION_SPEED;
+    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI/2, Math.PI/2);
+  }
+
+  // ---------------- File input ----------------
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
+    if(!input.files?.length) return;
     const file = input.files[0];
     const reader = new FileReader();
-
     reader.onload = () => {
-      const textureLoader = new THREE.TextureLoader();
-      textureLoader.load(reader.result as string, (texture) => {
-        if (Array.isArray(this.sphereMesh.material)) {
-          this.sphereMesh.material.forEach((mat) => mat.dispose());
-        } else {
-          this.sphereMesh.material.dispose();
-        }
-
-        this.sphereMesh.material = new THREE.MeshBasicMaterial({ map: texture });
+      new THREE.TextureLoader().load(reader.result as string, tex=>{
+        const mats = Array.isArray(this.sphereMesh.material) ?
+          this.sphereMesh.material : [this.sphereMesh.material as THREE.Material];
+        mats.forEach(m=>m.dispose());
+        this.sphereMesh.material = new THREE.MeshBasicMaterial({ map: tex });
       });
     };
-
     reader.readAsDataURL(file);
-  }
-
-  private handleKeyLook(): void {
-    let updated = false;
-
-    if (this.keys.has('arrowleft') || this.keys.has('a')) {
-      this.yaw += this.ROTATION_SPEED;
-      updated = true;
-    }
-    if (this.keys.has('arrowright') || this.keys.has('d')) {
-      this.yaw -= this.ROTATION_SPEED;
-      updated = true;
-    }
-    if (this.keys.has('arrowup') || this.keys.has('w')) {
-      this.pitch += this.ROTATION_SPEED;
-      updated = true;
-    }
-    if (this.keys.has('arrowdown') || this.keys.has('s')) {
-      this.pitch -= this.ROTATION_SPEED;
-      updated = true;
-    }
-
-    // Clamp pitch between straight up and straight down (to avoid flipping)
-    this.pitch = THREE.MathUtils.clamp(this.pitch, -Math.PI / 2, Math.PI / 2);
-
-    if (updated) {
-      // No need to do anything here because updateCameraRotation will run every frame
-    }
-  }
-
-  private updateCameraRotation(): void {
-    // Calculate the direction vector from yaw and pitch
-    const x = Math.cos(this.pitch) * Math.sin(this.yaw);
-    const y = Math.sin(this.pitch);
-    const z = Math.cos(this.pitch) * Math.cos(this.yaw);
-
-    const lookDirection = new THREE.Vector3(x, y, z);
-    lookDirection.add(this.camera.position);
-
-    this.camera.lookAt(lookDirection);
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  onKeyDown(event: KeyboardEvent): void {
-    this.keys.add(event.key.toLowerCase());
-  }
-
-  @HostListener('window:keyup', ['$event'])
-  onKeyUp(event: KeyboardEvent): void {
-    this.keys.delete(event.key.toLowerCase());
   }
 }

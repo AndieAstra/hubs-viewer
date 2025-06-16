@@ -1,5 +1,5 @@
 .viewer-container {
-  position: relative; /* enable z-index layering */
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -7,23 +7,141 @@
   overflow: hidden;
 }
 
+.toolbar {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background-color: #f8f8f8;
+  border-bottom: 1px solid #ccc;
+  z-index: 100;
+}
+
+.add-note-btn,
+.upload-label {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  color: white;
+}
+
+.add-note-btn {
+  background-color: #007bff;
+}
+
+.upload-label {
+  background-color: #28a745;
+}
+
 input[type='file'] {
-  z-index: 10; /* higher than renderer */
-  padding: 8px;
-  background: white;
-  border: 1px solid #ccc;
-  margin: 10px;
-  align-self: flex-start;
-  position: relative; /* keep it in flow but layered */
-  pointer-events: auto; /* input captures clicks */
+  display: none; // hidden, label is styled instead
 }
 
 .renderer {
-  position: relative;
-  z-index: 1; /* below input */
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  flex: 1;
   display: block;
-  pointer-events: auto; /* renderer captures clicks too */
+  z-index: 1;
+  pointer-events: all; // canvas must respond to interaction
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+canvas:active {
+  cursor: grabbing;
+}
+
+/* ---------------- Notes ---------------- */
+
+.pano-note {
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 10px;
+  border: 2px solid #333;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  min-width: 180px;
+  max-width: 280px;
+  z-index: 10;
+  font-family: sans-serif;
+  font-size: 16px;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.pano-note .note-title,
+.pano-note .note-body {
+  margin-bottom: 6px;
+  padding: 4px;
+  word-wrap: break-word;
+  background-color: #fff;
+  border-radius: 4px;
+}
+
+.pano-note .note-title {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.pano-note .note-body {
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.pano-note .note-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.pano-note button {
+  font-size: 14px;
+  padding: 4px 8px;
+  border: none;
+  background-color: #444;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pano-note button.note-remove {
+  background-color: #dc3545;
+}
+
+.note-pointer-circle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border: 2px solid red;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+}
+.pano-note {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #444;
+  padding: 0.5em;
+  border-radius: 8px;
+  min-width: 150px;
+  font-size: 14px;
+  z-index: 20;
+}
+.note-controls {
+  margin-top: 4px;
+  display: flex;
+  gap: 0.5em;
+  justify-content: right;
+}
+.note-title, .note-body {
+  word-wrap: break-word;
 }

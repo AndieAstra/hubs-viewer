@@ -1,4 +1,23 @@
+<!-- Add Note Button -->
+<div class="toolbar">
+<label class="upload-label">
+    🖼 Upload Panorama
+    <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+  </label>
+</div>
+
+<!-- 3D Scene + Notes Overlay -->
+<div class="button">
+  <button (click)="prepareNotePlacement()">🎯 Generate Note</button>
+  <span class="note-count">📝 Notes in Scene: {{ panoNotes.length }}</span>
+</div>
+
 <div class="viewer-container">
   <input type="file" accept="image/*" (change)="onFileSelected($event)" />
   <div class="renderer" #rendererContainer></div>
+<!-- Angular 17 @if directive usage -->
+@if(placingNote) {
+  <div class="note-pointer-circle"></div>
+}
 </div>
+
