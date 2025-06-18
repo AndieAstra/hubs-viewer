@@ -1,3 +1,20 @@
-<h1>3D Model Viewer</h1>
-<app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-<app-viewer [glbFile]="selectedFile"></app-viewer>
+<div class="viewer-page">
+  <header class="viewer-header">
+    <h1>🎨 Welcome to the 3D Model Playground!</h1>
+    <p>Pick a model to play with, then use the colorful tools to move, spin, and resize it.</p>
+  </header>
+
+  <section class="upload-section">
+    <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+  </section>
+
+  <section class="viewer-section">
+    @if (!selectedFile) {
+      <div class="upload-hint">
+        <p>⬆️ Upload a model to start playing!</p>
+      </div>
+    } @else {
+      <app-viewer [glbFile]="selectedFile"></app-viewer> <!-- Only viewer, not canvas -->
+    }
+  </section>
+</div>

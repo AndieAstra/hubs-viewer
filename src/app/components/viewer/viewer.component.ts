@@ -72,6 +72,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   modelHeight = 0;
   uploadedModel: THREE.Object3D | null = null;
 
+  ambientIntensity = 0.5;
+  speed = 2;
+  cameraHeight = 1.6;
+
   // State flags
   showGrid = true;
   isPlacingModel = false;
@@ -90,10 +94,12 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private ambientLight!: THREE.AmbientLight;
   private dirLight!: THREE.DirectionalLight;
   private gui!: GUI;
-  public speed = 5.0;
-  public cameraHeight = 1.6;
+  //public speed = 5.0;
+  //public cameraHeight = 1.6;
   private sceneLoaded = false;
   transformControls!: TransformControls;
+
+  selectedTool = '';
 
   private keysPressed = {
     forward: false,
@@ -170,6 +176,14 @@ ngAfterViewInit() {
     // Auto save TBA NOT FUNCTIONAL YET
 
   }
+
+  updateAmbientLight() {
+  this.ambientLight.intensity = this.ambientIntensity;
+}
+
+  updateCameraHeight() {
+  this.camera.position.y = this.cameraHeight;
+}
 
   //********* UI Controls for the ThreeJS Scene *********/
 
@@ -835,6 +849,14 @@ private onKeyUp = (event: KeyboardEvent) => {
     }
   };
 
+//************* Screen Sizing ******************* */
+
+onResize(width: number, height: number) {
+  this.renderer.setSize(width, height);
+  this.camera.aspect = width / height;
+  this.camera.updateProjectionMatrix();
+}
+
 //************* User Friendly UI Buttons ******************* */
 
 enterModelPlacementMode(): void {
@@ -843,6 +865,7 @@ enterModelPlacementMode(): void {
   }
 
 setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
+    this.selectedTool = mode;
     if (this.transformControls) {
       this.transformControls.setMode(mode);
       this.snackBar.open(`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode activated`, 'OK', {

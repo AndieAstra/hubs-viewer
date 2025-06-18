@@ -1,7 +1,90 @@
-.viewer-container {
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  position: relative;
-  cursor: crosshair;
+.viewer-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fdf6e3;
+  min-height: 100vh;
+  padding: 20px;
+  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
 }
+
+.viewer-header {
+  text-align: center;
+  margin-bottom: 20px;
+
+  h1 {
+    font-size: 2.5rem;
+    color: #4a90e2;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 1.2rem;
+    color: #444;
+  }
+}
+
+.upload-section {
+  margin-bottom: 20px;
+  background: #ffffff;
+  border: 3px dashed #90caf9;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  width: 90%;
+  max-width: 500px;
+}
+
+.upload-hint {
+  margin-top: 32px;
+  font-size: 1.4rem;
+  color: #888;
+  text-align: center;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%   { transform: scale(1); opacity: 0.7; }
+  50%  { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.7; }
+}
+
+.viewer-section {
+  flex: 1;
+  width: 90%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #fefefe;
+  border: 2px dashed #ccc;
+  border-radius: 16px;
+  padding: 16px;
+  box-sizing: border-box;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+  min-height: 400px;
+  overflow: hidden;
+  position: relative;  /* Important for absolutely positioned canvas */
+}
+
+.canvas-container {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;  /* Ensure canvas absolute positioning is relative to this */
+  overflow: hidden;
+}
+
+canvas {
+  position: absolute;  /* Position canvas absolutely to fill container */
+  top: 0;
+  left: 0;
+  width: 100% !important;  /* Make canvas width fill the container */
+  height: 100% !important; /* Make canvas height fill the container */
+  display: block;
+  outline: none;
+  object-fit: contain;    /* Scale nicely inside container */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
