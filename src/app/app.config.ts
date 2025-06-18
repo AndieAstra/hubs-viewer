@@ -4,10 +4,11 @@ import { importProvidersFrom } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { routes } from './app.routes';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    importProvidersFrom(FormsModule, ReactiveFormsModule) // ✅ Angular 17-compatible
+    importProvidersFrom(FormsModule, ReactiveFormsModule), provideAnimationsAsync() // ✅ Angular 17-compatible
   ]
 };

@@ -1,0 +1,29 @@
+<div class="viewer-container">
+  <div class="toolbar">
+    <button mat-raised-button color="primary" (click)="onAddModel()" matTooltip="Add a new model">
+      <mat-icon>add</mat-icon> Add
+    </button>
+    <button mat-raised-button color="accent" (click)="onToggleGrid()" matTooltip="Toggle grid helper">
+      <mat-icon>grid_on</mat-icon> Grid
+    </button>
+    <button mat-raised-button color="warn" (click)="onClearScene()" matTooltip="Remove all models">
+      <mat-icon>delete</mat-icon> Clear
+    </button>
+    <button mat-raised-button color="primary" (click)="saveScene()" matTooltip="Save scene to file">
+      <mat-icon>save</mat-icon> Save
+    </button>
+  </div>
+
+  <button mat-raised-button color="primary" (click)="onAddModel()">➕ Add Model</button>
+  <button mat-raised-button color="accent" (click)="setTransformMode('translate')">🔼 Move</button>
+  <button mat-raised-button color="accent" (click)="setTransformMode('rotate')">🔄 Rotate</button>
+  <button mat-raised-button color="accent" (click)="setTransformMode('scale')">📏 Scale</button>
+  <button mat-raised-button color="warn" (click)="onToggleGrid()">
+    {{ showGrid ? 'Hide Grid' : 'Show Grid' }}
+  </button>
+  <button mat-raised-button color="primary" (click)="saveScene()">💾 Save</button>
+
+  <div class="canvas-container">
+    <canvas #viewerCanvas></canvas>
+  </div>
+</div>

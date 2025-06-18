@@ -14,6 +14,12 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import GUI from 'lil-gui';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 export interface SavedModel {
   name: string;
@@ -46,18 +52,32 @@ export interface SceneData {
 @Component({
   selector: 'app-viewer',
   standalone: true,
-  imports: [],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatSnackBarModule,],
   template: `<div #canvasContainer class="viewer-container"></div>`,
   styleUrls: ['./viewer.component.scss'],
 })
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 
+  @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @Input() glbFile?: File;
+
+  constructor(private snackBar: MatSnackBar) {}
 
   modelScale = 1;
   modelHeight = 0;
   uploadedModel: THREE.Object3D | null = null;
+
+  // State flags
+  showGrid = true;
+  isPlacingModel = false;
+
+  // References
+  gridHelper!: THREE.GridHelper;
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
@@ -73,6 +93,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public speed = 5.0;
   public cameraHeight = 1.6;
   private sceneLoaded = false;
+  transformControls!: TransformControls;
 
   private keysPressed = {
     forward: false,
@@ -85,6 +106,7 @@ ngOnInit() {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
     this.loadSceneFromLocalStorage();
+    //this.initThree();
   }
 
 ngOnDestroy() {
@@ -141,15 +163,11 @@ ngAfterViewInit() {
       }
     });
 
-    // Auto save TBA NOT FUNCTIONAL YET
+    this.gridHelper = new THREE.GridHelper(10, 10);
+    this.scene.add(this.gridHelper);
+    this.gridHelper.visible = this.showGrid;
 
-    // const saved = localStorage.getItem('autosavedScene');
-    // if (saved) {
-    //   const confirmRestore = confirm('🕘 Restore previously saved scene?');
-    //   if (confirmRestore) {
-    //     this.uploadSceneFromFile(new File([saved], 'autosavedScene.json', { type: 'application/json' }));
-    //   }
-    // }
+    // Auto save TBA NOT FUNCTIONAL YET
 
   }
 
@@ -228,6 +246,28 @@ private initScene() {
 
   }
 
+
+// initThree(): void {
+//     const canvas = this.canvasRef.nativeElement;
+//     this.scene = new THREE.Scene();
+//     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+//     this.camera.position.set(0, 2, 5);
+
+//     this.renderer = new THREE.WebGLRenderer({ canvas });
+//     this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+//     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
+
+//     this.gridHelper = new THREE.GridHelper(10, 10);
+//     this.scene.add(this.gridHelper);
+//     this.gridHelper.visible = this.showGrid;
+
+//     this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
+//     this.scene.add(this.transformControls);
+
+//     this.animate();
+//   }
+
 //************* Update/Model Transform ******************* */
 
 updateModelTransform(): void {
@@ -299,9 +339,6 @@ private loadGLB(file: File): void {
         this.sceneLoaded = true;
 
         // Auto Save - TBA NOT FUNCTIONAL YET
-        //this.saveSceneToLocalStorage();
-        //setInterval(() => this.saveSceneToLocalStorage(), 30000); // every 30s
-
 
       });
     } catch {
@@ -378,10 +415,11 @@ uploadSceneFromFile(file: File): void {
         loadedModel.userData['fileName'] = model.fileName;
         loadedModel.userData['isLoadedModel'] = true;
 
+        this.objects = []; // Clear before restoring
         loadedModel.traverse((child: THREE.Object3D) => {
           if ((child as THREE.Mesh).isMesh) {
             child.userData['collidable'] = true;
-            this.objects.push(child);
+            this.objects.push(child); // Add only once
           }
         });
 
@@ -515,6 +553,7 @@ saveScene(): void {
 
   const exportNextModel = (index: number) => {
     if (index >= objectsToExport.length) {
+      // All models processed, save the final scene JSON
       const blob = new Blob([JSON.stringify(sceneData)], {
         type: 'application/json',
       });
@@ -524,21 +563,22 @@ saveScene(): void {
       link.download = 'scene.json';
       link.click();
       URL.revokeObjectURL(url);
+
+      this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
+      console.log('Scene export complete.');
       return;
     }
 
     const obj = objectsToExport[index];
+
     gltfExporter.parse(
       obj,
       (gltf) => {
-        // gltf can be ArrayBuffer (binary .glb) or JSON object (text .gltf)
-        // We expect binary export, but to be safe, handle both:
         let glbBlob: Blob;
 
         if (gltf instanceof ArrayBuffer) {
           glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
         } else {
-          // JSON export fallback
           glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
         }
 
@@ -566,17 +606,20 @@ saveScene(): void {
 
           exportNextModel(index + 1);
         };
+
         reader.readAsArrayBuffer(glbBlob);
       },
       (error) => {
         console.error('Error exporting model', error);
+        exportNextModel(index + 1); // Skip and continue with next model
       },
       { binary: true }
     );
   };
 
+  console.log('Scene export started...');
   exportNextModel(0);
-  }
+}
 
 //autosave
 private saveSceneToLocalStorage(): void {
@@ -653,6 +696,12 @@ private isColliding(position: THREE.Vector3): boolean {
   }
 
 clearScene(): void {
+  // Dispose of existing background if it's a texture
+  if (this.scene.background instanceof THREE.Texture) {
+    this.scene.background.dispose?.();
+    this.scene.background = null;
+  }
+
   // Remove all previously loaded models
   const toRemove = this.scene.children.filter((obj: THREE.Object3D) => obj.userData?.['isLoadedModel']);
   toRemove.forEach(obj => {
@@ -668,7 +717,7 @@ clearScene(): void {
         const disposeMaterial = (material: THREE.Material | undefined) => {
           if (!material) return;
 
-          const mat = material as any; // for accessing optional maps
+          const mat = material as any;
           ['map', 'lightMap', 'aoMap', 'emissiveMap', 'bumpMap', 'normalMap', 'displacementMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'envMap']
             .forEach((prop) => {
               if (mat[prop]?.dispose) mat[prop].dispose();
@@ -689,10 +738,11 @@ clearScene(): void {
   // Clear interaction objects
   this.objects = [];
 
-  // Optional: reset camera position/rotation
+  // Reset camera position/rotation
   this.camera.position.set(0, 0, 5);
   this.camera.rotation.set(0, 0, 0);
 }
+
 
 //************* Animation/ WSAD Keys ******************* */
 
@@ -764,4 +814,46 @@ private onKeyUp = (event: KeyboardEvent) => {
         break;
     }
   };
+
+//************* User Friendly UI Buttons ******************* */
+
+enterModelPlacementMode(): void {
+    this.isPlacingModel = true;
+    this.snackBar.open('Model placement mode active. Click to place.', 'OK', { duration: 3000 });
+  }
+
+setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
+    if (this.transformControls) {
+      this.transformControls.setMode(mode);
+      this.snackBar.open(`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode activated`, 'OK', {
+        duration: 2000,
+      });
+    }
+  }
+
+onAddModel(): void {
+  this.snackBar.open('Click anywhere to place a model!', 'OK', { duration: 3000 });
+  this.enterModelPlacementMode();
+}
+
+onToggleGrid(): void {
+  this.showGrid = !this.showGrid;
+  this.gridHelper.visible = this.showGrid;
+  this.snackBar.open(`Grid ${this.showGrid ? 'shown' : 'hidden'}`, 'OK', { duration: 2000 });
+}
+
+onClearScene(): void {
+  const confirmClear = confirm('Are you sure you want to remove all models?');
+  if (!confirmClear) return;
+
+  this.scene.children
+    .filter(obj => obj.userData?.['isLoadedModel'])
+    .forEach(obj => {
+      this.scene.remove(obj);
+    });
+
+  this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
+}
+
+
 }
