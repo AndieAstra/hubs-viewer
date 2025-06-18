@@ -8,32 +8,29 @@
     <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
   </section>
 
-  @if (selectedFile) {
+  <!-- @if (selectedFile) { -->
     <section class="viewer-section">
+  <section class="viewer-container">
+          <div class="kid-toolbar">
+    <button class="kid-button" (click)="resetView()">
+      <img src="assets/icons/reset.png" alt="Reset" />
+      <span>Reset</span>
+    </button>
+    <button class="kid-button" (click)="toggleWireframe()">
+      <img src="assets/icons/wire.jpg" alt="Wireframe" />
+      <span>Wireframe</span>
+    </button>
+    <button class="kid-button danger" (click)="clearModel()">
+      <img src="assets/icons/trash.jpg" alt="Clear" />
+      <span>Clear</span>
+    </button>
+  </div>
 
-      <section class="toolbar-section">
-        <div class="kid-toolbar">
-          <button class="kid-button" (click)="resetView()">
-            <img src="assets/icons/reset.svg" alt="Reset" />
-            <span>Reset</span>
-          </button>
-          <button class="kid-button" (click)="toggleWireframe()">
-            <img src="assets/icons/wireframe.svg" alt="Wireframe" />
-            <span>Wireframe</span>
-          </button>
-          <button class="kid-button danger" (click)="clearModel()">
-            <img src="assets/icons/delete.svg" alt="Clear" />
-            <span>Clear</span>
-          </button>
-        </div>
-      </section>
-
-      <app-viewer [glbFile]="selectedFile"></app-viewer>
-
-    </section>
-  } @else {
+  <app-viewer [glbFile]="selectedFile"></app-viewer>
+</section></section>
+  <!-- } @else {
     <div class="upload-hint">
       <p>⬆️ Upload a model to start playing!</p>
     </div>
   }
-</div>
+</div> -->

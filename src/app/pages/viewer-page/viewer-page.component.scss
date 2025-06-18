@@ -49,31 +49,18 @@
   100% { transform: scale(1); opacity: 0.7; }
 }
 
-.viewer-section {
-  flex: 1;
-  width: 90%;
-  max-width: 1200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #fefefe;
-  border: 2px dashed #ccc;
-  border-radius: 16px;
-  padding: 16px;
-  box-sizing: border-box;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-  min-height: 400px;
+.canvas-container {
+  flex-grow: 1;
   overflow: hidden;
-  position: relative;  /* Important for absolutely positioned canvas */
+  position: relative;
+  margin-top: 12px;
+  background-color: #d0f0fd;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.canvas-container {
-  flex: 1;
-  width: 100%;
-  height: 100%;
-  position: relative;  /* Ensure canvas absolute positioning is relative to this */
-  overflow: hidden;
-}
 
 canvas {
   position: absolute;  /* Position canvas absolutely to fill container */
@@ -86,14 +73,114 @@ canvas {
   object-fit: contain;    /* Scale nicely inside container */
   user-select: none;
   -webkit-user-select: none;
+  background-color: transparent !important;
+  outline: none;
+}
+
+.canvas-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 12px;
+  outline: none;
+  background-color: #d8ebf2;
 }
 
 .toolbar-section {
   padding: 12px 20px;
-  background: #fff;
   border-radius: 16px;
   margin-bottom: 12px;
   box-shadow: 0 6px 18px rgba(0,0,0,0.1);
   display: flex;
   justify-content: center;
+}
+
+.kid-toolbar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  user-select: none;
+  z-index: 1000;
+}
+
+.kid-button {
+  width: 100px;
+  height: 100px;
+  background-color: #ffeb3b;
+  border: 3px solid #fbc02d;
+  border-radius: 18px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, background-color 0.3s ease;
+}
+
+.kid-button img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  pointer-events: none;
+}
+
+.kid-button span {
+  font-weight: 700;
+  font-size: 16px;
+  color: #4a4a4a;
+  user-select: none;
+}
+
+.kid-button:hover {
+  background-color: #fff176;
+  transform: scale(1.1);
+}
+
+.kid-button.danger {
+  background-color: #ff8a80;
+  border-color: #d32f2f;
+}
+
+.kid-button.danger span {
+  color: #c62828;
+}
+
+.kid-button.danger:hover {
+  background-color: #ff5252;
+}
+
+.kid-button.selected {
+  outline: 4px solid #4caf50;
+  background-color: #c8e6c9;
+}
+
+.kid-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #4a90e2;
+}
+
+.viewer-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #eef3f7;
+}
+
+.viewer-section:focus,
+.viewer-section:active,
+.canvas-container:focus,
+.canvas-container:active {
+  background-color: #fdf6e3 !important;  /* beige on focus/active */
+  outline: none;
 }
