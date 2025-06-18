@@ -174,77 +174,97 @@ ngAfterViewInit() {
   //********* UI Controls for the ThreeJS Scene *********/
 
 private initScene() {
-    const container = this.containerRef.nativeElement;
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x111111);
+  const container = this.containerRef.nativeElement;
+  this.scene = new THREE.Scene();
+  this.scene.background = new THREE.Color(0x111111);
 
-    this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    this.camera.position.set(0, this.cameraHeight, 0);
-    this.camera.lookAt(0, 0, 0);
+  this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  this.camera.position.set(0, this.cameraHeight, 0);
+  this.camera.lookAt(0, 0, 0);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true });
-    this.renderer.setSize(container.clientWidth, container.clientHeight);
-    container.appendChild(this.renderer.domElement);
+  this.renderer = new THREE.WebGLRenderer({ antialias: true });
+  this.renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(this.renderer.domElement);
 
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-    this.scene.add(this.ambientLight);
+  // Lighting
+  this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  this.scene.add(this.ambientLight);
 
-    this.dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-    this.dirLight.position.set(5, 10, 7.5);
-    this.scene.add(this.dirLight);
+  this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  this.dirLight.position.set(5, 10, 7.5);
+  this.scene.add(this.dirLight);
 
-    this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
-    this.scene.add(this.controls.getObject());
+  // Controls with instruction for users
+  this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
+  this.scene.add(this.controls.getObject());
 
-    this.gui = new GUI();
-    const lightFolder = this.gui.addFolder('Lights');
-    lightFolder.addColor({ ambientColor: this.ambientLight.color.getHex() }, 'ambientColor')
-      .name('Ambient')
-      .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
-    lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.01).name('Ambient Intensity');
-    lightFolder.addColor({ directionalColor: this.dirLight.color.getHex() }, 'directionalColor')
-      .name('Directional')
-      .onChange((v: any) => this.dirLight.color.setHex(Number(v)));
-    lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.01).name('Directional Intensity');
-    lightFolder.open();
+  // User must press key to start – more intuitive for kids
+  const instructions = document.createElement('div');
+  instructions.innerText = "Click to start walking!";
+  instructions.style.position = "absolute";
+  instructions.style.top = "50%";
+  instructions.style.left = "50%";
+  instructions.style.transform = "translate(-50%, -50%)";
+  instructions.style.color = "white";
+  instructions.style.fontSize = "24px";
+  instructions.style.padding = "10px";
+  instructions.style.background = "rgba(0,0,0,0.5)";
+  instructions.style.borderRadius = "8px";
+  container.appendChild(instructions);
 
-    const movementFolder = this.gui.addFolder('Movement');
-    movementFolder.add(this, 'speed', 0.1, 20, 0.1).name('Walk Speed');
-    movementFolder.add(this, 'cameraHeight', 0.1, 5, 0.01).name('Camera Height');
-    movementFolder.open();
+  container.addEventListener('click', () => {
+    this.controls.lock();
+    container.removeChild(instructions);
+  });
 
-    const fileFolder = this.gui.addFolder('Scene');
-    fileFolder.add({ export: () => this.saveScene() }, 'export').name('💾⬇️ Download Scene');
-    fileFolder.add({ import: () => this.triggerSceneUpload() }, 'import').name('📂⬆️ Upload Scene');
+  // 🧰 GUI for kids
+  this.gui = new GUI({ width: 280 });
 
-    container.addEventListener('click', () => this.controls.lock());
+  // 💡 Lights
+  const lightFolder = this.gui.addFolder('💡 Lighting');
+  lightFolder.addColor({ RoomLight: this.ambientLight.color.getHex() }, 'RoomLight')
+    .name('🎨 Light Color')
+    .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
+  lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.1).name('🔆 Room Light');
+  lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.1).name('☀️ Sunlight');
+  lightFolder.open();
 
-    const floorGeo = new THREE.PlaneGeometry(200, 200);
-    const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    floor.userData['collidable'] = true;
-    this.scene.add(floor);
-    this.objects.push(floor);
+  // 🚶 Movement
+  const movementFolder = this.gui.addFolder('🚶 Movement Settings');
+  movementFolder.add(this, 'speed', 0.5, 10, 0.5).name('🏃 Speed');
+  movementFolder.add(this, 'cameraHeight', 1, 3, 0.1).name('👁️ Eye Level');
+  movementFolder.open();
 
-    const modelFolder = this.gui.addFolder('Model Controls');
-    modelFolder.add(this, 'modelScale', 0.1, 5, 0.1)
-      .name('Model Scale')
-      .onChange(() => this.updateModelTransform());
-    modelFolder.add(this, 'modelHeight', -10, 10, 0.1)
-      .name('Model Height')
-      .onChange(() => this.updateModelTransform());
-    modelFolder.open();
+  // 🗂 Scene Files
+  const fileFolder = this.gui.addFolder('🗂 Scene Files');
+  fileFolder.add({ save: () => this.saveScene() }, 'save').name('💾 Save');
+  fileFolder.add({ load: () => this.triggerSceneUpload() }, 'load').name('📂 Load');
 
-    const gridHelper = new THREE.GridHelper(200, 200, 0x888888, 0x444444);
-    this.scene.add(gridHelper);
+  // 🧱 Floor
+  const floorGeo = new THREE.PlaneGeometry(200, 200);
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  floor.userData['collidable'] = true;
+  this.scene.add(floor);
+  this.objects.push(floor);
 
-    const axesHelper = new THREE.AxesHelper(5);
-    this.scene.add(axesHelper);
+  // 🧍 Model Controls
+  const modelFolder = this.gui.addFolder('🧍 Model Settings');
+  modelFolder.add(this, 'modelScale', 0.5, 3, 0.1).name('📏 Size')
+    .onChange(() => this.updateModelTransform());
+  modelFolder.add(this, 'modelHeight', -5, 5, 0.5).name('⬆️ Height')
+    .onChange(() => this.updateModelTransform());
+  modelFolder.open();
 
+  // Helpers (optional for kids, could hide)
+  const gridHelper = new THREE.GridHelper(200, 200, 0x888888, 0x444444);
+  this.scene.add(gridHelper);
 
-  }
+  const axesHelper = new THREE.AxesHelper(5);
+  this.scene.add(axesHelper);
+}
 
 
 // initThree(): void {
