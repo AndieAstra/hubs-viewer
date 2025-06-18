@@ -1,84 +1,114 @@
-<div class="viewer-page">
-  <header class="viewer-header">
-    <h1>🎨 Welcome to the 3D Model Playground!</h1>
-    <p>Pick a model to play with, then use the colorful tools to move, spin, and resize it.</p>
+<div class="unity-layout">
+  <!-- Top Toolbar -->
+  <header class="top-toolbar">
+    <div class="toolbar-left">
+      🔲 🖱️ ⬆️ ⬇️ ⬅️ ➡️
+    </div>
+    <div class="toolbar-center">
+      <button class="play-button">▶️</button>
+      <button class="pause-button">⏸️</button>
+    </div>
+    <div class="toolbar-right">
+      <!-- Possibly tabs, view controls -->
+    </div>
   </header>
 
-  <section class="upload-section">
-    <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-  </section>
+  <div class="main-body">
+    <!-- Left Sidebar (Hierarchy) -->
+    <aside class="sidebar-left">
+      <h3>Hierarchy</h3>
+      <div class="project-entry">EXAMPLE PROJECT</div>
+    </aside>
 
-  <section class="viewer-section">
-    <section class="viewer-container">
-      <div class="kid-toolbar">
+    <!-- Center Content: Canvas + Toolbar -->
+    <main class="canvas-area">
+      <div class="toolbar-left">
+        <!-- Grouped Controls -->
 
-        <div class="toolbar-group">
-          <h3>🖼️ Scene Settings</h3>
-          <button class="kid-button" (click)="resetView()">
-            <img src="assets/icons/reset.png" alt="Reset" />
-            <span>Reset</span>
-          </button>
-          <button class="kid-button blue" (click)="toggleWireframe()">
-            <img src="assets/icons/wire.jpg" alt="Wireframe" />
-            <span>Wireframe</span>
-          </button>
-          <button class="kid-button danger" (click)="clearModel()">
-            <img src="assets/icons/trash.jpg" alt="Clear" />
-            <span>Clear</span>
-          </button>
+        <h4>Scene Settings</h4>
+        <button class="kid-button" (click)="resetView()">
+          <img src="assets/icons/reset.png" alt="Reset" />
+          <span>Reset</span>
+        </button>
+        <button class="kid-button blue" (click)="toggleWireframe()">
+          <img src="assets/icons/wire.jpg" alt="Wireframe" />
+          <span>Wireframe</span>
+        </button>
+        <button class="kid-button danger" (click)="clearModel()">
+          <img src="assets/icons/trash.jpg" alt="Clear" />
+          <span>Clear Scene</span>
+        </button>
+
+        <h4>Lighting</h4>
+        <button class="kid-button green">
+          <img src="assets/icons/reset.png" alt="Light" />
+          <span>Light Color</span>
+        </button>
+        <button class="kid-button orange">
+          <img src="assets/icons/wire.jpg" alt="Room" />
+          <span>Room Light</span>
+        </button>
+        <div class="kid-slider">
+          <label for="sunlight">☀️ Sunlight</label>
         </div>
 
-        <div class="toolbar-group">
-          <h3>💡 Lighting</h3>
-          <button class="kid-button green" (click)="lightColor()">
-            <img src="assets/icons/reset.png" alt="Light Color" />
-            <span>Light Color</span>
-          </button>
-          <button class="kid-button orange" (click)="lightColor()">
-            <img src="assets/icons/wire.jpg" alt="Room Light" />
-            <span>Room Light</span>
-          </button>
-          <div class="kid-slider">
-            <label for="sunlight">☀️ Sunlight</label>
-            <input id="sunlight" type="range" min="0" max="2" step="0.1">
-          </div>
+        <h4>Movement Settings</h4>
+        <div class="kid-slider">
+          <label for="speed">🏃 Speed</label>
+        </div>
+        <div class="kid-slider">
+          <label for="eyeLevel">👀 Eye Level</label>
         </div>
 
-        <div class="toolbar-group">
-          <h3>🏃 Movement</h3>
-          <div class="kid-slider">
-            <label for="speed">Speed</label>
-            <input id="speed" type="range" min="0" max="10" step="0.1">
-          </div>
-          <div class="kid-slider">
-            <label for="eyeLevel">Eye Level</label>
-            <input id="eyeLevel" type="range" min="-10" max="10" step="0.1">
-          </div>
-        </div>
+        <h4>Scene Files</h4>
+        <button class="kid-button turquoise" (click)="Save()">
+          <img src="assets/icons/save.jpg" alt="Save" />
+          <span>Save Scene</span>
+        </button>
 
-        <div class="toolbar-group">
-          <h3>💾 Scene Files</h3>
-          <button class="kid-button turquoise" (click)="Save()">
-            <img src="assets/icons/save.jpg" alt="Save Scene" />
-            <span>Save Scene</span>
-          </button>
+        <h4>Model Settings</h4>
+        <div class="kid-slider">
+          <label for="modelSize">📦 Model Size</label>
         </div>
-
-        <div class="toolbar-group">
-          <h3>📦 Model Settings</h3>
-          <div class="kid-slider">
-            <label for="modelSize">Model Size</label>
-            <input id="modelSize" type="range" min="0.1" max="5" step="0.1">
-          </div>
-          <div class="kid-slider">
-            <label for="modelHeight">Height</label>
-            <input id="modelHeight" type="range" min="-10" max="10" step="0.1">
-          </div>
+        <div class="kid-slider">
+          <label for="modelHeight">📏 Height</label>
         </div>
-
       </div>
 
-      <app-viewer [glbFile]="selectedFile"></app-viewer>
-    </section>
-  </section>
+      <!-- Canvas viewer area -->
+      <div class="canvas-container">
+        <app-viewer [glbFile]="selectedFile"></app-viewer>
+      </div>
+    </main>
+
+    <!-- Right Sidebar (Inspector) -->
+    <aside class="sidebar-right">
+      <h3>Inspector</h3>
+    </aside>
+  </div>
+
+  <!-- Bottom Panel (Project, Console, Errors) -->
+  <footer class="bottom-bar">
+    <div class="tabs">
+      <button>Project</button>
+      <button>Console</button>
+    </div>
+    <div class="assets-browser">
+      <div class="assets-tree">
+        <strong>Favorites</strong>
+        <ul>
+          <li>All Materials</li>
+          <li>All Models</li>
+          <li>All Prefabs</li>
+        </ul>
+      </div>
+      <div class="assets-view">
+        <p>Assets</p>
+        <div class="folder-icon">📁</div>
+      </div>
+    </div>
+    <div class="error-bar">
+      ERROR MESSAGES GO HERE :)
+    </div>
+  </footer>
 </div>

@@ -1,121 +1,147 @@
-.viewer-page {
+.unity-layout {
+  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
+  background: #fdf6e3;
+  height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Top Toolbar */
+.top-toolbar {
+  background-color: #d3d3d3;
+  padding: 8px 16px;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  background: #fdf6e3;
-  min-height: 100vh;
-  padding: 20px;
-  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
 }
 
-.viewer-header {
-  text-align: center;
-  margin-bottom: 20px;
-
-  h1 {
-    font-size: 2.5rem;
-    color: #4a90e2;
-    margin-bottom: 10px;
-  }
-
-  p {
-    font-size: 1.2rem;
-    color: #444;
-  }
+/* Canvas + Tool Panel */
+.canvas-area {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: row; /* toolbar-left + canvas-container side-by-side */
+  overflow: hidden;
 }
 
-.upload-section {
-  margin-bottom: 20px;
-  background: #ffffff;
-  border: 3px dashed #90caf9;
-  border-radius: 16px;
-  padding: 24px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-  width: 90%;
-  max-width: 500px;
+/* Vertical Toolbar (replacing old .kid-toolbar) */
+.toolbar-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px;
+  width: 180px;
+  background: rgba(255, 255, 255, 0.9);
+  border-right: 2px dashed #ccc;
+  overflow-y: auto;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.05);
+  z-index: 10;
 }
 
-.upload-hint {
-  margin-top: 32px;
-  font-size: 1.4rem;
-  color: #888;
-  text-align: center;
-  animation: pulse 1.5s infinite;
+.toolbar-left h4 {
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: #333;
+  border-bottom: 1px solid #ccc;
+  padding-bottom: 4px;
 }
 
-@keyframes pulse {
-  0%   { transform: scale(1); opacity: 0.7; }
-  50%  { transform: scale(1.05); opacity: 1; }
-  100% { transform: scale(1); opacity: 0.7; }
+/* Main Layout */
+.main-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
 }
 
+/* Sidebars */
+.sidebar-left {
+  width: 200px;
+  background-color: #ff6f61;
+  color: white;
+  padding: 12px;
+}
+
+.sidebar-right {
+  width: 240px;
+  background-color: #ff944d;
+  color: white;
+  padding: 12px;
+}
+
+/* Canvas Container */
 .canvas-container {
   flex-grow: 1;
-  overflow: hidden;
   position: relative;
-  margin-top: 12px;
+  margin: 12px;
   background-color: #d0f0fd;
   border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
+  overflow: hidden;
 }
 
-
-canvas {
-  position: absolute;  /* Position canvas absolutely to fill container */
-  top: 0;
-  left: 0;
-  width: 100% !important;  /* Make canvas width fill the container */
-  height: 100% !important; /* Make canvas height fill the container */
-  display: block;
-  outline: none;
-  object-fit: contain;    /* Scale nicely inside container */
-  user-select: none;
-  -webkit-user-select: none;
-  background-color: transparent !important;
-  outline: none;
-}
-
+.canvas-container app-viewer,
 .canvas-container canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
-  border-radius: 12px;
-  outline: none;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
   background-color: #d8ebf2;
+  border-radius: 12px;
 }
 
-.toolbar-section {
-  padding: 12px 20px;
-  border-radius: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+/* Bottom Bar */
+.bottom-bar {
+  background-color: #fdf6e3;
+  padding: 8px;
   display: flex;
+  flex-direction: column;
+}
+
+.tabs button {
+  background-color: #00bcd4;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin-right: 8px;
+  border-radius: 8px 8px 0 0;
+  font-weight: bold;
+}
+
+.assets-browser {
+  display: flex;
+  background-color: #00bcd4;
+  border-radius: 0 0 12px 12px;
+  padding: 12px;
+}
+
+.assets-tree {
+  flex: 1;
+  color: white;
+}
+
+.assets-view {
+  flex: 2;
+  display: flex;
+  align-items: center;
   justify-content: center;
+  color: white;
+  font-size: 1.2rem;
 }
 
-.kid-toolbar {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  user-select: none;
-  z-index: 1000;
+.error-bar {
+  margin-top: 8px;
+  color: red;
+  font-weight: bold;
+  padding-left: 8px;
 }
 
+/* Buttons */
 .kid-button {
-  width: 100px;
-  height: 100px;
+  width: 70px;
+  height: 70px;
   background-color: #ffeb3b;
   border: 3px solid #fbc02d;
-  border-radius: 18px;
+  border-radius: 12px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -127,15 +153,15 @@ canvas {
 }
 
 .kid-button img {
-  width: 40px;
-  height: 40px;
-  margin-bottom: 8px;
+  width: 28px;
+  height: 28px;
+  margin-bottom: 4px;
   pointer-events: none;
 }
 
 .kid-button span {
   font-weight: 700;
-  font-size: 16px;
+  font-size: 12px;
   color: #4a4a4a;
   user-select: none;
 }
@@ -145,88 +171,35 @@ canvas {
   transform: scale(1.1);
 }
 
-.kid-button.green {
-  background-color: #1bd915;
-  border-color: #00b1fc;
-}
+.kid-button.green { background-color: #1bd915; border-color: #00b1fc; }
+.kid-button.purple { background-color: #9415d9; border-color: #00fcc5; }
+.kid-button.orange { background-color: #d9a115; border-color: #6d8210; }
+.kid-button.blue { background-color: #157ed9; border-color: #411082; }
+.kid-button.turquoise { background-color: #e600ff; border-color: #411082; }
+.kid-button.danger { background-color: #ff8a80; border-color: #d32f2f; }
+.kid-button.danger span { color: #c62828; }
+.kid-button.danger:hover { background-color: #ff5252; }
+.kid-button.selected { outline: 4px solid #4caf50; background-color: #c8e6c9; }
+.kid-button:focus { outline: none; box-shadow: 0 0 0 2px #4a90e2; }
 
-.kid-button.purple {
-  background-color: #9415d9;
-  border-color: #00fcc5;
-}
-
-.kid-button.orange {
-  background-color: #d9a115;
-  border-color: #6d8210;
-}
-
-.kid-button.blue {
-  background-color: #157ed9;
-  border-color: #411082;
-}
-
-.kid-button.turquoise {
-  background-color: #e600ff;
-  border-color: #411082;
-}
-
-.kid-button.danger {
-  background-color: #ff8a80;
-  border-color: #d32f2f;
-}
-
-.kid-button.danger span {
-  color: #c62828;
-}
-
-.kid-button.danger:hover {
-  background-color: #ff5252;
-}
-
-.kid-button.selected {
-  outline: 4px solid #4caf50;
-  background-color: #c8e6c9;
-}
-
-.kid-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #4a90e2;
-}
-
-.viewer-container {
-  position: relative;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background-color: #eef3f7;
-}
-
-.viewer-section:focus,
-.viewer-section:active,
-.canvas-container:focus,
-.canvas-container:active {
-  background-color: #fdf6e3 !important;  /* beige on focus/active */
-  outline: none;
-}
-
+/* Sliders */
 .kid-slider {
-  width: 180px;
+  width: 120px;
   background-color: #fff59d;
   border: 3px solid #fbc02d;
-  border-radius: 18px;
-  padding: 12px;
+  border-radius: 12px;
+  padding: 8px;
   box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
   display: flex;
   flex-direction: column;
   align-items: center;
   font-family: 'Comic Sans MS', 'Nunito', sans-serif;
   font-weight: bold;
-  gap: 8px;
+  gap: 4px;
 }
 
 .kid-slider label {
-  font-size: 16px;
+  font-size: 12px;
   color: #4a4a4a;
 }
 
@@ -235,56 +208,3 @@ canvas {
   cursor: pointer;
   accent-color: #ffca28;
 }
-
-/* Smaller toolbar */
-.kid-toolbar {
-  top: 12px;
-  left: 12px;
-  gap: 8px;
-  padding: 8px;
-  border-radius: 12px;
-}
-
-/* Smaller buttons */
-.kid-button {
-  width: 70px;
-  height: 70px;
-  border-radius: 12px;
-  font-size: 12px;
-}
-
-.kid-button img {
-  width: 28px;
-  height: 28px;
-  margin-bottom: 4px;
-}
-
-.kid-button span {
-  font-size: 12px;
-}
-
-/* Smaller sliders */
-.kid-slider {
-  width: 120px;
-  padding: 8px;
-  border-radius: 12px;
-  gap: 4px;
-}
-
-.kid-slider label {
-  font-size: 12px;
-}
-
-/* Header section inside toolbar */
-.toolbar-group {
-  margin-bottom: 10px;
-}
-
-.toolbar-group h3 {
-  font-size: 14px;
-  margin: 6px 0;
-  color: #333;
-  font-weight: bold;
-  text-align: left;
-}
-
