@@ -63,11 +63,19 @@ export class ViewerPageComponent implements AfterViewInit {
     this.viewer.clearModel();
   }
 
-// Rest of the button controls for ThreeJS
-
   lightColor() {
     this.viewer.onLightcolor();
   }
+
+  Save() {
+     this.viewer.saveScene();
+   }
+
+  Height() {
+     this.viewer.updateCameraHeight();
+   }
+
+  // Rest of the buttons that need to be connected
 
   // roomLight() {
   //   this.viewer.
@@ -85,10 +93,6 @@ export class ViewerPageComponent implements AfterViewInit {
   //   this.viewer.
   // }
 
-   Save() {
-     this.viewer.saveScene();
-   }
-
   //  Load(file: File) {
   //     this.selectedFile = uploadSceneFromFile();
   //  }
@@ -96,10 +100,6 @@ export class ViewerPageComponent implements AfterViewInit {
   // Size() {
   //   this.viewer.
   // }
-
-   Height() {
-     this.viewer.updateCameraHeight();
-   }
 
   // ************************************************************
 

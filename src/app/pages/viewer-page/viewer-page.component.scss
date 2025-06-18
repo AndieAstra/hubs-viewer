@@ -235,3 +235,56 @@ canvas {
   cursor: pointer;
   accent-color: #ffca28;
 }
+
+/* Smaller toolbar */
+.kid-toolbar {
+  top: 12px;
+  left: 12px;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 12px;
+}
+
+/* Smaller buttons */
+.kid-button {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.kid-button img {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 4px;
+}
+
+.kid-button span {
+  font-size: 12px;
+}
+
+/* Smaller sliders */
+.kid-slider {
+  width: 120px;
+  padding: 8px;
+  border-radius: 12px;
+  gap: 4px;
+}
+
+.kid-slider label {
+  font-size: 12px;
+}
+
+/* Header section inside toolbar */
+.toolbar-group {
+  margin-bottom: 10px;
+}
+
+.toolbar-group h3 {
+  font-size: 14px;
+  margin: 6px 0;
+  color: #333;
+  font-weight: bold;
+  text-align: left;
+}
+
