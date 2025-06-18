@@ -1,49 +1,32 @@
 .viewer-container {
   position: relative;
-  height: 100vh;
   width: 100vw;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background-color: #eef3f7;
 }
 
 .canvas-container {
-  flex: 1;
+  flex-grow: 1;
   overflow: hidden;
   position: relative;
+  margin-top: 12px;
+  background-color: #d0f0fd;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   canvas {
     width: 100%;
     height: 100%;
     display: block;
+    border-radius: 12px;
+    outline: none;
     background-color: #d8ebf2;
   }
 }
-
-.canvas-toolbar {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  padding: 16px 20px;
-  border-radius: 16px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-
-  button {
-    font-size: 18px;
-    padding: 14px 20px;
-    min-width: 130px;
-    border-radius: 12px;
-    text-transform: none;
-    font-weight: bold;
-  }
-
-// Kid friendly UI
 
 .kid-toolbar {
   position: absolute;
@@ -51,62 +34,64 @@
   left: 16px;
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
-  background: rgba(255, 255, 255, 0.95);
+  gap: 16px;
   padding: 16px;
-  border-radius: 16px;
-  z-index: 100;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  user-select: none;
+  z-index: 1000;
 }
 
 .kid-button {
-  width: 80px;
-  height: 90px;
-  background: #e0f7fa;
-  border-radius: 16px;
-  text-align: center;
-  padding: 10px 6px;
+  width: 100px;
+  height: 100px;
+  background-color: #ffeb3b;
+  border: 3px solid #fbc02d;
+  border-radius: 18px;
   cursor: pointer;
-  transition: transform 0.2s, background 0.3s;
-
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease, background-color 0.3s ease;
 
   img {
-    width: 32px;
-    height: 32px;
-    margin-bottom: 6px;
+    width: 40px;
+    height: 40px;
+    margin-bottom: 8px;
+    pointer-events: none;
   }
 
   span {
-    font-size: 14px;
-    font-weight: bold;
-    color: #00796b;
+    font-weight: 700;
+    font-size: 16px;
+    color: #4a4a4a;
+    user-select: none;
   }
 
   &:hover {
+    background-color: #fff176;
     transform: scale(1.1);
-    background: #b2ebf2;
   }
 
   &.danger {
-    background: #ffebee;
+    background-color: #ff8a80;
+    border-color: #d32f2f;
 
     span {
       color: #c62828;
     }
 
     &:hover {
-      background: #ffcdd2;
+      background-color: #ff5252;
     }
+  }
 
   &.selected {
-  border: 2px solid #00796b;
-  background-color: #a7ffeb;
-}
+    outline: 4px solid #4caf50;
+    background-color: #c8e6c9;
   }
-}
-
 }

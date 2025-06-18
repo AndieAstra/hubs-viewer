@@ -14,6 +14,7 @@ export class ViewerPageComponent implements AfterViewInit {
 
   @ViewChild('viewerCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
+   @ViewChild(ViewerComponent) viewer!: ViewerComponent;  // <-- Make sure this is here!
 
   selectedFile?: File;
 
@@ -48,5 +49,17 @@ export class ViewerPageComponent implements AfterViewInit {
 
   onFileLoaded(file: File): void {
     this.selectedFile = file;
+  }
+
+  resetView() {
+    this.viewer.resetView();
+  }
+
+  toggleWireframe() {
+    this.viewer.toggleWireframe();
+  }
+
+  clearModel() {
+    this.viewer.clearModel();
   }
 }

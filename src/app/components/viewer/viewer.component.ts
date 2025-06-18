@@ -777,6 +777,38 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
+//
+// Resets camera or scene view
+resetView(): void {
+  // Implement your reset logic here (e.g., reset camera position)
+  this.camera.position.set(0, this.cameraHeight, 0);
+  this.camera.lookAt(0, 0, 0);
+  this.controls.unlock();  // Or however you want to reset controls
+  this.snackBar.open('View reset!', 'OK', { duration: 2000 });
+}
+
+// Toggles wireframe mode on loaded models
+toggleWireframe(): void {
+  if (!this.uploadedModel) return;
+
+  this.uploadedModel.traverse((child: any) => {
+    if (child.isMesh) {
+      child.material.wireframe = !child.material.wireframe;
+    }
+  });
+  this.snackBar.open('Wireframe toggled!', 'OK', { duration: 2000 });
+}
+
+// Clears the loaded model(s)
+clearModel(): void {
+  if (this.uploadedModel) {
+    this.scene.remove(this.uploadedModel);
+    this.uploadedModel = null;
+    this.snackBar.open('Model cleared!', 'OK', { duration: 2000 });
+  }
+}
+
+
 
 //************* Animation/ WSAD Keys ******************* */
 

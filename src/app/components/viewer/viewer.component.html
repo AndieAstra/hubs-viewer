@@ -1,10 +1,20 @@
-<!-- viewer.component.html -->
 <div class="viewer-container">
   <div class="kid-toolbar">
-    <!-- your cute kid buttons here -->
+    <button class="kid-button" (click)="resetView()">
+      <img src="assets/icons/reset.svg" alt="Reset" />
+      <span>Reset</span>
+    </button>
+    <button class="kid-button" (click)="toggleWireframe()">
+      <img src="assets/icons/wireframe.svg" alt="Wireframe" />
+      <span>Wireframe</span>
+    </button>
+    <button class="kid-button danger" (click)="clearModel()">
+      <img src="assets/icons/delete.svg" alt="Clear" />
+      <span>Clear</span>
+    </button>
   </div>
 
   <div class="canvas-container">
-    <canvas #viewerCanvas></canvas> <!-- keep it here -->
+    <canvas #viewerCanvas></canvas>
   </div>
 </div>
