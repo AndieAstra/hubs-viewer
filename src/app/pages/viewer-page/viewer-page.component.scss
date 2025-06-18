@@ -145,6 +145,31 @@ canvas {
   transform: scale(1.1);
 }
 
+.kid-button.green {
+  background-color: #1bd915;
+  border-color: #00b1fc;
+}
+
+.kid-button.purple {
+  background-color: #9415d9;
+  border-color: #00fcc5;
+}
+
+.kid-button.orange {
+  background-color: #d9a115;
+  border-color: #6d8210;
+}
+
+.kid-button.blue {
+  background-color: #157ed9;
+  border-color: #411082;
+}
+
+.kid-button.turquoise {
+  background-color: #e600ff;
+  border-color: #411082;
+}
+
 .kid-button.danger {
   background-color: #ff8a80;
   border-color: #d32f2f;
@@ -183,4 +208,30 @@ canvas {
 .canvas-container:active {
   background-color: #fdf6e3 !important;  /* beige on focus/active */
   outline: none;
+}
+
+.kid-slider {
+  width: 180px;
+  background-color: #fff59d;
+  border: 3px solid #fbc02d;
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
+  font-weight: bold;
+  gap: 8px;
+}
+
+.kid-slider label {
+  font-size: 16px;
+  color: #4a4a4a;
+}
+
+.kid-slider input[type="range"] {
+  width: 100%;
+  cursor: pointer;
+  accent-color: #ffca28;
 }

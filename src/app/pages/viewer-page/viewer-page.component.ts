@@ -14,7 +14,7 @@ export class ViewerPageComponent implements AfterViewInit {
 
   @ViewChild('viewerCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
-   @ViewChild(ViewerComponent) viewer!: ViewerComponent;  // <-- Make sure this is here!
+   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
 
   selectedFile?: File;
 
@@ -62,4 +62,66 @@ export class ViewerPageComponent implements AfterViewInit {
   clearModel() {
     this.viewer.clearModel();
   }
+
+// Rest of the button controls for ThreeJS
+
+  lightColor() {
+    this.viewer.onLightcolor();
+  }
+
+  // roomLight() {
+  //   this.viewer.
+  // }
+
+  // sunLight() {
+  //   this.viewer.
+  // }
+
+  // Speed() {
+  //   this.viewer.
+  // }
+
+  // eyeLevel() {
+  //   this.viewer.
+  // }
+
+   Save() {
+     this.viewer.saveScene();
+   }
+
+  //  Load(file: File) {
+  //     this.selectedFile = uploadSceneFromFile();
+  //  }
+
+  // Size() {
+  //   this.viewer.
+  // }
+
+   Height() {
+     this.viewer.updateCameraHeight();
+   }
+
+  // ************************************************************
+
+// updateSunlight() {
+//   // Update Three.js light intensity or direction
+// }
+
+// updateSpeed() {
+//   // Update model movement speed
+// }
+
+// updateEyeLevel() {
+//   // Adjust camera Y position
+// }
+
+// updateModelSize() {
+//   // Scale the model
+// }
+
+// updateModelHeight() {
+//   // Move model up/down
+// }
+
+
 }

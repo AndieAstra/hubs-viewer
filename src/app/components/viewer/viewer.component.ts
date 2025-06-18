@@ -68,6 +68,14 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   constructor(private snackBar: MatSnackBar) {}
 
+  //
+  //
+  sunlight = 1;
+  movementSpeed = 5;
+  modelSize = 1;
+  //
+  //
+
   modelScale = 1;
   modelHeight = 0;
   uploadedModel: THREE.Object3D | null = null;
@@ -128,9 +136,11 @@ ngOnChanges(changes: SimpleChanges) {
         this.clearScene();
       }
       this.loadGLB(changes['glbFile'].currentValue);
-    } else if (!this.glbFile && !this.sceneLoaded) {
-      alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
     }
+    //*********Need to fix! Change so it does not show up when screen loads********** */
+    // else if (!this.glbFile && !this.sceneLoaded) {
+    //   alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
+    // }
   }
 
 ngAfterViewInit() {
@@ -176,14 +186,6 @@ ngAfterViewInit() {
     // Auto save TBA NOT FUNCTIONAL YET
 
   }
-
-  updateAmbientLight() {
-  this.ambientLight.intensity = this.ambientIntensity;
-}
-
-  updateCameraHeight() {
-  this.camera.position.y = this.cameraHeight;
-}
 
   //********* UI Controls for the ThreeJS Scene *********/
 
@@ -280,28 +282,6 @@ private initScene() {
   this.scene.add(axesHelper);
 }
 
-
-// initThree(): void {
-//     const canvas = this.canvasRef.nativeElement;
-//     this.scene = new THREE.Scene();
-//     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-//     this.camera.position.set(0, 2, 5);
-
-//     this.renderer = new THREE.WebGLRenderer({ canvas });
-//     this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-//     this.orbitControls = new OrbitControls(this.camera, this.renderer.domElement);
-
-//     this.gridHelper = new THREE.GridHelper(10, 10);
-//     this.scene.add(this.gridHelper);
-//     this.gridHelper.visible = this.showGrid;
-
-//     this.transformControls = new TransformControls(this.camera, this.renderer.domElement);
-//     this.scene.add(this.transformControls);
-
-//     this.animate();
-//   }
-
 //************* Update/Model Transform ******************* */
 
 updateModelTransform(): void {
@@ -324,6 +304,16 @@ applyModelTransform(): void {
     }
   }
 
+//************* Update Ambient Light ******************* */
+
+  updateAmbientLight() {
+  this.ambientLight.intensity = this.ambientIntensity;
+}
+
+  updateCameraHeight() {
+  this.camera.position.y = this.cameraHeight;
+}
+
 //************* Loading Models ******************* */
 
 private triggerSceneUpload() {
@@ -338,7 +328,7 @@ private triggerSceneUpload() {
     input.click();
   }
 
-private loadGLB(file: File): void {
+public loadGLB(file: File): void {
   const loader = new GLTFLoader();
   const reader = new FileReader();
 
@@ -889,12 +879,14 @@ onResize(width: number, height: number) {
   this.camera.updateProjectionMatrix();
 }
 
-//************* User Friendly UI Buttons ******************* */
+//************* Page Load Popup*************** */
 
 enterModelPlacementMode(): void {
     this.isPlacingModel = true;
     this.snackBar.open('Model placement mode active. Click to place.', 'OK', { duration: 3000 });
   }
+
+//************* User Friendly UI Buttons ******************* */
 
 setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
     this.selectedTool = mode;
@@ -930,5 +922,22 @@ onClearScene(): void {
   this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
 }
 
+onLightcolor(): void {}
+
+onRoomLight(): void {}
+
+onsunLight(): void {}
+
+  Speed(): void {}
+
+  eyeLevel(): void {}
+
+  Save(): void {}
+
+  Load(): void {}
+
+  Size(): void {}
+
+  Height(): void {}
 
 }

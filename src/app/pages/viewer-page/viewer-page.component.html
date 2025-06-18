@@ -11,20 +11,91 @@
   <!-- @if (selectedFile) { -->
     <section class="viewer-section">
   <section class="viewer-container">
-          <div class="kid-toolbar">
+    <div class="kid-toolbar">
+
+    <p>Scene Settings</p>
+<!-- Reset -->
     <button class="kid-button" (click)="resetView()">
       <img src="assets/icons/reset.png" alt="Reset" />
       <span>Reset</span>
     </button>
-    <button class="kid-button" (click)="toggleWireframe()">
+<!-- Wireframe -->
+    <button class="kid-button blue" (click)="toggleWireframe()">
       <img src="assets/icons/wire.jpg" alt="Wireframe" />
-      <span>Wireframe</span>
+      <span>Model Wireframe</span>
     </button>
+<!-- Clear -->
     <button class="kid-button danger" (click)="clearModel()">
       <img src="assets/icons/trash.jpg" alt="Clear" />
-      <span>Clear</span>
+      <span>Clear Scene</span>
     </button>
+
+    <p>Lighting</p>
+
+<!-- Light Color -->
+<!-- **This needs to be an rgb color selector -->
+    <button class="kid-button green" (click)="clearModel()">
+      <img src="assets/icons/reset.png" alt="Clear" />
+      <span>Light Color</span>
+    </button>
+
+<!-- Room's Light -->
+<!-- **This needs to be an rgb color selector -->
+    <button class="kid-button orange" (click)="clearModel()">
+      <img src="assets/icons/wire.jpg" alt="Clear" />
+      <span>Room Light</span>
+    </button>
+
+<!-- Sunlight Slider -->
+<div class="kid-slider">
+  <label for="sunlight">☀️ Sunlight</label>
+  <!-- <input id="sunlight" type="range" min="0" max="2" step="0.1" [(ngModel)]="sunlight" (input)="updateSunlight()" /> -->
+</div>
+
+  <p>Movement Settings</p>
+<!-- Speed Slider -->
+<div class="kid-slider">
+  <label for="speed">🏃 Speed</label>
+  <!-- <input id="speed" type="range" min="0" max="10" step="0.1" [(ngModel)]="movementSpeed" (input)="updateSpeed()" /> -->
+</div>
+
+<!-- Eye Level Slider -->
+<div class="kid-slider">
+  <label for="eyeLevel">👀 Eye Level</label>
+  <!-- <input id="eyeLevel" type="range" min="-10" max="10" step="0.1" [(ngModel)]="eyeLevel" (input)="updateEyeLevel()" /> -->
+</div>
+
+  <p>Scene Files</p>
+<!-- Save JSON scene -->
+        <button class="kid-button turquoise" (click)="Save()">
+      <img src="assets/icons/save.jpg" alt="Clear" />
+      <span>Save Scene
+      </span>
+    </button>
+<!-- Load JSON scene -->
+      <!-- <button class="kid-button turquoise" (click)="Load()">
+      <img src="assets/icons/upload.png" alt="Clear" />
+      <span>Upload Scene</span>
+    </button> -->
+
+  <p>Model Settings</p>
+
+<!-- Model Size Slider -->
+<div class="kid-slider">
+  <label for="modelSize">📦 Model Size</label>
+  <!-- <input id="modelSize" type="range" min="0.1" max="5" step="0.1" [(ngModel)]="modelSize" (input)="updateModelSize()" /> -->
+</div>
+
+
+<!-- Height Slider -->
+<div class="kid-slider">
+  <label for="modelHeight">📏 Height</label>
+  <!-- <input id="modelHeight" type="range" min="-10" max="10" step="0.1" [(ngModel)]="modelHeight" (input)="updateModelHeight()" /> -->
+</div>
+
   </div>
+
+  <!-- ************************************ -->
 
   <app-viewer [glbFile]="selectedFile"></app-viewer>
 </section></section>
