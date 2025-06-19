@@ -58,7 +58,6 @@ export interface SceneData {
     MatTooltipModule,
     MatSnackBarModule,],
   template: `<div #canvasContainer class="viewer-container"></div>`,
-  styleUrls: ['./viewer.component.scss'],
 })
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 

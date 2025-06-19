@@ -97,7 +97,7 @@
 
 .canvas-container {
   flex: 1 1 auto;
-  position: relative;         // critical for absolute positioning
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -108,7 +108,7 @@
   min-width: 0;
 }
 
-/* Make the canvas behave like a background layer */
+/* Make canvas fill the container */
 .canvas-container canvas {
   position: absolute;
   top: 0;
@@ -116,10 +116,10 @@
   z-index: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;       // optional: avoids stealing input
+  pointer-events: none;
 }
 
-/* Prioritize app-viewer layout */
+/* Ensure app-viewer fills and centers */
 .canvas-container app-viewer {
   position: relative;
   z-index: 1;
@@ -129,6 +129,7 @@
   justify-content: center;
   align-items: center;
 }
+
 
 // *************************************************
 

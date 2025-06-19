@@ -97,37 +97,66 @@ export class ViewerPageComponent implements AfterViewInit {
     this.viewer?.toggleRoomLight?.();
   }
 
-// *****************************************
-// These buttons are not working yet
-
   toggleLightcolor(): void {
     this.viewer?.toggleLightcolor?.();
   }
 
- updateSunlight(event: Event): void {
+//
+//
+onSunlightInput(event: Event): void {
   const input = event.target as HTMLInputElement;
-  this.viewer?.updateSunlight?.(input.valueAsNumber);
+  const value = input.valueAsNumber;
+  this.updateSunlight(value); // pass number to actual update method
 }
 
-updateSpeed(event: Event): void {
+updateSunlight(value: number): void {
+  // Do something with the numeric value
+  console.log('Updated sunlight value:', value);
+}
+//
+//
+onSpeedInput(event: Event): void {
   const input = event.target as HTMLInputElement;
-  this.viewer?.updateSpeed?.(input.valueAsNumber);
+  this.updateSpeed(input.valueAsNumber);
 }
 
-updateEyeLevel(event: Event): void {
+updateSpeed(value: number): void {
+  this.viewer?.updateSpeed?.(value);
+}
+//
+//
+
+onEyeLevelInput(event: Event): void {
   const input = event.target as HTMLInputElement;
-  this.viewer?.updateEyeLevel?.(input.valueAsNumber);
+  this.updateEyeLevel(input.valueAsNumber);
 }
 
-updateModelSize(event: Event): void {
+updateEyeLevel(value: number): void {
+  this.viewer?.updateEyeLevel?.(value);
+}
+//
+//
+
+onModelSizeInput(event: Event): void {
   const input = event.target as HTMLInputElement;
-  this.viewer?.updateModelSize?.(input.valueAsNumber);
+  this.updateModelSize(input.valueAsNumber);
 }
 
-updateModelHeight(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  this.viewer?.updateModelHeight?.(input.valueAsNumber);
+updateModelSize(value: number): void {
+  this.viewer?.updateModelSize?.(value);
 }
+//
+//
+onModelHeightInput(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  this.updateModelHeight(input.valueAsNumber);
+}
+
+updateModelHeight(value: number): void {
+  this.viewer?.updateModelHeight?.(value);
+}
+//
+//
 
 // *****************************************
 
