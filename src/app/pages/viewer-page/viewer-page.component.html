@@ -2,151 +2,77 @@
 
   <!-- 🔝 Top Toolbar -->
   <header class="top-toolbar">
-
-    <!-- ☰ Toolbar Toggle -->
-    <!-- <button class="toggle-sidebar" (click)="sidebarCollapsed = !sidebarCollapsed">☰</button> -->
-       <div class="toggle-sidebar"></div>
-
-    <!-- 🎛 Toolbar Scene Buttons + Upload -->
-
+    <div class="toggle-sidebar"></div>
     <div class="toolbar-center">
-            <!-- 📂 Upload -->
-
-      <!-- **EDIT -->
-        <section class="upload-section">
-          <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-        </section>
-        <!-- **EDIT -->
-  </div>
-    <!-- ➕ Optional Right Toolbar -->
-    <div class="toolbar-right">
+      <section class="upload-section">
+        <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+      </section>
     </div>
-
+    <div class="toolbar-right"></div>
   </header>
 
   <!-- 🧱 Main Layout -->
   <div class="main-body">
 
-    <!-- 📁 Sidebar Left Tools-->
+    <!-- 📁 Sidebar Left -->
     <aside class="sidebar-left" [class.collapsed]="sidebarCollapsed">
-
-<!-- *********************************** -->
-
-      <!-- 🔧 Scene Controls -->
       <h4>Scene Settings</h4>
-
-      <p>Buttons to alter your virtual scene like camera and lighting goes here</p>
-
-
       <button class="kid-button" (click)="resetView()">
         <img src="assets/icons/reset.png" alt="Reset" />
         <span>Reset Camera View</span>
       </button>
-
-      <!-- <button class="kid-button blue" (click)="toggleWireframe()">
-        <img src="assets/icons/wire.jpg" alt="Wireframe" />
-        <span>Wireframe</span>
-      </button> -->
-      <!-- <button class="kid-button danger" (click)="clearModel()">
-        <img src="assets/icons/trash.jpg" alt="Clear" />
-        <span>Clear Scene</span>
-      </button> -->
-
       <button class="kid-button turquoise" (click)="save()">
         <img src="assets/icons/save.jpg" alt="Save" />
         <span>Save Scene</span>
       </button>
-
       <button class="kid-button purple" (click)="load()">
         <img src="assets/icons/upload.png" alt="Load" />
         <span>Load Scene</span>
       </button>
 
-      <!-- 💡 Lighting -->
       <h4>Lighting</h4>
-
       <button class="kid-button green" (click)="toggleLightcolor()">
         <img src="assets/icons/reset.png" alt="Light Color" />
         <span>Sunlight Color</span>
       </button>
-
       <button class="kid-button orange" (click)="toggleRoomLight()">
         <img src="assets/icons/wire.jpg" alt="Room Light" />
         <span>Room Light Toggle</span>
       </button>
 
-<!-- ***************************************** -->
-
-<!-- ☀️ Sunlight -->
-<div class="kid-slider">
-  <label for="sunlight">☀️ Sunlight</label>
-  <input type="range" (input)="onSunlightInput($event)">
-</div>
-
-
-<!-- *********************************** -->
-
-<!--  Need to fix this! Having issues with the render window being hidden by the background -->
-
+      <div class="kid-slider">
+        <label for="sunlight">☀️ Sunlight</label>
+        <input type="range" (input)="onSunlightInput($event)">
+      </div>
     </aside>
 
     <!-- 🖥 Canvas Center -->
-<div class="canvas-container">
-  <!-- @if (selectedFile) { -->
-    <canvas #viewerCanvas></canvas>
-    <app-viewer [glbFile]="selectedFile"></app-viewer>
-  <!-- } @else { -->
-    <!-- <h1 style="z-index: 2; position: relative; color: #555; text-align: center;">
-      🚀 Load your GLB model to begin!
-    </h1> -->
-  <!-- } -->
-</div>
+    <div class="canvas-container">
+      <canvas #viewerCanvas></canvas>
+      <app-viewer [glbFile]="selectedFile"></app-viewer>
+    </div>
 
-
-
-<!-- ************************************************************* -->
     <!-- 🛠 Sidebar Right -->
     <aside class="sidebar-right">
-
-<!-- ************************************************************* -->
-
-    <!-- 🧍 Model Settings -->
-
       <h4>Model Settings</h4>
-
-      <p>This is where the settings to modify your model goes</p>
-
       <div class="kid-slider">
         <label for="modelSize">📏 Size</label>
-<input type="range" (input)="onModelSizeInput($event)">
+        <input type="range" (input)="onModelSizeInput($event)">
+      </div>
+      <div class="kid-slider">
+        <label for="modelHeight">⬆️ Height</label>
+        <input type="range" (input)="onModelHeightInput($event)">
       </div>
 
-<!-- ⬆️ Model Height -->
-<div class="kid-slider">
-  <label for="modelHeight">⬆️ Height</label>
-<input type="range" (input)="onModelHeightInput($event)">
-</div>
-
-
- <!-- 🚶 Movement Settings -->
       <h4>Camera Movement Settings</h4>
-
-      <p>Settings for moving the camera around</p>
-
       <div class="kid-slider">
         <label for="speed">🏃 Speed</label>
-<input type="range" (input)="onSpeedInput($event)">
+        <input type="range" (input)="onSpeedInput($event)">
       </div>
-
-<!-- 👁️ Eye Level -->
-<div class="kid-slider">
-  <label for="eyeLevel">👁️ Eye Level</label>
-<input type="range" (input)="onEyeLevelInput($event)">
-</div>
-
-
-<!-- ************************************************************* -->
-
+      <div class="kid-slider">
+        <label for="eyeLevel">👁️ Eye Level</label>
+        <input type="range" (input)="onEyeLevelInput($event)">
+      </div>
     </aside>
   </div>
 
@@ -155,27 +81,13 @@
     <div class="tabs">
       <button>Console</button>
     </div>
-
     <div class="assets-browser">
       <div class="assets-tree">
         <ul>
-          <div class="error-bar">
-            Updates and errors will pop up here
-          </div>
+          <div class="error-bar">Updates and errors will pop up here</div>
         </ul>
       </div>
-
-
-      <!-- <div class="assets-view">
-        <p>Assets</p>
-        <div class="folder-icon">📁</div>
-      </div> -->
-
-
     </div>
-
-
-
   </footer>
 
 </div>

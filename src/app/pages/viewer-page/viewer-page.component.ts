@@ -156,7 +156,6 @@ updateModelHeight(value: number): void {
   this.viewer?.updateModelHeight?.(value);
 }
 //
-//
 
 // *****************************************
 

@@ -221,6 +221,14 @@ private initScene() {
   container.appendChild(this.renderer.domElement);
 
   //******************************************************** */
+  //Lighting
+  this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  this.scene.add(this.ambientLight);
+
+  this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  this.dirLight.position.set(5, 10, 7.5);
+  this.scene.add(this.dirLight);
+ // ******************************************************** */
 
   // Controls with instruction for users
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
