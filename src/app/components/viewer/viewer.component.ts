@@ -71,7 +71,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   //
   //
   sunlight = 1;
-  movementSpeed = 5;
+  movementSpeed = 50;
   modelSize = 1;
   //
   //
@@ -80,13 +80,21 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   modelHeight = 0;
   uploadedModel: THREE.Object3D | null = null;
 
+
+  private velocity = new THREE.Vector3();
+  private direction = new THREE.Vector3();
+  private canJump = false;
+  private gravity = 9.8;
+  private jumpStrength = 5;
+
   ambientIntensity = 0.5;
-  speed = 2;
+  speed = 50;
   cameraHeight = 1.6;
 
   // State flags
   showGrid = true;
   isPlacingModel = false;
+
 
   // References
   gridHelper!: THREE.GridHelper;
@@ -96,8 +104,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private renderer!: THREE.WebGLRenderer;
   private controls!: PointerLockControls;
   private clock = new THREE.Clock();
-  private velocity = new THREE.Vector3();
-  private direction = new THREE.Vector3();
+  //private velocity = new THREE.Vector3();
+  //private direction = new THREE.Vector3();
   private objects: THREE.Object3D[] = [];
   private ambientLight!: THREE.AmbientLight;
   private dirLight!: THREE.DirectionalLight;
@@ -120,6 +128,7 @@ ngOnInit() {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
     this.loadSceneFromLocalStorage();
+    this.canJump = true;
     //this.initThree();
   }
 
@@ -241,24 +250,24 @@ private initScene() {
   this.gui = new GUI({ width: 280 });
 
   // 💡 Lights
-  // const lightFolder = this.gui.addFolder('💡 Lighting');
-  // lightFolder.addColor({ RoomLight: this.ambientLight.color.getHex() }, 'RoomLight')
-  //   .name('🎨 Light Color')
-  //   .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
-  // lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.1).name('🔆 Room Light');
-  // lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.1).name('☀️ Sunlight');
-  // lightFolder.open();
+   const lightFolder = this.gui.addFolder('💡 Lighting');
+   lightFolder.addColor({ RoomLight: this.ambientLight.color.getHex() }, 'RoomLight')
+     .name('🎨 Light Color')
+     .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
+   lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.1).name('🔆 Room Light');
+   lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.1).name('☀️ Sunlight');
+   lightFolder.open();
 
   // 🚶 Movement
-  // const movementFolder = this.gui.addFolder('🚶 Movement Settings');
-  // movementFolder.add(this, 'speed', 0.5, 10, 0.5).name('🏃 Speed');
-  // movementFolder.add(this, 'cameraHeight', 1, 3, 0.1).name('👁️ Eye Level');
-  // movementFolder.open();
+   const movementFolder = this.gui.addFolder('🚶 Movement Settings');
+   movementFolder.add(this, 'speed', 0.5, 10, 0.5).name('🏃 Speed');
+   movementFolder.add(this, 'cameraHeight', 1, 3, 0.1).name('👁️ Eye Level');
+   movementFolder.open();
 
   // 🗂 Scene Files
-  // const fileFolder = this.gui.addFolder('🗂 Scene Files');
-  // fileFolder.add({ save: () => this.saveScene() }, 'save').name('💾 Save');
-  // fileFolder.add({ load: () => this.triggerSceneUpload() }, 'load').name('📂 Load');
+   const fileFolder = this.gui.addFolder('🗂 Scene Files');
+   fileFolder.add({ save: () => this.saveScene() }, 'save').name('💾 Save');
+   fileFolder.add({ load: () => this.triggerSceneUpload() }, 'load').name('📂 Load');
 
   // 🧱 Floor
   const floorGeo = new THREE.PlaneGeometry(200, 200);
@@ -271,12 +280,12 @@ private initScene() {
   this.objects.push(floor);
 
   // 🧍 Model Controls
-  // const modelFolder = this.gui.addFolder('🧍 Model Settings');
-  // modelFolder.add(this, 'modelScale', 0.5, 3, 0.1).name('📏 Size')
-  //   .onChange(() => this.updateModelTransform());
-  // modelFolder.add(this, 'modelHeight', -5, 5, 0.5).name('⬆️ Height')
-  //   .onChange(() => this.updateModelTransform());
-  // modelFolder.open();
+   const modelFolder = this.gui.addFolder('🧍 Model Settings');
+   modelFolder.add(this, 'modelScale', 0.5, 3, 0.1).name('📏 Size')
+     .onChange(() => this.updateModelTransform());
+   modelFolder.add(this, 'modelHeight', -5, 5, 0.5).name('⬆️ Height')
+     .onChange(() => this.updateModelTransform());
+   modelFolder.open();
 
   // Helpers (optional for kids, could hide)
   const gridHelper = new THREE.GridHelper(200, 200, 0x888888, 0x444444);
@@ -712,16 +721,26 @@ private saveSceneToLocalStorage(): void {
 }
 
 private isColliding(position: THREE.Vector3): boolean {
-    const playerBox = new THREE.Box3().setFromCenterAndSize(
-      position.clone().setY(0.5),
-      new THREE.Vector3(0.5, 1.6, 0.5)
-    );
-    for (const obj of this.objects) {
-      const box = new THREE.Box3().setFromObject(obj);
-      if (box.intersectsBox(playerBox)) return true;
-    }
-    return false;
+  // Player height and half-height for collision box center calculation
+  const playerHeight = 1.6;
+  const playerHalfHeight = playerHeight / 2;
+
+  // Create collision box centered at player's current position adjusted vertically
+  const playerBox = new THREE.Box3().setFromCenterAndSize(
+    new THREE.Vector3(position.x, position.y - playerHalfHeight, position.z),
+    new THREE.Vector3(0.5, playerHeight, 0.5)
+  );
+
+  // Check collisions with all scene objects
+  for (const obj of this.objects) {
+    const box = new THREE.Box3().setFromObject(obj);
+    if (box.intersectsBox(playerBox)) return true;
   }
+
+  return false;
+}
+
+
 
 clearScene(): void {
   // Dispose of existing background if it's a texture
@@ -771,7 +790,6 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
-//
 // Resets camera or scene view
 resetView(): void {
   // Implement your reset logic here (e.g., reset camera position)
@@ -807,73 +825,111 @@ clearModel(): void {
 //************* Animation/ WSAD Keys ******************* */
 
 private animate = () => {
-    requestAnimationFrame(this.animate);
-    const delta = this.clock.getDelta();
-    this.velocity.x -= this.velocity.x * 10.0 * delta;
-    this.velocity.z -= this.velocity.z * 10.0 * delta;
-    this.direction.z = Number(this.keysPressed.forward) - Number(this.keysPressed.backward);
-    this.direction.x = Number(this.keysPressed.right) - Number(this.keysPressed.left);
-    this.direction.normalize();
-    if (this.keysPressed.forward || this.keysPressed.backward)
-      this.velocity.z -= this.direction.z * this.speed * delta;
-    if (this.keysPressed.left || this.keysPressed.right)
-      this.velocity.x -= this.direction.x * this.speed * delta;
-    const moveX = -this.velocity.x * delta;
-    const moveZ = -this.velocity.z * delta;
-    const oldPosition = this.controls.getObject().position.clone();
-    this.controls.moveRight(moveX);
-    if (this.isColliding(this.controls.getObject().position)) {
-      this.controls.getObject().position.x = oldPosition.x;
-    }
-    this.controls.moveForward(moveZ);
-    if (this.isColliding(this.controls.getObject().position)) {
-      this.controls.getObject().position.z = oldPosition.z;
-    }
-    this.camera.position.y = this.cameraHeight;
-    this.renderer.render(this.scene, this.camera);
-  };
+  requestAnimationFrame(this.animate);
+
+  const delta = this.clock.getDelta();
+
+  // Apply friction / damping to velocity on XZ plane
+  this.velocity.x -= this.velocity.x * 10.0 * delta;
+  this.velocity.z -= this.velocity.z * 10.0 * delta;
+
+  // Reset direction vector
+  this.direction.set(0, 0, 0);
+
+  // Correct input mapping for directions
+  if (this.keysPressed.forward) this.direction.z -= 1;  // forward is negative Z
+  if (this.keysPressed.backward) this.direction.z += 1; // backward is positive Z
+  if (this.keysPressed.left) this.direction.x -= 1;     // left is negative X
+  if (this.keysPressed.right) this.direction.x += 1;    // right is positive X
+
+  this.direction.normalize(); // Normalize to avoid faster diagonal movement
+
+  // Update velocity based on direction and speed
+  if (this.direction.length() > 0) {
+    this.velocity.x -= this.direction.x * this.speed * delta;
+    this.velocity.z -= this.direction.z * this.speed * delta;
+  }
+
+  // Calculate movement deltas
+  const moveX = -this.velocity.x * delta;
+  const moveZ = -this.velocity.z * delta;
+
+  const oldPosition = this.controls.getObject().position.clone();
+
+  // Move horizontally with collision checks
+  this.controls.moveRight(moveX);
+  if (this.isColliding(this.controls.getObject().position)) {
+    this.controls.getObject().position.x = oldPosition.x;
+  }
+
+  this.controls.moveForward(moveZ);
+  if (this.isColliding(this.controls.getObject().position)) {
+    this.controls.getObject().position.z = oldPosition.z;
+  }
+
+  // Gravity and vertical movement handled separately (you have jumping and gravity)
+  this.velocity.y -= this.gravity * delta;
+
+  this.controls.getObject().position.y += this.velocity.y * delta;
+
+  if (this.controls.getObject().position.y < this.cameraHeight) {
+    this.velocity.y = 0;
+    this.controls.getObject().position.y = this.cameraHeight;
+    this.canJump = true;
+  }
+
+  this.renderer.render(this.scene, this.camera);
+};
+
 
 private onKeyDown = (event: KeyboardEvent) => {
-    switch (event.code) {
-      case 'ArrowUp':
-      case 'KeyW':
-        this.keysPressed.forward = true;
-        break;
-      case 'ArrowLeft':
-      case 'KeyA':
-        this.keysPressed.left = true;
-        break;
-      case 'ArrowDown':
-      case 'KeyS':
-        this.keysPressed.backward = true;
-        break;
-      case 'ArrowRight':
-      case 'KeyD':
-        this.keysPressed.right = true;
-        break;
-    }
-  };
+  switch (event.code) {
+    case 'ArrowUp':
+    case 'KeyW':
+      this.keysPressed.forward = true;
+      break;
+    case 'ArrowLeft':
+    case 'KeyA':
+      this.keysPressed.left = true;
+      break;
+    case 'ArrowDown':
+    case 'KeyS':
+      this.keysPressed.backward = true;
+      break;
+    case 'ArrowRight':
+    case 'KeyD':
+      this.keysPressed.right = true;
+      break;
+    case 'Space':
+      if (this.canJump) {
+        this.velocity.y = this.jumpStrength;
+        this.canJump = false;
+      }
+      break;
+  }
+};
+
 
 private onKeyUp = (event: KeyboardEvent) => {
-    switch (event.code) {
-      case 'ArrowUp':
-      case 'KeyW':
-        this.keysPressed.forward = false;
-        break;
-      case 'ArrowLeft':
-      case 'KeyA':
-        this.keysPressed.left = false;
-        break;
-      case 'ArrowDown':
-      case 'KeyS':
-        this.keysPressed.backward = false;
-        break;
-      case 'ArrowRight':
-      case 'KeyD':
-        this.keysPressed.right = false;
-        break;
-    }
-  };
+  switch (event.code) {
+    case 'ArrowUp':
+    case 'KeyW':
+      this.keysPressed.forward = false;
+      break;
+    case 'ArrowLeft':
+    case 'KeyA':
+      this.keysPressed.left = false;
+      break;
+    case 'ArrowDown':
+    case 'KeyS':
+      this.keysPressed.backward = false;
+      break;
+    case 'ArrowRight':
+    case 'KeyD':
+      this.keysPressed.right = false;
+      break;
+  }
+};
 
 //************* Screen Sizing ******************* */
 
