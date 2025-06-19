@@ -76,18 +76,27 @@
     </aside>
   </div>
 
-  <!-- 📌 Bottom Panel -->
-  <footer class="bottom-bar">
-    <div class="tabs">
-      <button>Console</button>
-    </div>
+<!-- 📌 Bottom Panel -->
+<footer class="bottom-bar">
+  <div class="tabs">
+    <button (click)="toggleConsole()">
+      Console {{ showConsole ? '▼' : '▲' }}
+    </button>
+  </div>
+
+  @if (showConsole) {
     <div class="assets-browser">
       <div class="assets-tree">
-        <ul>
-          <div class="error-bar">Updates and errors will pop up here</div>
-        </ul>
+        <div class="error-bar">
+          <ul>
+            @for (message of consoleMessages; track message) {
+              <li>{{ message }}</li>
+            }
+          </ul>
+        </div>
       </div>
     </div>
-  </footer>
+  }
+</footer>
 
 </div>

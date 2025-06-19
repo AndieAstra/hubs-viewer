@@ -983,6 +983,7 @@ updateSpeed(value: number): void {
 updateEyeLevel(value: number): void {
   this.cameraHeight = value;
   this.camera.position.y = value;
+
 }
 
 updateModelSize(value: number): void {

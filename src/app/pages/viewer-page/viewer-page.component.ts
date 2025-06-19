@@ -24,15 +24,31 @@ export class ViewerPageComponent implements AfterViewInit {
   selectedFile?: File;
   sidebarCollapsed = false;
 
+  showConsole = true;
+
+  // Console log messages
+  consoleMessages: string[] = [];
+
   ngAfterViewInit() {
     this.resizeCanvas();
 
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'));
   }, 100);
-
-
   }
+
+  // Log messages to UI console
+  logToConsole(message: string): void {
+    this.consoleMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    // Keep only the last 50 messages to prevent overflow
+    if (this.consoleMessages.length > 50) {
+      this.consoleMessages.shift();
+    }
+  }
+
+  toggleConsole(): void {
+  this.showConsole = !this.showConsole;
+}
 
   @HostListener('window:resize')
   onWindowResize() {
@@ -58,9 +74,9 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 }
 
-
-   onFileLoaded(file: File): void {
+  onFileLoaded(file: File): void {
     this.selectedFile = file;
+    this.logToConsole(`File loaded: ${file.name}`);
   }
 
   handleFileInput(event: Event): void {
@@ -74,31 +90,38 @@ export class ViewerPageComponent implements AfterViewInit {
   // Scene Buttons
   resetView(): void {
     this.viewer?.resetView?.();
+    this.logToConsole('Reset camera view.');
   }
 
   toggleWireframe(): void {
     this.viewer?.toggleWireframe?.();
+    this.logToConsole('Toggled wireframe.');
   }
 
   clearModel(): void {
     this.viewer?.clearModel?.();
+    this.logToConsole('Cleared model.');
   }
 
   save(): void {
     this.viewer?.save?.();
+    this.logToConsole('Saved scene.');
   }
 
   load(): void {
     this.viewer?.load?.();
+    this.logToConsole('Loaded scene.');
   }
 
   // Light Controls
   toggleRoomLight(): void {
     this.viewer?.toggleRoomLight?.();
+    this.logToConsole('Toggled room light.');
   }
 
   toggleLightcolor(): void {
     this.viewer?.toggleLightcolor?.();
+    this.logToConsole('Toggled sunlight color.');
   }
 
 //
@@ -110,7 +133,7 @@ onSunlightInput(event: Event): void {
 }
 
 updateSunlight(value: number): void {
-  // Do something with the numeric value
+  this.viewer?.updateSunlight?.(value);
   console.log('Updated sunlight value:', value);
 }
 //
@@ -122,6 +145,7 @@ onSpeedInput(event: Event): void {
 
 updateSpeed(value: number): void {
   this.viewer?.updateSpeed?.(value);
+  this.logToConsole(`Updated camera speed to ${value}`);
 }
 //
 //
@@ -144,6 +168,7 @@ onModelSizeInput(event: Event): void {
 
 updateModelSize(value: number): void {
   this.viewer?.updateModelSize?.(value);
+  this.logToConsole(`Updated eye level to ${value}`);
 }
 //
 //
@@ -154,6 +179,7 @@ onModelHeightInput(event: Event): void {
 
 updateModelHeight(value: number): void {
   this.viewer?.updateModelHeight?.(value);
+  this.logToConsole(`Updated model height to ${value}`);
 }
 //
 
