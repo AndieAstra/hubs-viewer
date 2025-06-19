@@ -202,13 +202,15 @@ private initScene() {
   this.renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(this.renderer.domElement);
 
-  // Lighting
+  //******************************************************** */
+  //Lighting
   this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   this.scene.add(this.ambientLight);
 
   this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
   this.dirLight.position.set(5, 10, 7.5);
   this.scene.add(this.dirLight);
+ // ******************************************************** */
 
   // Controls with instruction for users
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
@@ -233,28 +235,30 @@ private initScene() {
     container.removeChild(instructions);
   });
 
-  // 🧰 GUI for kids
+    //******************************************************** */
+
+   // 🧰 GUI for kids
   this.gui = new GUI({ width: 280 });
 
   // 💡 Lights
-  const lightFolder = this.gui.addFolder('💡 Lighting');
-  lightFolder.addColor({ RoomLight: this.ambientLight.color.getHex() }, 'RoomLight')
-    .name('🎨 Light Color')
-    .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
-  lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.1).name('🔆 Room Light');
-  lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.1).name('☀️ Sunlight');
-  lightFolder.open();
+  // const lightFolder = this.gui.addFolder('💡 Lighting');
+  // lightFolder.addColor({ RoomLight: this.ambientLight.color.getHex() }, 'RoomLight')
+  //   .name('🎨 Light Color')
+  //   .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
+  // lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.1).name('🔆 Room Light');
+  // lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.1).name('☀️ Sunlight');
+  // lightFolder.open();
 
   // 🚶 Movement
-  const movementFolder = this.gui.addFolder('🚶 Movement Settings');
-  movementFolder.add(this, 'speed', 0.5, 10, 0.5).name('🏃 Speed');
-  movementFolder.add(this, 'cameraHeight', 1, 3, 0.1).name('👁️ Eye Level');
-  movementFolder.open();
+  // const movementFolder = this.gui.addFolder('🚶 Movement Settings');
+  // movementFolder.add(this, 'speed', 0.5, 10, 0.5).name('🏃 Speed');
+  // movementFolder.add(this, 'cameraHeight', 1, 3, 0.1).name('👁️ Eye Level');
+  // movementFolder.open();
 
   // 🗂 Scene Files
-  const fileFolder = this.gui.addFolder('🗂 Scene Files');
-  fileFolder.add({ save: () => this.saveScene() }, 'save').name('💾 Save');
-  fileFolder.add({ load: () => this.triggerSceneUpload() }, 'load').name('📂 Load');
+  // const fileFolder = this.gui.addFolder('🗂 Scene Files');
+  // fileFolder.add({ save: () => this.saveScene() }, 'save').name('💾 Save');
+  // fileFolder.add({ load: () => this.triggerSceneUpload() }, 'load').name('📂 Load');
 
   // 🧱 Floor
   const floorGeo = new THREE.PlaneGeometry(200, 200);
@@ -267,12 +271,12 @@ private initScene() {
   this.objects.push(floor);
 
   // 🧍 Model Controls
-  const modelFolder = this.gui.addFolder('🧍 Model Settings');
-  modelFolder.add(this, 'modelScale', 0.5, 3, 0.1).name('📏 Size')
-    .onChange(() => this.updateModelTransform());
-  modelFolder.add(this, 'modelHeight', -5, 5, 0.5).name('⬆️ Height')
-    .onChange(() => this.updateModelTransform());
-  modelFolder.open();
+  // const modelFolder = this.gui.addFolder('🧍 Model Settings');
+  // modelFolder.add(this, 'modelScale', 0.5, 3, 0.1).name('📏 Size')
+  //   .onChange(() => this.updateModelTransform());
+  // modelFolder.add(this, 'modelHeight', -5, 5, 0.5).name('⬆️ Height')
+  //   .onChange(() => this.updateModelTransform());
+  // modelFolder.open();
 
   // Helpers (optional for kids, could hide)
   const gridHelper = new THREE.GridHelper(200, 200, 0x888888, 0x444444);
@@ -316,7 +320,7 @@ applyModelTransform(): void {
 
 //************* Loading Models ******************* */
 
-private triggerSceneUpload() {
+public triggerSceneUpload() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -922,22 +926,54 @@ onClearScene(): void {
   this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
 }
 
-onLightcolor(): void {}
+// ********************************
+// ** NEW Fun Controls **
 
-onRoomLight(): void {}
+// viewer.component.ts
 
-onsunLight(): void {}
+toggleRoomLight() {
+  this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
+}
 
-  Speed(): void {}
+toggleLightcolor() {
+  const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
+  const current = this.ambientLight.color.getHex();
+  const next = colors[(colors.indexOf(current) + 1) % colors.length];
+  this.ambientLight.color.setHex(next);
+}
 
-  eyeLevel(): void {}
+updateSunlight(value: number): void {
+  this.dirLight.intensity = value;
+}
 
-  Save(): void {}
+updateSpeed(value: number): void {
+  this.speed = value;
+}
 
-  Load(): void {}
+updateEyeLevel(value: number): void {
+  this.cameraHeight = value;
+  this.camera.position.y = value;
+}
 
-  Size(): void {}
+updateModelSize(value: number): void {
+  this.modelScale = value;
+  this.updateModelTransform?.();
+}
 
-  Height(): void {}
+updateModelHeight(value: number): void {
+  this.modelHeight = value;
+  this.updateModelTransform?.();
+}
+
+save(): void {
+  this.saveScene?.();
+}
+
+load(): void {
+  this.triggerSceneUpload?.();
+}
+
+
+// ********************************
 
 }

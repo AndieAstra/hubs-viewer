@@ -1,4 +1,10 @@
-import { Component, ViewChild, ElementRef, HostListener, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  HostListener,
+  AfterViewInit
+} from '@angular/core';
 import { UploaderComponent } from '../../components/uploader/uploader.component';
 import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { FormsModule } from '@angular/forms';
@@ -12,14 +18,20 @@ import { FormsModule } from '@angular/forms';
 })
 export class ViewerPageComponent implements AfterViewInit {
 
-  @ViewChild('viewerCanvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
-   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
+  @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild(ViewerComponent) viewer!: ViewerComponent;
 
   selectedFile?: File;
+  sidebarCollapsed = false;
 
   ngAfterViewInit() {
     this.resizeCanvas();
+
+  setTimeout(() => {
+    window.dispatchEvent(new Event('resize'));
+  }, 100);
+
+
   }
 
   @HostListener('window:resize')
@@ -28,100 +40,95 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   resizeCanvas() {
-    if (!this.canvasRef) return;
+  if (!this.canvasRef) return;
 
-    const canvas = this.canvasRef.nativeElement;
-    const container = canvas.parentElement;
+  const canvas = this.canvasRef.nativeElement;
+  const container = canvas.parentElement;
 
-    if (container) {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+  if (container) {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
 
-      canvas.width = width;
-      canvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
 
-      // Inform viewer component to update renderer and camera
-      if (this.viewerComponent && this.viewerComponent.onResize) {
-        this.viewerComponent.onResize(width, height);
-      }
+    if (this.viewer?.onResize) {
+      this.viewer.onResize(width, height);
     }
   }
+}
 
-  onFileLoaded(file: File): void {
+
+   onFileLoaded(file: File): void {
     this.selectedFile = file;
   }
 
-  resetView() {
-    this.viewer.resetView();
+  handleFileInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) {
+      this.onFileLoaded(file);
+    }
   }
 
-  toggleWireframe() {
-    this.viewer.toggleWireframe();
+  // Scene Buttons
+  resetView(): void {
+    this.viewer?.resetView?.();
   }
 
-  clearModel() {
-    this.viewer.clearModel();
+  toggleWireframe(): void {
+    this.viewer?.toggleWireframe?.();
   }
 
-  lightColor() {
-    this.viewer.onLightcolor();
+  clearModel(): void {
+    this.viewer?.clearModel?.();
   }
 
-  Save() {
-     this.viewer.saveScene();
-   }
+  save(): void {
+    this.viewer?.save?.();
+  }
 
-  Height() {
-     this.viewer.updateCameraHeight();
-   }
+  load(): void {
+    this.viewer?.load?.();
+  }
 
-  // Rest of the buttons that need to be connected
+  // Light Controls
+  toggleRoomLight(): void {
+    this.viewer?.toggleRoomLight?.();
+  }
 
-  // roomLight() {
-  //   this.viewer.
-  // }
+// *****************************************
+// These buttons are not working yet
 
-  // sunLight() {
-  //   this.viewer.
-  // }
+  toggleLightcolor(): void {
+    this.viewer?.toggleLightcolor?.();
+  }
 
-  // Speed() {
-  //   this.viewer.
-  // }
+ updateSunlight(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  this.viewer?.updateSunlight?.(input.valueAsNumber);
+}
 
-  // eyeLevel() {
-  //   this.viewer.
-  // }
+updateSpeed(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  this.viewer?.updateSpeed?.(input.valueAsNumber);
+}
 
-  //  Load(file: File) {
-  //     this.selectedFile = uploadSceneFromFile();
-  //  }
+updateEyeLevel(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  this.viewer?.updateEyeLevel?.(input.valueAsNumber);
+}
 
-  // Size() {
-  //   this.viewer.
-  // }
+updateModelSize(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  this.viewer?.updateModelSize?.(input.valueAsNumber);
+}
 
-  // ************************************************************
+updateModelHeight(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  this.viewer?.updateModelHeight?.(input.valueAsNumber);
+}
 
-// updateSunlight() {
-//   // Update Three.js light intensity or direction
-// }
-
-// updateSpeed() {
-//   // Update model movement speed
-// }
-
-// updateEyeLevel() {
-//   // Adjust camera Y position
-// }
-
-// updateModelSize() {
-//   // Scale the model
-// }
-
-// updateModelHeight() {
-//   // Move model up/down
-// }
-
+// *****************************************
 
 }
