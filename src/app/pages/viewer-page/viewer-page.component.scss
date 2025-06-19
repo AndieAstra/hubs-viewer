@@ -96,30 +96,30 @@
 // I need to work with these to fix the issue of the message of loading a model!
 
 .canvas-container {
-  flex: 1 1 auto;
-  position: relative;
+  flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
-  overflow: hidden;
+  justify-content: center;
+  position: relative;
   background-color: transparent;
+  overflow: hidden;
   border-radius: 12px;
   min-height: 0;
   min-width: 0;
 }
 
-/* Make canvas fill the container */
+/* Optional: make canvas behave like a background layer */
 .canvas-container canvas {
   position: absolute;
   top: 0;
   left: 0;
-  z-index: 0;
   width: 100%;
   height: 100%;
+  z-index: 0;
   pointer-events: none;
 }
 
-/* Ensure app-viewer fills and centers */
+/* Style the viewer container */
 .canvas-container app-viewer {
   position: relative;
   z-index: 1;
@@ -128,6 +128,20 @@
   display: flex;
   justify-content: center;
   align-items: center;
+}
+
+/* Center the placeholder text when no model is loaded */
+.model-placeholder {
+  font-size: 1.5rem;
+  color: #555;
+  text-align: center;
+  z-index: 2;
+}
+
+.canvas-container canvas,
+.canvas-container app-viewer,
+.model-placeholder {
+  transition: opacity 0.3s ease;
 }
 
 

@@ -59,6 +59,7 @@ export interface SceneData {
     MatSnackBarModule,],
   template: `<div #canvasContainer class="viewer-container"></div>`,
 })
+
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
@@ -137,19 +138,27 @@ ngOnDestroy() {
   }
 
 ngOnChanges(changes: SimpleChanges) {
-    if (changes['glbFile'] && changes['glbFile'].currentValue) {
-      if (this.sceneLoaded) {
-        const confirmReplace = confirm('A scene is already loaded. Do you want to replace it with a new model?');
-        if (!confirmReplace) return;
-        this.clearScene();
-      }
-      this.loadGLB(changes['glbFile'].currentValue);
+  if (changes['glbFile'] && changes['glbFile'].currentValue) {
+    // Skip loading if this is the very first change (initial binding)
+    if (changes['glbFile'].isFirstChange()) {
+      // Optionally, do nothing on first load or set a flag here
+      return;
     }
-    //*********Need to fix! Change so it does not show up when screen loads********** */
-    // else if (!this.glbFile && !this.sceneLoaded) {
-    //   alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
-    // }
+
+    if (this.sceneLoaded) {
+      const confirmReplace = confirm('A scene is already loaded. Do you want to replace it with a new model?');
+      if (!confirmReplace) return;
+      this.clearScene();
+    }
+    this.loadGLB(changes['glbFile'].currentValue);
   }
+
+  // Optionally handle no model loaded only after initial load
+  else if (!this.glbFile && !this.sceneLoaded && !changes['glbFile']?.isFirstChange()) {
+    alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
+  }
+}
+
 
 ngAfterViewInit() {
     this.initScene();
@@ -203,22 +212,15 @@ private initScene() {
   this.scene.background = new THREE.Color(0x111111);
 
   this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-  this.camera.position.set(0, this.cameraHeight, 0);
-  this.camera.lookAt(0, 0, 0);
+
+  this.camera.position.set(0, this.cameraHeight, 10);  // 10 units "behind" the center
+  this.camera.lookAt(0, this.cameraHeight, 0);        // look straight ahead at same height
 
   this.renderer = new THREE.WebGLRenderer({ antialias: true });
   this.renderer.setSize(container.clientWidth, container.clientHeight);
   container.appendChild(this.renderer.domElement);
 
   //******************************************************** */
-  //Lighting
-  this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-  this.scene.add(this.ambientLight);
-
-  this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
-  this.dirLight.position.set(5, 10, 7.5);
-  this.scene.add(this.dirLight);
- // ******************************************************** */
 
   // Controls with instruction for users
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
@@ -243,30 +245,11 @@ private initScene() {
     container.removeChild(instructions);
   });
 
-    //******************************************************** */
+//******************************************************** */
 
    // 🧰 GUI for kids
   this.gui = new GUI({ width: 280 });
-
-  // 💡 Lights
-   const lightFolder = this.gui.addFolder('💡 Lighting');
-   lightFolder.addColor({ RoomLight: this.ambientLight.color.getHex() }, 'RoomLight')
-     .name('🎨 Light Color')
-     .onChange((v: any) => this.ambientLight.color.setHex(Number(v)));
-   lightFolder.add(this.ambientLight, 'intensity', 0, 2, 0.1).name('🔆 Room Light');
-   lightFolder.add(this.dirLight, 'intensity', 0, 2, 0.1).name('☀️ Sunlight');
-   lightFolder.open();
-
-  // 🚶 Movement
-   const movementFolder = this.gui.addFolder('🚶 Movement Settings');
-   movementFolder.add(this, 'speed', 0.5, 10, 0.5).name('🏃 Speed');
-   movementFolder.add(this, 'cameraHeight', 1, 3, 0.1).name('👁️ Eye Level');
-   movementFolder.open();
-
-  // 🗂 Scene Files
-   const fileFolder = this.gui.addFolder('🗂 Scene Files');
-   fileFolder.add({ save: () => this.saveScene() }, 'save').name('💾 Save');
-   fileFolder.add({ load: () => this.triggerSceneUpload() }, 'load').name('📂 Load');
+  this.gui.domElement.style.display = 'none';  // 👈 Hides GUI but keeps functionality
 
   // 🧱 Floor
   const floorGeo = new THREE.PlaneGeometry(200, 200);
@@ -278,16 +261,8 @@ private initScene() {
   this.scene.add(floor);
   this.objects.push(floor);
 
-  // 🧍 Model Controls
-   const modelFolder = this.gui.addFolder('🧍 Model Settings');
-   modelFolder.add(this, 'modelScale', 0.5, 3, 0.1).name('📏 Size')
-     .onChange(() => this.updateModelTransform());
-   modelFolder.add(this, 'modelHeight', -5, 5, 0.5).name('⬆️ Height')
-     .onChange(() => this.updateModelTransform());
-   modelFolder.open();
-
   // Helpers (optional for kids, could hide)
-  const gridHelper = new THREE.GridHelper(200, 200, 0x888888, 0x444444);
+  const gridHelper = new THREE.GridHelper(200, 200, 0xd453ff, 0x444ddd);
   this.scene.add(gridHelper);
 
   const axesHelper = new THREE.AxesHelper(5);
@@ -739,8 +714,6 @@ private isColliding(position: THREE.Vector3): boolean {
   return false;
 }
 
-
-
 clearScene(): void {
   // Dispose of existing background if it's a texture
   if (this.scene.background instanceof THREE.Texture) {
@@ -819,8 +792,6 @@ clearModel(): void {
   }
 }
 
-
-
 //************* Animation/ WSAD Keys ******************* */
 
 private animate = () => {
@@ -880,7 +851,6 @@ private animate = () => {
   this.renderer.render(this.scene, this.camera);
 };
 
-
 private onKeyDown = (event: KeyboardEvent) => {
   switch (event.code) {
     case 'ArrowUp':
@@ -907,7 +877,6 @@ private onKeyDown = (event: KeyboardEvent) => {
       break;
   }
 };
-
 
 private onKeyUp = (event: KeyboardEvent) => {
   switch (event.code) {
@@ -984,8 +953,6 @@ onClearScene(): void {
 // ********************************
 // ** NEW Fun Controls **
 
-// viewer.component.ts
-
 toggleRoomLight() {
   this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
 }
@@ -1027,8 +994,6 @@ save(): void {
 load(): void {
   this.triggerSceneUpload?.();
 }
-
-
 // ********************************
 
 }
