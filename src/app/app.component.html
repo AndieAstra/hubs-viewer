@@ -1,20 +1,8 @@
-<!-- Optional: RouterOutlet (only if you're using routing) -->
-<!-- <router-outlet></router-outlet> -->
+<h1>☘ 4H STEM YOUniversity Virtual Farming System Playground</h1>
 
-<h1>3D Environment Viewer</h1>
-
-<app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-
-<!-- <app-lighting (lightAdded)="onLightAdded($event)"></app-lighting>
-
-<app-notes (noteAdded)="onNoteAdded($event)"></app-notes>
-
-<app-project-manager
-  [lights]="lights"
-  [notes]="notes"
-  [modelFile]="selectedFile"
-></app-project-manager> -->
-
-<app-viewer [glbFile]="selectedFile"></app-viewer>
+<nav>
+  <button (click)="navigateTo('/3dviewer')">3D Viewer</button>
+  <button (click)="navigateTo('/panorama')">Panorama Viewer</button>
+</nav>
 
 <router-outlet></router-outlet>

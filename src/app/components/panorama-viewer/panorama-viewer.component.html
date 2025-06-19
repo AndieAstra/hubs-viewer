@@ -1,0 +1,30 @@
+<div class="toolbar">
+  <label class="upload-label">
+    🖼 Upload Panorama
+    <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+  </label>
+
+  <div class="controls">
+    <button (click)="prepareNotePlacement()">🎯 Generate Note</button>
+    <span class="note-count">📝 Notes in Scene: {{ panoNotes.length }}</span>
+  </div>
+</div>
+
+<div class="viewer-container">
+  <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
+
+  <div
+    class="renderer"
+    #rendererContainer
+    (mousemove)="onPointerMove($event)"
+    (click)="placingNote && placeNoteAtPointer()"
+  >
+    @if(placingNote) {
+      <div
+        class="note-pointer-circle"
+        [style.left.px]="pointerX"
+        [style.top.px]="pointerY"
+      ></div>
+    }
+  </div>
+</div>

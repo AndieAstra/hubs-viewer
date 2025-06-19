@@ -1,73 +1,118 @@
 {
-  "hash": "99b0cde3",
-  "configHash": "5d7e00c7",
-  "lockfileHash": "a133c48c",
-  "browserHash": "f5004ed0",
+  "hash": "bf36ecaa",
+  "configHash": "de66f270",
+  "lockfileHash": "3cee8abc",
+  "browserHash": "ff9d67c2",
   "optimized": {
     "@angular/core": {
       "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
       "file": "@angular_core.js",
-      "fileHash": "0b1db456",
+      "fileHash": "0346e186",
       "needsInterop": false
     },
     "@angular/forms": {
       "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
       "file": "@angular_forms.js",
-      "fileHash": "36ca4afd",
+      "fileHash": "165428e4",
+      "needsInterop": false
+    },
+    "@angular/material/button": {
+      "src": "../../../../../node_modules/@angular/material/fesm2022/button.mjs",
+      "file": "@angular_material_button.js",
+      "fileHash": "ee871d81",
+      "needsInterop": false
+    },
+    "@angular/material/icon": {
+      "src": "../../../../../node_modules/@angular/material/fesm2022/icon.mjs",
+      "file": "@angular_material_icon.js",
+      "fileHash": "b8b34a6b",
+      "needsInterop": false
+    },
+    "@angular/material/snack-bar": {
+      "src": "../../../../../node_modules/@angular/material/fesm2022/snack-bar.mjs",
+      "file": "@angular_material_snack-bar.js",
+      "fileHash": "6d540aa4",
+      "needsInterop": false
+    },
+    "@angular/material/tooltip": {
+      "src": "../../../../../node_modules/@angular/material/fesm2022/tooltip.mjs",
+      "file": "@angular_material_tooltip.js",
+      "fileHash": "cd1836ad",
       "needsInterop": false
     },
     "@angular/platform-browser": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
       "file": "@angular_platform-browser.js",
-      "fileHash": "b1a62c9b",
+      "fileHash": "1df4d2c5",
+      "needsInterop": false
+    },
+    "@angular/platform-browser/animations/async": {
+      "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/animations/async.mjs",
+      "file": "@angular_platform-browser_animations_async.js",
+      "fileHash": "74ff2247",
       "needsInterop": false
     },
     "@angular/router": {
       "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
       "file": "@angular_router.js",
-      "fileHash": "eae479cd",
+      "fileHash": "10f40d9e",
       "needsInterop": false
     },
     "lil-gui": {
       "src": "../../../../../node_modules/lil-gui/dist/lil-gui.esm.js",
       "file": "lil-gui.js",
-      "fileHash": "22b6e2ce",
+      "fileHash": "a1d449a1",
       "needsInterop": false
     },
     "three": {
       "src": "../../../../../node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "232f2e06",
+      "fileHash": "ea60e01b",
       "needsInterop": false
     },
-    "three/examples/jsm/controls/PointerLockControls": {
+    "three/examples/jsm/controls/PointerLockControls.js": {
       "src": "../../../../../node_modules/three/examples/jsm/controls/PointerLockControls.js",
-      "file": "three_examples_jsm_controls_PointerLockControls.js",
-      "fileHash": "d9402c58",
+      "file": "three_examples_jsm_controls_PointerLockControls__js.js",
+      "fileHash": "4d16dfc9",
       "needsInterop": false
     },
-    "three/examples/jsm/exporters/GLTFExporter": {
+    "three/examples/jsm/exporters/GLTFExporter.js": {
       "src": "../../../../../node_modules/three/examples/jsm/exporters/GLTFExporter.js",
-      "file": "three_examples_jsm_exporters_GLTFExporter.js",
-      "fileHash": "bf8546d3",
+      "file": "three_examples_jsm_exporters_GLTFExporter__js.js",
+      "fileHash": "879adc15",
       "needsInterop": false
     },
-    "three/examples/jsm/loaders/GLTFLoader": {
+    "three/examples/jsm/loaders/GLTFLoader.js": {
       "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
-      "file": "three_examples_jsm_loaders_GLTFLoader.js",
-      "fileHash": "96f79b51",
+      "file": "three_examples_jsm_loaders_GLTFLoader__js.js",
+      "fileHash": "feed8e7e",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-XUIIYUNP": {
-      "file": "chunk-XUIIYUNP.js"
+    "browser-5KPL3UKZ": {
+      "file": "browser-5KPL3UKZ.js"
     },
-    "chunk-CQCHV5RH": {
-      "file": "chunk-CQCHV5RH.js"
+    "chunk-W2XKI52R": {
+      "file": "chunk-W2XKI52R.js"
     },
-    "chunk-LKVAI3R5": {
-      "file": "chunk-LKVAI3R5.js"
+    "chunk-RMLWMTKS": {
+      "file": "chunk-RMLWMTKS.js"
+    },
+    "chunk-GXEUN43T": {
+      "file": "chunk-GXEUN43T.js"
+    },
+    "chunk-CUKTEYIU": {
+      "file": "chunk-CUKTEYIU.js"
+    },
+    "chunk-AZ4LSJ4W": {
+      "file": "chunk-AZ4LSJ4W.js"
+    },
+    "chunk-DGQIIK5Y": {
+      "file": "chunk-DGQIIK5Y.js"
+    },
+    "chunk-T4IQ37WX": {
+      "file": "chunk-T4IQ37WX.js"
     },
     "chunk-SJMSC4T5": {
       "file": "chunk-SJMSC4T5.js"
