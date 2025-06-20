@@ -1,0 +1,35 @@
+<div class="contact-container" [class.submitted]="submitted">
+  <h2>📬 Send Us a Message</h2>
+
+  <p class="info-text">Hey there! We’d love to hear from you. Please ask an adult to help you fill this out. 🧑‍🤝‍🧑</p>
+
+  <form *ngIf="!submitted" (ngSubmit)="submitForm()">
+    <label for="email">📧 Your Email (With a Parent):</label>
+    <input
+      type="email"
+      id="email"
+      [(ngModel)]="email"
+      name="email"
+      placeholder="you@example.com"
+      required
+    />
+
+    <label for="message">💡 What do you want to share?</label>
+    <textarea
+      id="message"
+      rows="4"
+      [(ngModel)]="message"
+      name="message"
+      placeholder="Tell us your ideas, questions, or bugs!"
+      required
+    ></textarea>
+
+    <button type="submit">Send Message 🚀</button>
+  </form>
+
+  <div *ngIf="submitted" class="thank-you">
+    <h3>🎉 Yay! Message Sent!</h3>
+    <p>Thanks for reaching out! We'll write back to <strong>{{ email }}</strong> soon.</p>
+    <button (click)="resetForm()">Send Another Message</button>
+  </div>
+</div>

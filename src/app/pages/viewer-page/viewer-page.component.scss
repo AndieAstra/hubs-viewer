@@ -227,3 +227,35 @@ app-root, .unity-layout {
   cursor: pointer;
   accent-color: #ffca28;
 }
+
+// Tutorial CSS
+
+.upload-instructions {
+  margin-bottom: 2px;
+  padding: 10px;
+  background-color: #eef6fa;
+  border-left: 4px solid #00bcd4;
+  border-radius: 6px;
+  font-family: 'Segoe UI', sans-serif;
+  color: #333;
+}
+
+.shepherd-theme-default {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 16px;
+}
+
+/* Overlay behind non-focused areas */
+.shepherd-modal-overlay-container {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  z-index: 9998 !important;
+}
+
+/* Highlighted element styles */
+.shepherd-highlight {
+  position: relative;
+  z-index: 9999 !important;
+  box-shadow: 0 0 0 4px #ffeb3b, 0 0 12px 4px rgba(255, 235, 59, 0.6);
+  border-radius: 12px;
+  transition: box-shadow 0.3s ease;
+}
