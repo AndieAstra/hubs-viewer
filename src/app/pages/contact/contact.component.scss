@@ -1,0 +1,85 @@
+.contact-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  border-radius: 15px;
+  background-color: #fff8e1;
+  border: 2px solid #ffe082;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  animation: fadeIn 0.6s ease-in;
+
+  h2 {
+    color: #ff9800;
+  }
+
+  .info-text {
+    margin-bottom: 1rem;
+    color: #5d4037;
+    font-size: 0.95rem;
+  }
+
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: bold;
+    color: #6d4c41;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-top: 0.3rem;
+    font-size: 1rem;
+  }
+
+  button {
+    margin-top: 1.5rem;
+    background-color: #ffb74d;
+    color: white;
+    border: none;
+    padding: 0.7rem 1.4rem;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &:hover {
+      background-color: #ffa726;
+    }
+  }
+
+  .thank-you {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background-color: #fff3e0;
+    border: 2px dashed #ffcc80;
+    border-radius: 12px;
+    animation: popIn 0.4s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes popIn {
+    0% {
+      transform: scale(0.8);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}

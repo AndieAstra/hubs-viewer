@@ -4,11 +4,26 @@
   <header class="top-toolbar">
     <div class="toggle-sidebar"></div>
     <div class="toolbar-center">
-      <section class="upload-section">
+
+
+      <!-- <section class="upload-section">
         <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-      </section>
-    </div>
-    <div class="toolbar-right"></div>
+      </section> -->
+
+
+<div class="upload-instructions">
+  <p>
+    <strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, SPACE to jump.
+  </p>
+    <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+</div>
+
+</div>
+
+    <div class="toolbar-right">
+  <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
+</div>
+
   </header>
 
   <!-- 🧱 Main Layout -->
