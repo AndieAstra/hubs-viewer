@@ -10,6 +10,7 @@ import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { FormsModule } from '@angular/forms';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
+import { Router } from '@angular/router'; // ✅ Import Router
 
 @Component({
   selector: 'app-viewer-page',
@@ -19,6 +20,8 @@ import 'shepherd.js/dist/css/shepherd.css';
   styleUrls: ['./viewer-page.component.scss']
 })
 export class ViewerPageComponent implements AfterViewInit {
+
+  constructor(private router: Router) {} // ✅ Inject it
 
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
@@ -174,119 +177,131 @@ export class ViewerPageComponent implements AfterViewInit {
     this.logToConsole(`Updated model height to ${value}`);
   }
 
-  // ============================
-  // Shepherd Tutorial
-  // ============================
-  startTutorial(): void {
-    const tour = new Shepherd.Tour({
-      useModalOverlay: true,
-      defaultStepOptions: {
-        cancelIcon: {
-          enabled: true
-        },
-        scrollTo: { behavior: 'smooth', block: 'center' },
-        classes: 'shepherd-theme-default',
-        modalOverlayOpeningPadding: 8,
-        modalOverlayOpeningRadius: 8,
-        canClickTarget: false
+
+// ************* Bug Report **********************
+
+openBugReport() {
+  // Navigate to the bug report page or open a modal
+  this.router.navigate(['/bug-report']); // Make sure route exists
+}
+
+// ============================
+// Shepherd Tutorial
+// ============================
+startTutorial(): void {
+  const tour = new Shepherd.Tour({
+    useModalOverlay: true,
+    defaultStepOptions: {
+      cancelIcon: {
+        enabled: true
+      },
+      scrollTo: { behavior: 'smooth', block: 'center' },
+      classes: 'shepherd-theme-default',
+      modalOverlayOpeningPadding: 8,
+      modalOverlayOpeningRadius: 8,
+      canClickTarget: false,
+      when: {
+        show() {
+          if (this.el) {
+            document.body.appendChild(this.el);
+          }
+        }
       }
-    });
+    }
+  });
 
-    tour.addStep({
-      id: 'welcome',
-      text: 'Welcome! Let’s take a quick tour of this 3D playground.',
-      buttons: [{ text: 'Next', action: tour.next }]
-    });
+  tour.addStep({
+    id: 'welcome',
+    text: 'Welcome! Let’s take a quick tour of this 3D playground.',
+    buttons: [{ text: 'Next', action: tour.next }]
+  });
 
-    tour.addStep({
-      id: 'upload',
-      attachTo: {
-        element: '.upload-instructions',
-        on: 'bottom'
-      },
-      text: 'Start by uploading a 3D model here.',
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next }
-      ]
-    });
+  tour.addStep({
+    id: 'upload',
+    attachTo: {
+      element: '.upload-instructions',
+      on: 'bottom'
+    },
+    text: 'Start by uploading a 3D model here.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-    tour.addStep({
-      id: 'scene-controls',
-      attachTo: {
-        element: '.sidebar-left',
-        on: 'right'
-      },
-      text: 'Use these buttons to save, load, and reset your scene.',
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next }
-      ]
-    });
+  tour.addStep({
+    id: 'scene-controls',
+    attachTo: {
+      element: '.sidebar-left',
+      on: 'right'
+    },
+    text: 'Use these buttons to save, load, and reset your scene.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-    tour.addStep({
-      id: 'canvas',
-      attachTo: {
-        element: '.canvas-container',
-        on: 'top'
-      },
-      text: 'Here’s where your 3D model will appear.',
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next }
-      ]
-    });
+  tour.addStep({
+    id: 'canvas',
+    attachTo: {
+      element: '.canvas-container',
+      on: 'top'
+    },
+    text: 'Here’s where your 3D model will appear.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-    tour.addStep({
-      id: 'console',
-      attachTo: {
-        element: '.bottom-bar',
-        on: 'top'
-      },
-      text: 'Console logs and messages appear here.',
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next }
-      ]
-    });
+  tour.addStep({
+    id: 'console',
+    attachTo: {
+      element: '.bottom-bar',
+      on: 'top'
+    },
+    text: 'Console logs and messages appear here.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-    tour.addStep({
-      id: 'model-camera-controls',
-      attachTo: {
-        element: '.sidebar-right',
-        on: 'left'
-      },
-      text: 'Change your model and camera settings here.',
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Done', action: tour.complete }
-      ]
-    });
+  tour.addStep({
+    id: 'model-camera-controls',
+    attachTo: {
+      element: '.sidebar-right',
+      on: 'left'
+    },
+    text: 'Change your model and camera settings here.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Done', action: tour.complete }
+    ]
+  });
 
-    tour.on('complete', () => {
-      localStorage.setItem('hasSeenTutorial', 'true');
-    });
+  // Set localStorage when the tour completes or is cancelled
+  const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
+  tour.on('complete', markTutorialSeen);
+  tour.on('cancel', markTutorialSeen);
 
-    tour.on('cancel', () => {
-      localStorage.setItem('hasSeenTutorial', 'true');
-    });
+  // Highlight the current step's target element
+  tour.on('show', () => {
+    const currentStep = tour.getCurrentStep();
+    const el = currentStep?.options.attachTo?.element;
+    if (typeof el === 'string') {
+      document.querySelector(el)?.classList.add('shepherd-highlight');
+    }
+  });
 
-    tour.start();
+  // Remove highlight from all elements
+  tour.on('hide', () => {
+    document.querySelectorAll('.shepherd-highlight')
+      .forEach(el => el.classList.remove('shepherd-highlight'));
+  });
 
-    // Highlight active step target element
-    tour.on('show', () => {
-      const currentStep = tour.getCurrentStep();
-      const el = currentStep?.options.attachTo?.element;
-      if (typeof el === 'string') {
-        const target = document.querySelector(el);
-        target?.classList.add('shepherd-highlight');
-      }
-    });
+  tour.start();
+}
 
-    tour.on('hide', () => {
-      document.querySelectorAll('.shepherd-highlight')
-        .forEach(el => el.classList.remove('shepherd-highlight'));
-    });
-
-  }
 }

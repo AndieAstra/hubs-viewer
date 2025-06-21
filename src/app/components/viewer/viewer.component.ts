@@ -57,7 +57,16 @@ export interface SceneData {
     MatIconModule,
     MatTooltipModule,
     MatSnackBarModule,],
+    // ************************************************************************
+// ************************************************************************
+// ************************************************************************
+
+// I think this is linked to the cursor issue!@
+
   template: `<div #canvasContainer class="viewer-container"></div>`,
+  // ************************************************************************
+// ************************************************************************
+// ************************************************************************
 })
 
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
@@ -104,14 +113,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private renderer!: THREE.WebGLRenderer;
   private controls!: PointerLockControls;
   private clock = new THREE.Clock();
-  //private velocity = new THREE.Vector3();
-  //private direction = new THREE.Vector3();
   private objects: THREE.Object3D[] = [];
   private ambientLight!: THREE.AmbientLight;
   private dirLight!: THREE.DirectionalLight;
   private gui!: GUI;
-  //public speed = 5.0;
-  //public cameraHeight = 1.6;
   private sceneLoaded = false;
   transformControls!: TransformControls;
 
@@ -770,6 +775,10 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
+// ************************************************************************
+// ************************************************************************
+// ************************************************************************
+// Need to update to current camera view straight ahead. NOT the floor!
 // Resets camera or scene view
 resetView(): void {
   // Implement your reset logic here (e.g., reset camera position)
@@ -778,6 +787,10 @@ resetView(): void {
   this.controls.unlock();  // Or however you want to reset controls
   this.snackBar.open('View reset!', 'OK', { duration: 2000 });
 }
+
+// ************************************************************************
+// ************************************************************************
+// ************************************************************************
 
 // Toggles wireframe mode on loaded models
 toggleWireframe(): void {
