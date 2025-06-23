@@ -11,18 +11,20 @@
       </section> -->
 
 
-<div class="upload-instructions">
-  <p>
-    <strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, ESC to exit viewer, SPACE to jump.
-  </p>
-    <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-</div>
+  <div class="upload-instructions">
+    <p>
+      <strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, ESC to exit viewer, SPACE to jump.
+    </p>
+      <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+  </div>
+
 
 </div>
 
-    <div class="toolbar-right">
+  <div class="sidebar-button-row">
   <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
-</div>
+  <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
+  </div>
 
   </header>
 
@@ -33,8 +35,8 @@
     <aside class="sidebar-left" [class.collapsed]="sidebarCollapsed">
       <h4>Scene Settings</h4>
       <button class="kid-button" (click)="resetView()">
-        <img src="assets/icons/reset.png" alt="Reset" />
-        <span>Reset Camera View</span>
+        <img src="assets/icons/new_rotate.png" alt="Reset" />
+        <span>Reset Camera</span>
       </button>
       <button class="kid-button turquoise" (click)="save()">
         <img src="assets/icons/save.jpg" alt="Save" />
@@ -52,7 +54,7 @@
       </button>
       <button class="kid-button orange" (click)="toggleRoomLight()">
         <img src="assets/icons/wire.jpg" alt="Room Light" />
-        <span>Room Light Toggle</span>
+        <span>Room Light</span>
       </button>
 
       <div class="kid-slider">

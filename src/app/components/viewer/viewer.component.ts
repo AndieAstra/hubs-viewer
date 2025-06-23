@@ -57,6 +57,7 @@ export interface SceneData {
     MatIconModule,
     MatTooltipModule,
     MatSnackBarModule,],
+
   template: `<div #canvasContainer class="viewer-container"></div>`,
 })
 
@@ -72,7 +73,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   //
   sunlight = 1;
   movementSpeed = 50;
-  modelSize = 1;
+  modelSize = 30;
   //
   //
 
@@ -89,7 +90,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   ambientIntensity = 0.5;
   speed = 50;
-  cameraHeight = 1.6;
+  cameraHeight = 2;
 
   // State flags
   showGrid = true;
@@ -104,14 +105,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private renderer!: THREE.WebGLRenderer;
   private controls!: PointerLockControls;
   private clock = new THREE.Clock();
-  //private velocity = new THREE.Vector3();
-  //private direction = new THREE.Vector3();
   private objects: THREE.Object3D[] = [];
   private ambientLight!: THREE.AmbientLight;
   private dirLight!: THREE.DirectionalLight;
   private gui!: GUI;
-  //public speed = 5.0;
-  //public cameraHeight = 1.6;
   private sceneLoaded = false;
   transformControls!: TransformControls;
 
@@ -196,12 +193,38 @@ ngAfterViewInit() {
       }
     });
 
+    const canvas = this.renderer.domElement;
+
+  // Click inside to start walking (existing logic)
+  const instructions = document.createElement('div');
+  this.containerRef.nativeElement.appendChild(instructions);
+
+  canvas.addEventListener('click', () => {
+    this.controls.lock();
+    if (instructions.parentNode) {
+      instructions.parentNode.removeChild(instructions);
+    }
+
+    // 👶 Automatically unlock after 10 seconds
+    setTimeout(() => {
+      if (this.controls.isLocked) {
+        this.controls.unlock();
+      }
+    }, 1000);
+  });
+
+  // 👆 Click *outside* canvas to unlock
+  document.addEventListener('click', (e) => {
+    if (!canvas.contains(e.target as Node) && this.controls.isLocked) {
+      this.controls.unlock();
+    }
+  });
+
     this.gridHelper = new THREE.GridHelper(10, 10);
     this.scene.add(this.gridHelper);
     this.gridHelper.visible = this.showGrid;
 
     // Auto save TBA NOT FUNCTIONAL YET
-
   }
 
   //********* UI Controls for the ThreeJS Scene *********/
@@ -333,13 +356,13 @@ public loadGLB(file: File): void {
         const model = gltf.scene;
 
         // Traverse the model and set collidable properties
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            (child as THREE.Mesh).geometry.computeBoundingBox();
-            this.objects.push(child);
-            child.userData['collidable'] = true;
-          }
-        });
+        // model.traverse((child) => {
+        //   if ((child as THREE.Mesh).isMesh) {
+        //     (child as THREE.Mesh).geometry.computeBoundingBox();
+        //     this.objects.push(child);
+        //     child.userData['collidable'] = true;
+        //   }
+        // });
 
         // Set metadata
         model.userData['isLoadedModel'] = true;
@@ -437,7 +460,8 @@ uploadSceneFromFile(file: File): void {
         this.objects = []; // Clear before restoring
         loadedModel.traverse((child: THREE.Object3D) => {
           if ((child as THREE.Mesh).isMesh) {
-            child.userData['collidable'] = true;
+            // Taking out the colliding physics for now
+            child.userData['collidable'] = false;
             this.objects.push(child); // Add only once
           }
         });
@@ -770,6 +794,8 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
+// ************************************************************************
+// Need to update to current camera view straight ahead. NOT the floor!
 // Resets camera or scene view
 resetView(): void {
   // Implement your reset logic here (e.g., reset camera position)
@@ -778,6 +804,7 @@ resetView(): void {
   this.controls.unlock();  // Or however you want to reset controls
   this.snackBar.open('View reset!', 'OK', { duration: 2000 });
 }
+// ************************************************************************
 
 // Toggles wireframe mode on loaded models
 toggleWireframe(): void {
@@ -807,57 +834,65 @@ private animate = () => {
 
   const delta = this.clock.getDelta();
 
-  // Apply friction / damping to velocity on XZ plane
-  this.velocity.x -= this.velocity.x * 10.0 * delta;
-  this.velocity.z -= this.velocity.z * 10.0 * delta;
+  // Friction (XZ plane)
+  const friction = 5.0;
+  this.velocity.x -= this.velocity.x * friction * delta;
+  this.velocity.z -= this.velocity.z * friction * delta;
 
-  // Reset direction vector
+  // Reset direction
   this.direction.set(0, 0, 0);
 
-  // Correct input mapping for directions
-  if (this.keysPressed.forward) this.direction.z -= 1;  // forward is negative Z
-  if (this.keysPressed.backward) this.direction.z += 1; // backward is positive Z
-  if (this.keysPressed.left) this.direction.x -= 1;     // left is negative X
-  if (this.keysPressed.right) this.direction.x += 1;    // right is positive X
+  // ✅ REVERSED: Z is flipped
+  if (this.keysPressed.forward) this.direction.z += 1;   // forward = +Z
+  if (this.keysPressed.backward) this.direction.z -= 1;  // backward = -Z
+  if (this.keysPressed.left) this.direction.x -= 1;      // left = -X
+  if (this.keysPressed.right) this.direction.x += 1;     // right = +X
 
-  this.direction.normalize(); // Normalize to avoid faster diagonal movement
+  this.direction.normalize();
 
-  // Update velocity based on direction and speed
+  // Apply movement
   if (this.direction.length() > 0) {
-    this.velocity.x -= this.direction.x * this.speed * delta;
-    this.velocity.z -= this.direction.z * this.speed * delta;
+    this.velocity.x += this.direction.x * this.speed * delta;
+    this.velocity.z += this.direction.z * this.speed * delta;
   }
 
-  // Calculate movement deltas
-  const moveX = -this.velocity.x * delta;
-  const moveZ = -this.velocity.z * delta;
+const moveX = this.velocity.x * delta;
+const moveZ = this.velocity.z * delta;
 
-  const oldPosition = this.controls.getObject().position.clone();
+const playerObj = this.controls.getObject();
+const oldX = playerObj.position.x;
+const oldZ = playerObj.position.z;
 
-  // Move horizontally with collision checks
-  this.controls.moveRight(moveX);
-  if (this.isColliding(this.controls.getObject().position)) {
-    this.controls.getObject().position.x = oldPosition.x;
-  }
+// Try move right/left (X)
+this.controls.moveRight(moveX);
+if (this.isColliding(playerObj.position)) {
+  playerObj.position.x = oldX; // only undo X movement
+}
 
-  this.controls.moveForward(moveZ);
-  if (this.isColliding(this.controls.getObject().position)) {
-    this.controls.getObject().position.z = oldPosition.z;
-  }
+// Try move forward/backward (Z)
+this.controls.moveForward(moveZ);
+if (this.isColliding(playerObj.position)) {
+  playerObj.position.z = oldZ; // only undo Z movement
+}
 
-  // Gravity and vertical movement handled separately (you have jumping and gravity)
+
+// Gravity
   this.velocity.y -= this.gravity * delta;
 
-  this.controls.getObject().position.y += this.velocity.y * delta;
 
-  if (this.controls.getObject().position.y < this.cameraHeight) {
-    this.velocity.y = 0;
-    this.controls.getObject().position.y = this.cameraHeight;
-    this.canJump = true;
-  }
+// Prevent falling below ground level
+const minY = this.cameraHeight; // or hardcode 2 if preferred
+this.controls.getObject().position.y += this.velocity.y * delta;
+
+if (this.controls.getObject().position.y < minY) {
+  this.velocity.y = 0;
+  this.controls.getObject().position.y = minY;
+  this.canJump = true;
+}
 
   this.renderer.render(this.scene, this.camera);
 };
+
 
 private onKeyDown = (event: KeyboardEvent) => {
   switch (event.code) {
@@ -981,13 +1016,15 @@ updateSpeed(value: number): void {
 }
 
 updateEyeLevel(value: number): void {
-  this.cameraHeight = value;
-  this.camera.position.y = value;
-
+  const minHeight = 2;
+  this.cameraHeight = Math.max(value, minHeight);
+  this.camera.position.y = this.cameraHeight;
 }
 
 updateModelSize(value: number): void {
-  this.modelScale = value;
+  const minScale = 30;
+  const maxScale = 100;
+  this.modelScale = Math.min(Math.max(value, minScale), maxScale);
   this.updateModelTransform?.();
 }
 

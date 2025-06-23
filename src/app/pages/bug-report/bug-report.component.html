@@ -1,0 +1,28 @@
+<div class="bug-form-container">
+  <h2>🐞 Report a Bug</h2>
+  <form (ngSubmit)="submitBug()" #bugForm="ngForm">
+
+    <label for="title">Bug Title:</label>
+    <input id="title" name="title" [(ngModel)]="bug.title" required>
+
+    <label for="description">Description:</label>
+    <textarea id="description" name="description" [(ngModel)]="bug.description" required></textarea>
+
+    <label for="steps">Steps to Reproduce:</label>
+    <textarea id="steps" name="steps" [(ngModel)]="bug.stepsToReproduce"></textarea>
+
+    <label for="browser">Browser Info:</label>
+    <input id="browser" name="browser" [(ngModel)]="bug.browserInfo">
+
+    <label for="screenshot">Screenshot:</label>
+    <input type="file" (change)="onFileChange($event)" accept="image/*">
+
+    <button type="submit" [disabled]="!bugForm.form.valid">Submit Bug</button>
+  </form>
+
+@if (successMessage) {
+  <p class="success">
+    {{ successMessage }}
+  </p>
+}
+</div>
