@@ -1,98 +1,70 @@
-/* 🧩 Root Resets */
-.unity-layout,
-.top-toolbar,
-.main-body,
-.sidebar-left,
-.sidebar-right,
-.bottom-bar,
-.canvas-container,
-.canvas-container app-viewer {
-  position: relative;
-  z-index: 1;
-}
-
-.canvas-container canvas {
-  z-index: 0;
-  pointer-events: none;
-}
-
-body::after {
-  content: "Z-INDEX DEBUG";
-  position: fixed;
-  top: 10px;
-  right: 10px;
-  z-index: 10001;
-  background: red;
-  color: white;
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
+/* ===================== GLOBAL RESETS ===================== */
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   overflow: hidden;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  touch-action: manipulation;
+  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
 }
 
 app-root, .unity-layout {
   height: 100%;
   display: flex;
   flex-direction: column;
-  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
   background: #fdf6e3;
 }
 
-/* Top Toolbar */
-.top-toolbar {
-  background-color: #d3d3d3;
-  padding: 8px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+canvas {
+  touch-action: none;
+  display: block;
 }
 
-/* Main Layout */
+/* ===================== LAYOUT ===================== */
+.unity-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .main-body {
   display: flex;
   flex: 1;
   overflow: hidden;
+  flex-direction: row;
   min-height: 0;
 }
 
-.canvas-container,
-.canvas-container canvas,
-.canvas-container app-viewer {
-  transform: none !important;
-  filter: none !important;
-  perspective: none !important;
-}
-
-
-/* Canvas + Sidebar Layout */
 .canvas-container {
+  position: relative;
   flex: 1 1 auto;
   display: flex;
-  position: relative;
   background-color: transparent;
   overflow: hidden;
   min-height: 0;
   min-width: 0;
   border-radius: 12px;
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
 }
 
-/* Canvas layer */
 .canvas-container canvas {
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
   z-index: 0;
-  pointer-events: none;
+  pointer-events: auto;
+  touch-action: none;
+  display: block;
 }
 
-/* Viewer wrapper */
 .canvas-container app-viewer {
   position: relative;
   z-index: 1;
@@ -101,114 +73,27 @@ app-root, .unity-layout {
   display: flex;
   justify-content: center;
   align-items: center;
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
 }
 
-.sidebar-button-row {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.sidebar-button-row .kid-button {
-  width: 100px;
-  height: 70px;
-}
-
-/* Left Sidebar */
-.sidebar-left {
-  width: 200px;
-  background-color: #ff6f61;
-  color: white;
-  padding: 12px;
-  flex-shrink: 0;
-  overflow-y: auto;
-}
-
-/* Right Sidebar */
+/* ===================== SIDEBARS ===================== */
+.sidebar-left,
 .sidebar-right {
-  width: 240px;
   background-color: #ff944d;
   color: white;
   padding: 12px;
+  overflow-y: auto;
   flex-shrink: 0;
-  overflow-y: auto;
+  width: 200px;
 }
 
-/* Bottom Bar */
-.bottom-bar {
-  background-color: #fdf6e3;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
+.sidebar-left {
+  background-color: #ff6f61;
 }
 
-.tabs button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  margin-right: 8px;
-  border-radius: 8px 8px 0 0;
-  font-weight: bold;
-}
-
-.assets-browser {
-  display: flex;
-  background-color: #00bcd4;
-  border-radius: 0 0 12px 12px;
-  padding: 12px;
-}
-
-.assets-tree {
-  flex: 1;
-  color: white;
-}
-
-.error-bar {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 120px;
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 12px;
-  color: #222;
-  background: #fefefe;
-  border: 1px solid #ccc;
-  padding: 8px;
-  border-radius: 6px;
-}
-
-.error-bar li {
-  padding: 2px 0;
-}
-
-.assets-browser {
-  transition: max-height 0.3s ease;
-  overflow: hidden;
-}
-
-.tabs button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  margin-right: 8px;
-  border-radius: 8px 8px 0 0;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.vr-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-}
-
-/* UI Buttons */
+/* ===================== BUTTON STYLES ===================== */
 .kid-button {
   width: 70px;
   height: 70px;
@@ -225,6 +110,7 @@ app-root, .unity-layout {
   transition: transform 0.2s ease, background-color 0.3s ease;
   margin-bottom: 10px;
   font-weight: bold;
+  touch-action: manipulation;
 }
 
 .kid-button.small {
@@ -234,9 +120,18 @@ app-root, .unity-layout {
 }
 
 .kid-button.danger {
-  background-color: #e74c3c;
-  color: rgb(0, 0, 0);
+  background-color: #ff8a80;
+  border-color: #d32f2f;
+  color: black;
   font-weight: bold;
+}
+
+.kid-button.danger span {
+  color: #c62828;
+}
+
+.kid-button.danger:hover {
+  background-color: #ff5252;
 }
 
 .kid-button img {
@@ -258,87 +153,85 @@ app-root, .unity-layout {
   transform: scale(1.1);
 }
 
-/* Variants */
 .kid-button.green { background-color: #1bd915; border-color: #00b1fc; }
 .kid-button.purple { background-color: #cc83f4; border-color: #00fcc5; }
 .kid-button.orange { background-color: #d9a115; border-color: #6d8210; }
 .kid-button.blue { background-color: #157ed9; border-color: #411082; }
 .kid-button.turquoise { background-color: #e600ff; border-color: #411082; }
-.kid-button.danger { background-color: #ff8a80; border-color: #d32f2f; }
-.kid-button.danger span { color: #c62828; }
-.kid-button.danger:hover { background-color: #ff5252; }
 .kid-button.selected { outline: 4px solid #4caf50; background-color: #c8e6c9; }
 .kid-button:focus { outline: none; box-shadow: 0 0 0 2px #4a90e2; }
 
-/* Sliders */
-.kid-slider {
-  width: 120px;
-  background-color: #fff59d;
-  border: 3px solid #fbc02d;
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+/* ===================== RESPONSIVE ===================== */
+@media screen and (max-width: 1024px) {
+  .main-body {
+    flex-direction: column;
+  }
+
+  .sidebar-left,
+  .sidebar-right {
+    width: 100%;
+    order: 1;
+    flex-direction: row;
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .canvas-container {
+    order: 0;
+    height: 70vh;
+  }
+}
+
+.sidebar-button-row {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: center;
   align-items: center;
-  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
-  font-weight: bold;
-  gap: 4px;
+  gap: 12px;
+  flex-wrap: nowrap; /* Force into one row */
   margin-bottom: 12px;
+  overflow-x: auto;
+  padding: 8px 0;
 }
 
-.kid-slider label {
-  font-size: 12px;
-  color: #4a4a4a;
+@media screen and (max-width: 600px) {
+  .sidebar-button-row {
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    justify-content: center;
+  }
 }
 
-.kid-slider input[type="range"] {
-  width: 100%;
+  .kid-button {
+    width: 80px;
+    height: 60px;
+    font-size: 12px;
+  }
+
+  .kid-slider {
+    width: 100%;
+    padding: 4px;
+  }
+
+  .bottom-bar {
+    font-size: 14px;
+  }
+
+/* ===================== FULLSCREEN VR BUTTON ===================== */
+.vr-button {
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+  z-index: 9999;
+  padding: 10px 20px;
+  background: #1bd915;
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   cursor: pointer;
-  accent-color: #ffca28;
 }
 
-// Tutorial CSS
-
-.upload-instructions {
-  margin-bottom: 2px;
-  padding: 10px;
-  background-color: #eef6fa;
-  border-left: 4px solid #00bcd4;
-  border-radius: 6px;
-  font-family: 'Segoe UI', sans-serif;
-  color: #333;
-}
-
-.shepherd-theme-default {
-  font-family: 'Segoe UI', sans-serif;
-  font-size: 16px;
-}
-
-/* Overlay behind non-focused areas */
-.shepherd-modal-overlay-container {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  background-color: rgba(0, 0, 0, 0.6) !important;
-  z-index: 9998 !important;
-  pointer-events: none;
-}
-
-/* Highlighted element styles */
-.shepherd-highlight {
-  position: relative;
-  z-index: 9999 !important;
-  box-shadow: 0 0 0 4px #ffeb3b, 0 0 12px 4px rgba(255, 235, 59, 0.6);
-  border-radius: 12px;
-  transition: box-shadow 0.3s ease;
-}
-
-.shepherd-element,
-.shepherd-step,
-.shepherd-tooltip,
-.shepherd-modal-overlay-container {
-  z-index: 10000 !important;
+.vr-button:active {
+  background: #0cb10c;
 }

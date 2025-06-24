@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 export interface SavedModel {
   name: string;
@@ -68,6 +69,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
 
+
   @Input() glbFile?: File;
 
   constructor(private snackBar: MatSnackBar) {}
@@ -85,7 +87,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   private originalSize?: { width: number; height: number };
   private originalCameraAspect?: number;
-  private originalSetAnimationLoop?: typeof THREE.WebGLRenderer.prototype.setAnimationLoop;
+  //private originalSetAnimationLoop?: typeof THREE.WebGLRenderer.prototype.setAnimationLoop;
+  private controls!: PointerLockControls;
+  private originalSetAnimationLoop: any;
 
   modelScale = 1;
   modelHeight = 0;
@@ -113,7 +117,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
-  private controls!: PointerLockControls;
+  //private controls!: PointerLockControls;
   private clock = new THREE.Clock();
   private objects: THREE.Object3D[] = [];
   private ambientLight!: THREE.AmbientLight;
@@ -121,6 +125,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private gui!: GUI;
   private sceneLoaded = false;
   transformControls!: TransformControls;
+
+  //private controls!: PointerLockControls | OrbitControls;
+  private isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   selectedTool = '';
 
@@ -270,6 +277,10 @@ private initScene() {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
     this.renderer.shadowMap.enabled = false;
     container.appendChild(this.renderer.domElement);
+
+    // ✅ Touch compatibility
+    this.renderer.domElement.style.touchAction = 'manipulation';
+    this.renderer.domElement.style.pointerEvents = 'auto';
   } catch (e) {
     console.error('WebGLRenderer creation failed:', e);
     alert('WebGL could not initialize. Try restarting your browser or switching to Chrome.');
@@ -303,8 +314,15 @@ private initScene() {
 
   container.addEventListener('click', () => {
     this.controls.lock();
-    container.removeChild(instructions); // ✅ uncommented
+    container.removeChild(instructions);
   });
+
+  container.addEventListener('touchstart', () => {
+    this.controls.lock();
+    if (container.contains(instructions)) {
+      container.removeChild(instructions);
+    }
+  }, { passive: true });
 
   // 🧰 GUI (hidden, optional for dev tools)
   this.gui = new GUI({ width: 280 });
@@ -327,7 +345,6 @@ private initScene() {
   const axesHelper = new THREE.AxesHelper(5);
   this.scene.add(axesHelper);
 }
-
 
 //************* Update/Model Transform ******************* */
 
@@ -886,39 +903,36 @@ private animate = () => {
     this.velocity.z += this.direction.z * this.speed * delta;
   }
 
-const moveX = this.velocity.x * delta;
-const moveZ = this.velocity.z * delta;
+  const moveX = this.velocity.x * delta;
+  const moveZ = this.velocity.z * delta;
 
-const playerObj = this.controls.object;
-const oldX = playerObj.position.x;
-const oldZ = playerObj.position.z;
+  const playerObj = this.controls.object;
+  const oldX = playerObj.position.x;
+  const oldZ = playerObj.position.z;
 
-// Try move right/left (X)
-this.controls.moveRight(moveX);
-if (this.isColliding(playerObj.position)) {
-  playerObj.position.x = oldX; // only undo X movement
-}
+  // Try move right/left (X)
+  this.controls.moveRight(moveX);
+  if (this.isColliding(playerObj.position)) {
+    playerObj.position.x = oldX; // only undo X movement
+  }
 
-// Try move forward/backward (Z)
-this.controls.moveForward(moveZ);
-if (this.isColliding(playerObj.position)) {
-  playerObj.position.z = oldZ; // only undo Z movement
-}
+  // Try move forward/backward (Z)
+  this.controls.moveForward(moveZ);
+  if (this.isColliding(playerObj.position)) {
+    playerObj.position.z = oldZ; // only undo Z movement
+  }
 
-
-// Gravity
+  // Gravity
   this.velocity.y -= this.gravity * delta;
 
-
-// Prevent falling below ground level
-const minY = this.cameraHeight; // or hardcode 2 if preferred
-this.controls.object.position.y += this.velocity.y * delta;
-
-if (this.controls.object.position.y < minY) {
-  this.velocity.y = 0;
-  this.controls.object.position.y = minY;
-  this.canJump = true;
-}
+  // Prevent falling below ground level
+  const minY = this.cameraHeight;
+  this.controls.object.position.y += this.velocity.y * delta;
+  if (this.controls.object.position.y < minY) {
+    this.velocity.y = 0;
+    this.controls.object.position.y = minY;
+    this.canJump = true;
+  }
 
   this.renderer.render(this.scene, this.camera);
 };
@@ -990,50 +1004,71 @@ onResize(width?: number, height?: number): void {
 //************* VR Integration ******************* */
 
 public enterVR(): void {
+  // Only activate VR on mobile devices
+  if (!/Mobi|Android/i.test(navigator.userAgent)) {
+    this.snackBar.open('VR mode is only available on mobile devices.', 'OK', { duration: 3000 });
+    return;
+  }
+
+  if (confirm('Enter VR mode? Place your phone into a viewer like Google Cardboard.')) {
+  this.enterVR();
+}
+
+  // Try to enter fullscreen
+  const canvas = this.renderer.domElement;
+  if (canvas.requestFullscreen) {
+    canvas.requestFullscreen().catch((err) => {
+      console.warn('Fullscreen request failed:', err);
+    });
+  } else if ((canvas as any).webkitRequestFullscreen) {
+    (canvas as any).webkitRequestFullscreen();
+  }
+
   this.originalCameraAspect = this.camera.aspect;
   this.originalSetAnimationLoop = this.renderer.setAnimationLoop;
   this.originalSize = {
-  width: this.containerRef.nativeElement.clientWidth,
-  height: this.containerRef.nativeElement.clientHeight,
-};
-
-  if (!this.renderer) {
-    console.warn('Renderer not initialized. Cannot enter VR.');
-    return;
-  }
+    width: this.containerRef.nativeElement.clientWidth,
+    height: this.containerRef.nativeElement.clientHeight,
+  };
 
   this.isVRMode = true;
 
   this.renderer.setAnimationLoop(() => {
-    this.renderVR();  // your custom update/render function
+    this.renderVR();
   });
-
 }
+
 
 exitVR(): void {
   this.isVRMode = false;
 
-  // Stop the VR animation loop
-  if (this.renderer && this.renderer.setAnimationLoop) {
+  // Stop VR loop
+  if (this.renderer?.setAnimationLoop) {
     this.renderer.setAnimationLoop(null);
   }
 
-  // Restore normal view
+  // Restore camera size
   if (this.renderer && this.camera && this.containerRef) {
-    const { width, height } = this.originalSize || {
+    const { width, height } = this.originalSize ?? {
       width: window.innerWidth,
       height: window.innerHeight,
     };
-
-    this.camera.aspect = this.originalCameraAspect || width / height;
+    this.camera.aspect = this.originalCameraAspect ?? width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
   }
 
-  // Optionally re-enable controls or other overlays
+  // ✅ Exit fullscreen
+  if (document.fullscreenElement) {
+    document.exitFullscreen().catch((err) => {
+      console.warn('Error exiting fullscreen:', err);
+    });
+  }
+
   this.controls.enabled = true;
-  // this.snackBar.open('Exited VR mode.', 'OK', { duration: 2000 });
+  this.snackBar.open('Exited VR mode.', 'OK', { duration: 2000 });
 }
+
 
 
 private renderVR = () => {

@@ -3,41 +3,23 @@
   <!-- 🔝 Top Toolbar -->
   <header class="top-toolbar">
     <div class="toggle-sidebar"></div>
+
     <div class="toolbar-center">
-
-
-      <!-- <section class="upload-section">
+      <div class="upload-instructions">
+        <p><strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, SPACE to jump.</p>
         <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-      </section> -->
+      </div>
+    </div>
 
-
-  <div class="upload-instructions">
-    <p>
-      <strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, SPACE to jump.
-    </p>
-      <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
-  </div>
-
-
-</div>
-
-  <div class="sidebar-button-row">
-  <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
-  <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
-
-<!-- VR Integration  -->
-
-
-
-<button mat-button (click)="enterVRMode()">🕶 Enter VR</button>
-
-@if(viewerRef?.isVRMode) {
-<button mat-button (click)="exitVRMode()">🚪 Exit VR</button>
-}
-
-
-  </div>
-
+    <!-- 🎛️ Top Buttons -->
+    <div class="sidebar-button-row">
+      <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
+      <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
+      <button class="kid-button green" (click)="enterVRMode()">🕶 Enter VR</button>
+      @if(viewerRef?.isVRMode) {
+        <button class="kid-button danger" (click)="exitVRMode()">🚪 Exit VR</button>
+      }
+    </div>
   </header>
 
   <!-- 🧱 Main Layout -->
@@ -93,7 +75,7 @@
         <input type="range" (input)="onModelHeightInput($event)">
       </div>
 
-      <h4>Camera Movement Settings</h4>
+      <h4>Camera Movement</h4>
       <div class="kid-slider">
         <label for="speed">🏃 Speed</label>
         <input type="range" (input)="onSpeedInput($event)">
@@ -105,27 +87,26 @@
     </aside>
   </div>
 
-<!-- 📌 Bottom Panel -->
-<footer class="bottom-bar">
-  <div class="tabs">
-    <button (click)="toggleConsole()">
-      Console {{ showConsole ? '▼' : '▲' }}
-    </button>
-  </div>
+  <!-- 📌 Bottom Panel -->
+  <footer class="bottom-bar">
+    <div class="tabs">
+      <button (click)="toggleConsole()">
+        Console {{ showConsole ? '▼' : '▲' }}
+      </button>
+    </div>
 
-  @if (showConsole) {
-    <div class="assets-browser">
-      <div class="assets-tree">
-        <div class="error-bar">
-          <ul>
-            @for (message of consoleMessages; track message) {
-              <li>{{ message }}</li>
-            }
-          </ul>
+    @if (showConsole) {
+      <div class="assets-browser">
+        <div class="assets-tree">
+          <div class="error-bar">
+            <ul>
+              @for (message of consoleMessages; track message) {
+                <li>{{ message }}</li>
+              }
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
-  }
-</footer>
-
+    }
+  </footer>
 </div>
