@@ -216,6 +216,24 @@ canvas {
     font-size: 14px;
   }
 
+  //
+
+  /* Hide by default on desktop */
+.mobile-only-buttons {
+  display: none;
+}
+
+/* Show only on devices <= 1024px width */
+@media screen and (max-width: 1024px) {
+  .mobile-only-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+}
+
 /* ===================== FULLSCREEN VR BUTTON ===================== */
 .vr-button {
   position: fixed;

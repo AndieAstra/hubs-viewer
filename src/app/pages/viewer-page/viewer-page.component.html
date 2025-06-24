@@ -11,15 +11,25 @@
       </div>
     </div>
 
-    <!-- 🎛️ Top Buttons -->
-    <div class="sidebar-button-row">
-      <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
-      <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
-      <button class="kid-button green" (click)="enterVRMode()">🕶 Enter VR</button>
-      @if(viewerRef?.isVRMode) {
-        <button class="kid-button danger" (click)="exitVRMode()">🚪 Exit VR</button>
-      }
-    </div>
+<!-- 🎛️ Top Buttons -->
+
+
+<div class="sidebar-button-row">
+  <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
+  <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
+
+<div class="mobile-only-buttons">
+  <button class="kid-button green" (click)="enterVRMode()">🕶 Enter VR</button>
+
+  @if(viewerRef?.isVRMode) {
+    <button class="kid-button danger" (click)="exitVRMode()">🚪 Exit VR</button>
+  }
+</div>
+
+</div>
+
+
+
   </header>
 
   <!-- 🧱 Main Layout -->

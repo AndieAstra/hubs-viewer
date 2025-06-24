@@ -17,3 +17,29 @@ nav {
     }
   }
 }
+
+:host-context(.vr-mode) .canvas-container {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999;
+  border-radius: 0 !important;
+}
+
+:host-context(.vr-mode) .sidebar-left,
+:host-context(.vr-mode) .sidebar-right,
+:host-context(.vr-mode) .bottom-bar,
+:host-context(.vr-mode) .top-toolbar {
+  display: none !important;
+}
+
+body.vr-mode, body.vr-mode .canvas-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: black;
+}

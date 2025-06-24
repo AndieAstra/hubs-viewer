@@ -149,6 +149,7 @@ ngOnInit() {
 ngOnDestroy() {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+    window.removeEventListener('resize', this.resizeListener);
   }
 
 ngOnChanges(changes: SimpleChanges) {
@@ -253,6 +254,22 @@ ngAfterViewInit() {
   // VR Integration
   this.stereoEffect = new StereoEffect(this.renderer);
   this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
+
+  window.addEventListener('orientationchange', () => {
+      const isLandscape = window.innerWidth > window.innerHeight;
+      if (isLandscape && !this.isVRMode) {
+        this.enterVR();
+      } else if (!isLandscape && this.isVRMode) {
+        this.exitVR();
+      }
+    });
+
+    window.addEventListener('popstate', () => {
+      if (this.isVRMode) {
+        this.exitVR();
+      }
+    });
+
   }
 
   //********* UI Controls for the ThreeJS Scene *********/
@@ -988,6 +1005,13 @@ private onKeyUp = (event: KeyboardEvent) => {
 
 //************* Screen Sizing ******************* */
 
+private resizeListener = () => {
+  const container = this.containerRef.nativeElement;
+  this.camera.aspect = container.clientWidth / container.clientHeight;
+  this.camera.updateProjectionMatrix();
+  this.renderer.setSize(container.clientWidth, container.clientHeight);
+};
+
 onResize(width?: number, height?: number): void {
   const container = this.containerRef.nativeElement;
   const w = width ?? container.clientWidth;
@@ -998,84 +1022,118 @@ onResize(width?: number, height?: number): void {
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
+
+  // ✅ Attach resize only once
+  window.removeEventListener('resize', this.resizeListener);
+  window.addEventListener('resize', this.resizeListener);
 }
 
 
 //************* VR Integration ******************* */
 
 public enterVR(): void {
-  // Only activate VR on mobile devices
   if (!/Mobi|Android/i.test(navigator.userAgent)) {
     this.snackBar.open('VR mode is only available on mobile devices.', 'OK', { duration: 3000 });
     return;
   }
 
-  if (confirm('Enter VR mode? Place your phone into a viewer like Google Cardboard.')) {
-  this.enterVR();
-}
-
-  // Try to enter fullscreen
-  const canvas = this.renderer.domElement;
-  if (canvas.requestFullscreen) {
-    canvas.requestFullscreen().catch((err) => {
-      console.warn('Fullscreen request failed:', err);
-    });
-  } else if ((canvas as any).webkitRequestFullscreen) {
-    (canvas as any).webkitRequestFullscreen();
+  if (!confirm('Enter VR mode? Place your phone into a viewer like Google Cardboard.')) {
+    return;
   }
 
-  this.originalCameraAspect = this.camera.aspect;
-  this.originalSetAnimationLoop = this.renderer.setAnimationLoop;
-  this.originalSize = {
-    width: this.containerRef.nativeElement.clientWidth,
-    height: this.containerRef.nativeElement.clientHeight,
-  };
-
   this.isVRMode = true;
+  document.body.classList.add('vr-mode');
 
-  this.renderer.setAnimationLoop(() => {
-    this.renderVR();
-  });
+  const canvas = this.renderer.domElement;
+  const container = this.containerRef.nativeElement;
+
+  // Try fullscreen on container (priority)
+  const requestFullscreen = container.requestFullscreen
+    || (container as any).webkitRequestFullscreen
+    || (container as any).msRequestFullscreen;
+
+  if (requestFullscreen) {
+    requestFullscreen.call(container).catch((err: any) => {
+      console.warn('Fullscreen failed:', err);
+    });
+  }
+
+  // Orientation lock (Android Chrome only)
+  try {
+    (screen.orientation as any)?.lock?.('landscape').catch((err: any) => {
+      console.warn('Orientation lock failed:', err);
+    });
+  } catch (err) {
+    console.warn('Orientation lock not available:', err);
+  }
+
+  // Save original size/aspect
+  this.originalSize = {
+    width: container.clientWidth,
+    height: container.clientHeight,
+  };
+  this.originalCameraAspect = this.camera.aspect;
+
+  // Set up stereo effect for split-view
+  if (!this.stereoEffect) {
+    this.stereoEffect = new StereoEffect(this.renderer);
+  }
+  this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
+
+  // Start VR render loop
+  this.renderer.setAnimationLoop(() => this.renderVR());
+
+  // Push to history stack so back button exits
+  history.pushState({ vr: true }, '');
+
+  // Handle popstate/back-button
+  window.onpopstate = () => {
+    if (this.isVRMode) this.exitVR();
+  };
 }
 
-
-exitVR(): void {
+public exitVR(): void {
+  document.body.classList.remove('vr-mode');
   this.isVRMode = false;
 
-  // Stop VR loop
   if (this.renderer?.setAnimationLoop) {
     this.renderer.setAnimationLoop(null);
   }
 
-  // Restore camera size
-  if (this.renderer && this.camera && this.containerRef) {
-    const { width, height } = this.originalSize ?? {
-      width: window.innerWidth,
-      height: window.innerHeight,
-    };
-    this.camera.aspect = this.originalCameraAspect ?? width / height;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
+  try {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err: any) => {
+        console.warn('Exit fullscreen failed', err);
+      });
+    }
+    (screen.orientation as any)?.unlock?.();
+  } catch (e) {
+    console.warn('Unlock orientation failed', e);
   }
 
-  // ✅ Exit fullscreen
-  if (document.fullscreenElement) {
-    document.exitFullscreen().catch((err) => {
-      console.warn('Error exiting fullscreen:', err);
-    });
+  if (this.renderer && this.camera && this.originalSize) {
+    this.camera.aspect = this.originalCameraAspect ?? window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.originalSize.width, this.originalSize.height);
   }
 
   this.controls.enabled = true;
   this.snackBar.open('Exited VR mode.', 'OK', { duration: 2000 });
+
+  // Restore browser history
+  if (history.state?.vr) {
+    history.back();
+  }
+
+  // Reset onpopstate handler
+  window.onpopstate = null;
 }
 
-
-
 private renderVR = () => {
-  // this.updateMovement(); // optional: player controls
   this.camera.position.y = this.cameraHeight;
   this.stereoEffect.render(this.scene, this.camera);
 };
+
 
 //************* Page Load Popup*************** */
 
