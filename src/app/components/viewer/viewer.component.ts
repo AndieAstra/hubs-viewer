@@ -66,6 +66,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
+  @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
 
   @Input() glbFile?: File;
 
@@ -81,6 +82,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   private stereoEffect!: StereoEffect;
   public isVRMode = false;
+
+  private originalSize?: { width: number; height: number };
+  private originalCameraAspect?: number;
+  private originalSetAnimationLoop?: typeof THREE.WebGLRenderer.prototype.setAnimationLoop;
 
   modelScale = 1;
   modelHeight = 0;
@@ -167,6 +172,13 @@ ngAfterViewInit() {
 
     if (this.glbFile) this.loadGLB(this.glbFile);
     this.animate();
+
+    if (!this.renderer) {
+      console.warn('Renderer not available — possibly failed to create WebGL context');
+      return;
+    }
+
+
     this.renderer.domElement.addEventListener('dragover', (event) => {
     event.preventDefault();
     });
@@ -206,9 +218,9 @@ ngAfterViewInit() {
 
   canvas.addEventListener('click', () => {
     this.controls.lock();
-    if (instructions.parentNode) {
-      instructions.parentNode.removeChild(instructions);
-    }
+    // if (instructions.parentNode) {
+    //   instructions.parentNode.removeChild(instructions);
+    // }
 
     // 👶 Automatically unlock after 10 seconds
     setTimeout(() => {
@@ -243,53 +255,60 @@ private initScene() {
   this.scene = new THREE.Scene();
   this.scene.background = new THREE.Color(0x111111);
 
-  this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+  this.camera = new THREE.PerspectiveCamera(
+    75,
+    container.clientWidth / container.clientHeight,
+    0.1,
+    1000
+  );
+  this.camera.position.set(0, this.cameraHeight, 10);
+  this.camera.lookAt(0, this.cameraHeight, 0);
 
-  this.camera.position.set(0, this.cameraHeight, 10);  // 10 units "behind" the center
-  this.camera.lookAt(0, this.cameraHeight, 0);        // look straight ahead at same height
+  try {
+    this.renderer = new THREE.WebGLRenderer({ antialias: false });
+    this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1));
+    this.renderer.shadowMap.enabled = false;
+    container.appendChild(this.renderer.domElement);
+  } catch (e) {
+    console.error('WebGLRenderer creation failed:', e);
+    alert('WebGL could not initialize. Try restarting your browser or switching to Chrome.');
+    return;
+  }
 
-  this.renderer = new THREE.WebGLRenderer({ antialias: true });
-  this.renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(this.renderer.domElement);
-
-  //******************************************************** */
-  //Lighting
+  // 💡 Lighting
   this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   this.scene.add(this.ambientLight);
 
   this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
   this.dirLight.position.set(5, 10, 7.5);
   this.scene.add(this.dirLight);
- // ******************************************************** */
 
-  // Controls with instruction for users
+  // 🚶 Controls + user instructions
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
   this.scene.add(this.controls.getObject());
 
-  // User must press key to start – more intuitive for kids
   const instructions = document.createElement('div');
-  instructions.innerText = "Click to start walking!";
-  instructions.style.position = "absolute";
-  instructions.style.top = "50%";
-  instructions.style.left = "50%";
-  instructions.style.transform = "translate(-50%, -50%)";
-  instructions.style.color = "white";
-  instructions.style.fontSize = "24px";
-  instructions.style.padding = "10px";
-  instructions.style.background = "rgba(0,0,0,0.5)";
-  instructions.style.borderRadius = "8px";
+  instructions.innerText = 'Click to start walking!';
+  instructions.style.position = 'absolute';
+  instructions.style.top = '50%';
+  instructions.style.left = '50%';
+  instructions.style.transform = 'translate(-50%, -50%)';
+  instructions.style.color = 'white';
+  instructions.style.fontSize = '24px';
+  instructions.style.padding = '10px';
+  instructions.style.background = 'rgba(0,0,0,0.5)';
+  instructions.style.borderRadius = '8px';
   container.appendChild(instructions);
 
   container.addEventListener('click', () => {
     this.controls.lock();
-    container.removeChild(instructions);
+    container.removeChild(instructions); // ✅ uncommented
   });
 
-//******************************************************** */
-
-   // 🧰 GUI for kids
+  // 🧰 GUI (hidden, optional for dev tools)
   this.gui = new GUI({ width: 280 });
-  this.gui.domElement.style.display = 'none';  // 👈 Hides GUI but keeps functionality
+  this.gui.domElement.style.display = 'none';
 
   // 🧱 Floor
   const floorGeo = new THREE.PlaneGeometry(200, 200);
@@ -301,13 +320,14 @@ private initScene() {
   this.scene.add(floor);
   this.objects.push(floor);
 
-  // Helpers (optional for kids, could hide)
+  // 📐 Helpers
   const gridHelper = new THREE.GridHelper(200, 200, 0xd453ff, 0x444ddd);
   this.scene.add(gridHelper);
 
   const axesHelper = new THREE.AxesHelper(5);
   this.scene.add(axesHelper);
 }
+
 
 //************* Update/Model Transform ******************* */
 
@@ -493,7 +513,8 @@ uploadSceneFromFile(file: File): void {
   }
 
 private loadSceneFromLocalStorage(): void {
- const raw = localStorage.getItem('autosavedScene');
+
+  const raw = localStorage.getItem('autosavedScene');
   if (!raw) {
     console.warn('No autosaved scene found in localStorage.');
     return;
@@ -868,7 +889,7 @@ private animate = () => {
 const moveX = this.velocity.x * delta;
 const moveZ = this.velocity.z * delta;
 
-const playerObj = this.controls.getObject();
+const playerObj = this.controls.object;
 const oldX = playerObj.position.x;
 const oldZ = playerObj.position.z;
 
@@ -891,11 +912,11 @@ if (this.isColliding(playerObj.position)) {
 
 // Prevent falling below ground level
 const minY = this.cameraHeight; // or hardcode 2 if preferred
-this.controls.getObject().position.y += this.velocity.y * delta;
+this.controls.object.position.y += this.velocity.y * delta;
 
-if (this.controls.getObject().position.y < minY) {
+if (this.controls.object.position.y < minY) {
   this.velocity.y = 0;
-  this.controls.getObject().position.y = minY;
+  this.controls.object.position.y = minY;
   this.canJump = true;
 }
 
@@ -953,24 +974,67 @@ private onKeyUp = (event: KeyboardEvent) => {
 
 //************* Screen Sizing ******************* */
 
-onResize(width: number, height: number) {
-  this.renderer.setSize(width, height);
-  this.camera.aspect = width / height;
-  this.camera.updateProjectionMatrix();
+onResize(width?: number, height?: number): void {
+  const container = this.containerRef.nativeElement;
+  const w = width ?? container.clientWidth;
+  const h = height ?? container.clientHeight;
+
+  if (this.renderer && this.camera) {
+    this.renderer.setSize(w, h);
+    this.camera.aspect = w / h;
+    this.camera.updateProjectionMatrix();
+  }
 }
+
 
 //************* VR Integration ******************* */
 
 public enterVR(): void {
+  this.originalCameraAspect = this.camera.aspect;
+  this.originalSetAnimationLoop = this.renderer.setAnimationLoop;
+  this.originalSize = {
+  width: this.containerRef.nativeElement.clientWidth,
+  height: this.containerRef.nativeElement.clientHeight,
+};
+
+  if (!this.renderer) {
+    console.warn('Renderer not initialized. Cannot enter VR.');
+    return;
+  }
+
   this.isVRMode = true;
-  this.renderer.setAnimationLoop(this.renderVR);
+
+  this.renderer.setAnimationLoop(() => {
+    this.renderVR();  // your custom update/render function
+  });
+
 }
 
-public exitVR(): void {
+exitVR(): void {
   this.isVRMode = false;
-  this.renderer.setAnimationLoop(this.animate); // fallback to normal render loop
-  this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+  // Stop the VR animation loop
+  if (this.renderer && this.renderer.setAnimationLoop) {
+    this.renderer.setAnimationLoop(null);
+  }
+
+  // Restore normal view
+  if (this.renderer && this.camera && this.containerRef) {
+    const { width, height } = this.originalSize || {
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+
+    this.camera.aspect = this.originalCameraAspect || width / height;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(width, height);
+  }
+
+  // Optionally re-enable controls or other overlays
+  this.controls.enabled = true;
+  // this.snackBar.open('Exited VR mode.', 'OK', { duration: 2000 });
 }
+
 
 private renderVR = () => {
   // this.updateMovement(); // optional: player controls
@@ -1045,7 +1109,12 @@ updateSpeed(value: number): void {
 
 updateEyeLevel(value: number): void {
   const minHeight = 2;
-  this.cameraHeight = Math.max(value, minHeight);
+  const maxHeight = 30;
+
+  // Clamp the value between minHeight and maxHeight
+  this.cameraHeight = Math.max(minHeight, Math.min(value, maxHeight));
+
+  // Apply new height to camera position
   this.camera.position.y = this.cameraHeight;
 }
 
