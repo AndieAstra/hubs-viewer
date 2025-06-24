@@ -20,6 +20,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
 
 export interface SavedModel {
   name: string;
@@ -65,6 +66,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
+
   @Input() glbFile?: File;
 
   constructor(private snackBar: MatSnackBar) {}
@@ -76,6 +78,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   modelSize = 30;
   //
   //
+
+  private stereoEffect!: StereoEffect;
+  public isVRMode = false;
 
   modelScale = 1;
   modelHeight = 0;
@@ -159,9 +164,9 @@ ngOnChanges(changes: SimpleChanges) {
 
 ngAfterViewInit() {
     this.initScene();
+
     if (this.glbFile) this.loadGLB(this.glbFile);
     this.animate();
-
     this.renderer.domElement.addEventListener('dragover', (event) => {
     event.preventDefault();
     });
@@ -225,6 +230,10 @@ ngAfterViewInit() {
     this.gridHelper.visible = this.showGrid;
 
     // Auto save TBA NOT FUNCTIONAL YET
+
+  // VR Integration
+  this.stereoEffect = new StereoEffect(this.renderer);
+  this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
   }
 
   //********* UI Controls for the ThreeJS Scene *********/
@@ -949,6 +958,25 @@ onResize(width: number, height: number) {
   this.camera.aspect = width / height;
   this.camera.updateProjectionMatrix();
 }
+
+//************* VR Integration ******************* */
+
+public enterVR(): void {
+  this.isVRMode = true;
+  this.renderer.setAnimationLoop(this.renderVR);
+}
+
+public exitVR(): void {
+  this.isVRMode = false;
+  this.renderer.setAnimationLoop(this.animate); // fallback to normal render loop
+  this.renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+private renderVR = () => {
+  // this.updateMovement(); // optional: player controls
+  this.camera.position.y = this.cameraHeight;
+  this.stereoEffect.render(this.scene, this.camera);
+};
 
 //************* Page Load Popup*************** */
 

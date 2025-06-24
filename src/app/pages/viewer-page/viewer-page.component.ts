@@ -21,8 +21,9 @@ import { Router } from '@angular/router'; // ✅ Import Router
 })
 export class ViewerPageComponent implements AfterViewInit {
 
-  constructor(private router: Router) {} // ✅ Inject it
+  constructor(private router: Router) {}
 
+  @ViewChild(ViewerComponent) viewerRef?: ViewerComponent;
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
 
@@ -42,6 +43,7 @@ export class ViewerPageComponent implements AfterViewInit {
       this.startTutorial();
       localStorage.setItem('hasSeenTutorial', 'true');
     }
+    console.log('ViewerComponent initialized:', this.viewerRef);
   }
 
   logToConsole(message: string): void {
@@ -185,9 +187,7 @@ openBugReport() {
   this.router.navigate(['/bug-report']); // Make sure route exists
 }
 
-// ============================
-// Shepherd Tutorial
-// ============================
+// ************* Shepherd Tutorial **********************
 startTutorial(): void {
   const tour = new Shepherd.Tour({
     useModalOverlay: true,
@@ -304,4 +304,12 @@ startTutorial(): void {
   tour.start();
 }
 
+// VR Integration
+enterVRMode() {
+    this.viewerRef?.enterVR();
+  }
+
+  exitVRMode() {
+    this.viewerRef?.exitVR();
+  }
 }
