@@ -116,7 +116,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   private scene!: THREE.Scene;
   private camera!: THREE.PerspectiveCamera;
-  private renderer!: THREE.WebGLRenderer;
+  public renderer!: THREE.WebGLRenderer;
   //private controls!: PointerLockControls;
   private clock = new THREE.Clock();
   private objects: THREE.Object3D[] = [];

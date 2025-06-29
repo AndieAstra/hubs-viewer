@@ -10,27 +10,48 @@ import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { FormsModule } from '@angular/forms';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
-import { Router } from '@angular/router'; // ✅ Import Router
+import { Router } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-viewer-page',
   standalone: true,
-  imports: [UploaderComponent, ViewerComponent, FormsModule],
+  imports: [
+    UploaderComponent,
+    ViewerComponent,
+    FormsModule,
+    TranslateModule
+  ],
   templateUrl: './viewer-page.component.html',
   styleUrls: ['./viewer-page.component.scss']
 })
 export class ViewerPageComponent implements AfterViewInit {
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private translate: TranslateService
+  ) {
+    const savedLang = localStorage.getItem('preferredLang') as 'en' | 'es' || 'en';
+    this.currentLang = savedLang;
+    this.translate.setDefaultLang('en');
+    this.translate.use(this.currentLang);
+  }
 
   @ViewChild(ViewerComponent) viewerRef?: ViewerComponent;
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
 
+  @HostListener('document:fullscreenchange')
+  onFullscreenChange() {
+    this.resizeCanvas();
+  }
+
   selectedFile?: File;
   sidebarCollapsed = false;
   showConsole = true;
   consoleMessages: string[] = [];
+
+  currentLang: 'en' | 'es' = 'en';
 
   ngAfterViewInit() {
     this.resizeCanvas();
@@ -41,8 +62,8 @@ export class ViewerPageComponent implements AfterViewInit {
 
     if (!localStorage.getItem('hasSeenTutorial')) {
       this.startTutorial();
-      localStorage.setItem('hasSeenTutorial', 'true');
     }
+
     console.log('ViewerComponent initialized:', this.viewerRef);
   }
 
@@ -62,24 +83,62 @@ export class ViewerPageComponent implements AfterViewInit {
     this.resizeCanvas();
   }
 
-  resizeCanvas() {
-    if (!this.canvasRef) return;
+  // resizeCanvas() {
+  //   if (!this.canvasRef) return;
 
-    const canvas = this.canvasRef.nativeElement;
-    const container = canvas.parentElement;
+  //   const canvas = this.canvasRef.nativeElement;
+  //   const container = canvas.parentElement;
 
-    if (container) {
-      const width = container.clientWidth;
-      const height = container.clientHeight;
+  //   if (container) {
+  //     const width = container.clientWidth;
+  //     const height = container.clientHeight;
 
-      canvas.width = width;
-      canvas.height = height;
+  //     canvas.width = width;
+  //     canvas.height = height;
 
-      if (this.viewer?.onResize) {
-        this.viewer.onResize(width, height);
-      }
-    }
+  //     if (this.viewer?.onResize) {
+  //       this.viewer.onResize(width, height);
+  //     }
+  //   }
+  // }
+
+// resizeCanvas() {
+//   const canvas = this.canvasRef.nativeElement;
+//   const container = canvas.parentElement;
+//   if (container) {
+//     const width = container.clientWidth;
+//     const height = container.clientHeight;
+
+//     canvas.width = width;
+//     canvas.height = height;
+
+//     if (this.viewer?.onResize) {
+//       this.viewer.onResize(width, height);
+//     }
+
+//     this.viewer?.renderer?.setSize(width, height, false);
+//   }
+// }
+
+resizeCanvas() {
+  if (!this.canvasRef || !this.viewer) return;
+
+  const canvas = this.canvasRef.nativeElement;
+  const container = canvas.parentElement;
+
+  if (container) {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    this.viewer.onResize?.(width, height);
+    this.viewer.renderer?.setSize?.(width, height); // ✅ Ensures Three.js resizes properly
   }
+}
+
+
 
   onFileLoaded(file: File): void {
     this.selectedFile = file;
@@ -166,7 +225,7 @@ export class ViewerPageComponent implements AfterViewInit {
 
   updateModelSize(value: number): void {
     this.viewer?.updateModelSize?.(value);
-    this.logToConsole(`Updated eye level to ${value}`);
+    this.logToConsole(`Updated model size to ${value}`);
   }
 
   onModelHeightInput(event: Event): void {
@@ -179,137 +238,142 @@ export class ViewerPageComponent implements AfterViewInit {
     this.logToConsole(`Updated model height to ${value}`);
   }
 
+  openBugReport() {
+    this.router.navigate(['/bug-report']);
+  }
 
-// ************* Bug Report **********************
+  startTutorial(): void {
+    const t = (key: string) => this.translate.instant(key);
 
-openBugReport() {
-  // Navigate to the bug report page or open a modal
-  this.router.navigate(['/bug-report']); // Make sure route exists
-}
-
-// ************* Shepherd Tutorial **********************
-startTutorial(): void {
-  const tour = new Shepherd.Tour({
-    useModalOverlay: true,
-    defaultStepOptions: {
-      cancelIcon: {
-        enabled: true
-      },
-      scrollTo: { behavior: 'smooth', block: 'center' },
-      classes: 'shepherd-theme-default',
-      modalOverlayOpeningPadding: 8,
-      modalOverlayOpeningRadius: 8,
-      canClickTarget: false,
-      when: {
-        show() {
-          if (this.el) {
-            document.body.appendChild(this.el);
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        scrollTo: { behavior: 'smooth', block: 'center' },
+        classes: 'shepherd-theme-default',
+        modalOverlayOpeningPadding: 8,
+        modalOverlayOpeningRadius: 8,
+        canClickTarget: false,
+        when: {
+          show() {
+            if (this.el) {
+              document.body.appendChild(this.el);
+            }
           }
         }
       }
-    }
-  });
+    });
 
-  tour.addStep({
-    id: 'welcome',
-    text: 'Welcome! Let’s take a quick tour of this 3D playground.',
-    buttons: [{ text: 'Next', action: tour.next }]
-  });
+    tour.addStep({
+      id: 'welcome',
+      text: t('TITLE'),
+      buttons: [{ text: 'Next', action: tour.next }]
+    });
 
-  tour.addStep({
-    id: 'upload',
-    attachTo: {
-      element: '.upload-instructions',
-      on: 'bottom'
-    },
-    text: 'Start by uploading a 3D model here.',
-    buttons: [
-      { text: 'Back', action: tour.back },
-      { text: 'Next', action: tour.next }
-    ]
-  });
+    tour.addStep({
+      id: 'upload',
+      attachTo: { element: '.upload-instructions', on: 'bottom' },
+      text: t('UPLOAD_INSTRUCTION') + '. ' + t('MOVEMENT_TIPS'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next }
+      ]
+    });
 
-  tour.addStep({
-    id: 'scene-controls',
-    attachTo: {
-      element: '.sidebar-left',
-      on: 'right'
-    },
-    text: 'Use these buttons to save, load, and reset your scene.',
-    buttons: [
-      { text: 'Back', action: tour.back },
-      { text: 'Next', action: tour.next }
-    ]
-  });
+    tour.addStep({
+      id: 'scene-controls',
+      attachTo: { element: '.sidebar-left', on: 'right' },
+      text: t('SCENE_SETTINGS'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next }
+      ]
+    });
 
-  tour.addStep({
-    id: 'canvas',
-    attachTo: {
-      element: '.canvas-container',
-      on: 'top'
-    },
-    text: 'Here’s where your 3D model will appear.',
-    buttons: [
-      { text: 'Back', action: tour.back },
-      { text: 'Next', action: tour.next }
-    ]
-  });
+    tour.addStep({
+      id: 'canvas',
+      attachTo: { element: '.canvas-container', on: 'top' },
+      text: t('MODEL_SETTINGS'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next }
+      ]
+    });
 
-  tour.addStep({
-    id: 'console',
-    attachTo: {
-      element: '.bottom-bar',
-      on: 'top'
-    },
-    text: 'Console logs and messages appear here.',
-    buttons: [
-      { text: 'Back', action: tour.back },
-      { text: 'Next', action: tour.next }
-    ]
-  });
+    tour.addStep({
+      id: 'console',
+      attachTo: { element: '.bottom-bar', on: 'top' },
+      text: t('CONSOLE'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next }
+      ]
+    });
 
-  tour.addStep({
-    id: 'model-camera-controls',
-    attachTo: {
-      element: '.sidebar-right',
-      on: 'left'
-    },
-    text: 'Change your model and camera settings here.',
-    buttons: [
-      { text: 'Back', action: tour.back },
-      { text: 'Done', action: tour.complete }
-    ]
-  });
+    tour.addStep({
+      id: 'model-camera-controls',
+      attachTo: { element: '.sidebar-right', on: 'left' },
+      text: `${t('CAMERA_MOVEMENT')}, ${t('SIZE')}, ${t('HEIGHT')}`,
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Done', action: tour.complete }
+      ]
+    });
 
-  // Set localStorage when the tour completes or is cancelled
-  const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
-  tour.on('complete', markTutorialSeen);
-  tour.on('cancel', markTutorialSeen);
+    const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
+    tour.on('complete', markTutorialSeen);
+    tour.on('cancel', markTutorialSeen);
 
-  // Highlight the current step's target element
-  tour.on('show', () => {
-    const currentStep = tour.getCurrentStep();
-    const el = currentStep?.options.attachTo?.element;
-    if (typeof el === 'string') {
-      document.querySelector(el)?.classList.add('shepherd-highlight');
-    }
-  });
+    tour.on('show', () => {
+      const currentStep = tour.getCurrentStep();
+      const el = currentStep?.options.attachTo?.element;
+      if (typeof el === 'string') {
+        document.querySelector(el)?.classList.add('shepherd-highlight');
+      }
+    });
 
-  // Remove highlight from all elements
-  tour.on('hide', () => {
-    document.querySelectorAll('.shepherd-highlight')
-      .forEach(el => el.classList.remove('shepherd-highlight'));
-  });
+    tour.on('hide', () => {
+      document.querySelectorAll('.shepherd-highlight')
+        .forEach(el => el.classList.remove('shepherd-highlight'));
+    });
 
-  tour.start();
+    tour.start();
+  }
+
+  // enterVRMode() {
+  //   this.viewerRef?.enterVR();
+  // }
+
+enterVRMode() {
+  this.viewerRef?.enterVR();
+
+  // Apply forced styles if necessary
+  const canvas = this.canvasRef?.nativeElement;
+  if (canvas) {
+    Object.assign(canvas.style, {
+      width: '100vw',
+      height: '100vh',
+      position: 'absolute',
+      top: '0',
+      left: '0',
+      display: 'block',
+    });
+  }
+
+  // Resize again after small delay (some mobile browsers need this)
+  setTimeout(() => this.resizeCanvas(), 200);
 }
 
-// VR Integration
-enterVRMode() {
-    this.viewerRef?.enterVR();
-  }
 
   exitVRMode() {
     this.viewerRef?.exitVR();
   }
+
+
+switchLanguage(lang: 'en' | 'es'): void {
+  this.currentLang = lang;
+  this.translate.use(lang);
+  localStorage.setItem('preferredLang', lang);
+}
+
 }

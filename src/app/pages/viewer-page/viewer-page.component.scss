@@ -52,11 +52,14 @@ canvas {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: space-between; // ✅ aligns language switcher left or right
+  align-items: center;
   margin-bottom: 12px;
   overflow-x: auto;
-  padding: 8px 0;
+  padding: 8px 16px;
 }
+
+
 
 .sidebar-button-row .kid-button {
   width: 100px;
@@ -86,16 +89,29 @@ canvas {
   min-height: 0;
 }
 
+// .canvas-container {
+//   position: relative;
+//   flex: 1 1 auto;
+//   display: flex;
+//   background-color: transparent;
+//   overflow: hidden;
+//   min-height: 0;
+//   min-width: 0;
+//   border-radius: 12px;
+// }
+
 .canvas-container {
   position: relative;
-  flex: 1 1 auto;
   display: flex;
-  background-color: transparent;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  background: black;
   overflow: hidden;
-  min-height: 0;
-  min-width: 0;
-  border-radius: 12px;
 }
+
 
 .canvas-container canvas {
   position: absolute;
@@ -332,4 +348,47 @@ body::after {
   font-size: 12px;
   font-family: monospace;
   display: none; // change to block to enable
+}
+
+/* ===================== LANGUAGE TOOL ======================================= */
+
+.language-switcher {
+  display: flex;
+  gap: 8px;
+
+  .kid-button {
+    font-size: 14px;
+    height: 50px;
+    width: 60px;
+    padding: 6px 8px;
+    border-radius: 8px;
+  }
+
+  .active {
+    background-color: #ffe680;
+    font-weight: bold;
+  }
+}
+
+/* ===================== Fix for VR Screen ======================================= */
+
+// 🧷 When fullscreen is active, make the container and canvas fill the screen
+:fullscreen,
+:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  background: black !important;
+}
+
+canvas:fullscreen,
+canvas:-webkit-full-screen {
+  width: 100vw !important;
+  height: 100vh !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
 }
