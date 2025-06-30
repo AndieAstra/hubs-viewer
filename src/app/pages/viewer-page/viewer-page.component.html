@@ -2,41 +2,35 @@
 
   <!-- 🔝 Top Toolbar -->
   <header class="top-toolbar">
-    <div class="toggle-sidebar"></div>
-
     <div class="toolbar-center">
       <div class="upload-instructions">
         <p><strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, SPACE to jump.</p>
         <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
       </div>
     </div>
-
-<!-- 🎛️ Top Buttons -->
-
-
-<div class="sidebar-button-row">
-  <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
-  <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
-
-<div class="mobile-only-buttons">
-  <button class="kid-button green" (click)="enterVRMode()">🕶 Enter VR</button>
-
-  @if(viewerRef?.isVRMode) {
-    <button class="kid-button danger" (click)="exitVRMode()">🚪 Exit VR</button>
-  }
-</div>
-
-</div>
-
-
-
   </header>
 
-  <!-- 🧱 Main Layout -->
+  <!-- 🧱 Main Body: Sidebar + Canvas -->
   <div class="main-body">
 
-    <!-- 📁 Sidebar Left -->
-    <aside class="sidebar-left" [class.collapsed]="sidebarCollapsed">
+    <!-- 📁 Left Sidebar: Buttons + Sliders -->
+    <aside class="sidebar-left">
+
+      <!-- 🎛️ Top Buttons -->
+      <div class="sidebar-button-row">
+        <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
+        <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
+      </div>
+
+      <!-- 📱 Mobile VR Buttons -->
+      <div class="mobile-only-buttons">
+        <button class="kid-button green" (click)="enterVRMode()">🕶 Enter VR</button>
+        @if(viewerRef?.isVRMode) {
+          <button class="kid-button danger" (click)="exitVRMode()">🚪 Exit VR</button>
+        }
+      </div>
+
+      <!-- 🔧 Scene Buttons -->
       <h4>Scene Settings</h4>
       <button class="kid-button" (click)="resetView()">
         <img src="assets/icons/new_rotate.png" alt="Reset" />
@@ -51,6 +45,7 @@
         <span>Load Scene</span>
       </button>
 
+      <!-- 💡 Lighting -->
       <h4>Lighting</h4>
       <button class="kid-button green" (click)="toggleLightcolor()">
         <img src="assets/icons/reset.png" alt="Light Color" />
@@ -65,16 +60,8 @@
         <label for="sunlight">☀️ Sunlight</label>
         <input type="range" (input)="onSunlightInput($event)">
       </div>
-    </aside>
 
-      <!-- 🖥 Canvas Center -->
-      <div class="canvas-container">
-        <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
-      </div>
-
-
-    <!-- 🛠 Sidebar Right -->
-    <aside class="sidebar-right">
+      <!-- 📐 Model Controls -->
       <h4>Model Settings</h4>
       <div class="kid-slider">
         <label for="modelSize">📏 Size</label>
@@ -85,6 +72,7 @@
         <input type="range" (input)="onModelHeightInput($event)">
       </div>
 
+      <!-- 🎥 Camera Controls -->
       <h4>Camera Movement</h4>
       <div class="kid-slider">
         <label for="speed">🏃 Speed</label>
@@ -94,10 +82,17 @@
         <label for="eyeLevel">👁️ Eye Level</label>
         <input type="range" (input)="onEyeLevelInput($event)">
       </div>
+
     </aside>
+
+    <!-- 🖼️ Canvas Display -->
+    <div class="canvas-container">
+      <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
+    </div>
+
   </div>
 
-  <!-- 📌 Bottom Panel -->
+  <!-- 📌 Bottom Console -->
   <footer class="bottom-bar">
     <div class="tabs">
       <button (click)="toggleConsole()">
@@ -119,4 +114,5 @@
       </div>
     }
   </footer>
+
 </div>
