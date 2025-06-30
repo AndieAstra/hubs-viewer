@@ -9,7 +9,8 @@
   },
 
   "UPLOAD": {
-    "INSTRUCTIONS": "Choose your 3D model (glb), then use the WASD keys to move around, SPACE to jump."
+    "INSTRUCTIONS": "Choose your 3D model (glb), then use the WASD keys to move around, SPACE to jump.",
+    "BUTTON_LABEL": "Upload Model"
   },
 
     "INSTRUCTION_THREE": {
@@ -17,6 +18,7 @@
   },
 
   "BUTTONS": {
+    "TOGGLE_WIREFRAME": "Toggle Wireframe",
     "TUTORIAL": "🎓 Tutorial",
     "BUG_REPORT": "🐞 Something not working?",
     "ENTER_VR": "🕶 Enter VR",
@@ -48,14 +50,107 @@
   },
 
 
-  "TITLE_SHEPHARD": "Virtual Agriculture System Demo",
-  "UPLOAD_INSTRUCTION": "Choose your 3D model (glb)",
-  "MOVEMENT_TIPS": "then use the WASD keys to move and SPACE to jump.",
-  "SCENE_SETTINGS": "Scene Settings",
-  "MODEL_SETTINGS": "Model Settings",
-  "CONSOLE_SHEPHARD": "Console",
-  "CAMERA_MOVEMENT": "Camera Movement",
-  "SIZE": "Size",
-  "HEIGHT": "Height"
+  "START_TUTORIAL": "Welcome to the editor! Let’s take a quick tour.",
+
+  "UPLOAD_INSTRUCTION": "Start by uploading a 3D model (glb) here. Then use the WASD keys to move and SPACE to jump.",
+
+  "SCENE_SETTINGS": "Use these buttons to save, load, and reset your scene.",
+
+  "MODEL_SETTINGS": "Here is where your 3D model will appear.",
+
+  "CONSOLE_SHEPHARD": "Console logs and messages appear here.",
+
+  "FINISH_TUTORIAL": "Congrats! This is the end of the tutorial. Let's get to making your virtual farming system."
+  ,
+
+  "CONTACT": {
+    "TITLE": "📬 Send Us a Message",
+    "INFO_TEXT": "Hey there! We’d love to hear from you. Please ask an adult to help you fill this out. 🧑‍🤝‍🧑",
+    "EMAIL_LABEL": "📧 Your Email (With a Parent):",
+    "EMAIL_PLACEHOLDER": "you@example.com",
+    "MESSAGE_LABEL": "💡 What do you want to share?",
+    "MESSAGE_PLACEHOLDER": "Tell us your ideas, questions, or bugs!",
+    "SEND_BUTTON": "Send Message 🚀",
+    "THANK_YOU_TITLE": "🎉 Yay! Message Sent!",
+    "THANK_YOU_TEXT": "Thanks for reaching out! We'll write back to {{ email }} soon.",
+    "SEND_ANOTHER_BUTTON": "Send Another Message"
+
+},
+
+
+  "BUG_REPORT": {
+    "TITLE": "🐞 Report a Bug",
+    "LABEL_TITLE": "Bug Title:",
+    "LABEL_DESCRIPTION": "Description:",
+    "LABEL_STEPS": "Steps to Reproduce:",
+    "LABEL_BROWSER": "Browser Info:",
+    "LABEL_SCREENSHOT": "Screenshot:",
+    "BUTTON_SUBMIT": "Submit Bug",
+    "SUCCESS_MESSAGE": "Thank you! Your bug has been submitted."
+  },
+
+
+  "ERRORS": {
+    "RENDERER_NOT_AVAILABLE": "Renderer not available — possibly failed to create WebGL context",
+    "DROP_REPLACE_CONFIRM": "Replace current scene with new model?",
+    "WEBGL_CREATION_FAILED": "WebGLRenderer creation failed:",
+    "WEBGL_INIT_FAIL_ALERT": "WebGL could not initialize. Try restarting your browser or switching to Chrome.",
+    "MODEL_LOAD_ERROR_ALERT": "❌ Error loading model. Please try again with a proper GLB format.",
+    "FILE_READ_FAIL_ALERT": "❌ Failed to read file. Please try again.",
+    "MODEL_LOAD_FAIL": "Failed to load model:",
+    "NO_AUTOSAVED_SCENE": "No autosaved scene found in localStorage.",
+    "MODEL_MISSING_BASE64": "Model {{modelName}} missing base64 data",
+    "MODEL_LOAD_BASE64_ERROR": "Error loading model from base64:",
+    "SCENE_LOAD_LOCALSTORAGE_ERROR": "Failed to load scene from localStorage:",
+    "SCENE_SAVE_LOCALSTORAGE_ERROR": "Failed to save scene to localStorage:",
+    "FULLSCREEN_FAILED": "Fullscreen failed:",
+    "ORIENTATION_LOCK_FAILED": "Orientation lock failed:",
+    "ORIENTATION_LOCK_UNAVAILABLE": "Orientation lock not available:",
+    "EXIT_FULLSCREEN_FAILED": "Exit fullscreen failed",
+    "UNLOCK_ORIENTATION_FAILED": "Unlock orientation failed",
+     "FAILED_LOAD_MODEL": "Failed to load model: {{fileName}}",
+    "MODEL_EXPORT_ERROR": "Error exporting model"
+  },
+
+  "MESSAGES": {
+    "SCENE_LOADED_LOCALSTORAGE": "Scene loaded from localStorage with base64 models.",
+    "SCENE_EXPORTED": "Scene exported successfully!",
+    "SCENE_EXPORT_STARTED": "Scene export started...",
+    "VIEW_RESET": "View reset!",
+    "WIREFRAME_TOGGLED": "Wireframe toggled!",
+    "MODEL_CLEARED": "Model cleared!",
+    "VR_MOBILE_ONLY": "VR mode is only available on mobile devices.",
+    "ENTER_VR_CONFIRM": "Enter VR mode? Place your phone into a viewer like Google Cardboard.",
+    "MODEL_PLACEMENT_MODE_ACTIVE": "Model placement mode active. Click to place.",
+    "TRANSLATE_MODE_ACTIVATED": "Translate mode activated",
+    "ROTATE_MODE_ACTIVATED": "Rotate mode activated",
+    "SCALE_MODE_ACTIVATED": "Scale mode activated",
+    "CLICK_PLACE_MODEL": "Click anywhere to place a model!",
+    "GRID_SHOWN": "Grid shown",
+    "GRID_HIDDEN": "Grid hidden",
+    "SCENE_CLEARED_CONFIRM": "Are you sure you want to remove all models?",
+    "SCENE_CLEARED": "Scene cleared!",
+    "SCENE_EXPORT_COMPLETE": "Scene export complete."
+  },
+
+  "VIEWER": {
+    "INIT_LOG": "ViewerComponent initialized: {{viewerRef}}",
+    "FILE_LOADED": "File loaded: {{fileName}}",
+    "RESET_VIEW": "Reset camera view.",
+    "TOGGLE_WIREFRAME": "Toggled wireframe.",
+    "CLEAR_MODEL": "Cleared model.",
+    "SAVE_SCENE": "Saved scene.",
+    "LOAD_SCENE": "Loaded scene.",
+    "TOGGLE_ROOM_LIGHT": "Toggled room light.",
+    "TOGGLE_SUNLIGHT_COLOR": "Toggled sunlight color.",
+    "UPDATED_SUNLIGHT_VALUE": "Updated sunlight value: {{value}}",
+    "UPDATED_CAMERA_SPEED": "Updated camera speed to {{value}}",
+    "UPDATED_MODEL_SIZE": "Updated model size to {{value}}",
+    "UPDATED_MODEL_HEIGHT": "Updated model height to {{value}}"
+  },
+
+  "UPLOADER": {
+    "BUTTON_LABEL": "Upload your model"
+  }
 
 }

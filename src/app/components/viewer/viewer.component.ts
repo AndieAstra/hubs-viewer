@@ -222,7 +222,8 @@ ngAfterViewInit() {
 
   // ✅ SAFELY SETUP canvas + renderer DOM
   if (!this.renderer || !this.renderer.domElement) {
-    console.warn('Renderer not available — possibly failed to create WebGL context');
+    const msg = this.translate.instant('ERRORS.RENDERER_NOT_AVAILABLE');
+    console.warn(msg);
     return;
   }
 
@@ -268,14 +269,14 @@ Object.assign(canvas.style, {
   });
 
   canvas.addEventListener('drop', (event) => {
-    event.preventDefault();
-    const file = event.dataTransfer?.files?.[0];
-    if (file && file.name.endsWith('.glb')) {
-      if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
-      this.clearScene();
-      this.loadGLB(file);
-    }
-  });
+  event.preventDefault();
+  const file = event.dataTransfer?.files?.[0];
+  if (file && file.name.endsWith('.glb')) {
+    if (this.sceneLoaded && !confirm(this.translate.instant('ERRORS.DROP_REPLACE_CONFIRM'))) return;
+    this.clearScene();
+    this.loadGLB(file);
+  }
+});
 
   // ✅ Raycasting click handler
   canvas.addEventListener('click', (event) => {
@@ -318,13 +319,9 @@ Object.assign(canvas.style, {
   this.scene.add(this.gridHelper);
   this.gridHelper.visible = this.showGrid;
 
-  // ****************************************************************************
-
   // ✅ Stereo VR effect
   this.stereoEffect = new StereoEffect(this.renderer);
   this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
-
- // ****************************************************************************
 
   // ✅ VR auto-toggle on mobile orientation
   window.addEventListener('orientationchange', () => {
@@ -367,12 +364,12 @@ private initScene() {
     this.renderer.shadowMap.enabled = false;
     container.appendChild(this.renderer.domElement);
 
-    // ✅ Touch compatibility
+     // ✅ Touch compatibility
     this.renderer.domElement.style.touchAction = 'manipulation';
     this.renderer.domElement.style.pointerEvents = 'auto';
   } catch (e) {
-    console.error('WebGLRenderer creation failed:', e);
-    alert('WebGL could not initialize. Try restarting your browser or switching to Chrome.');
+    console.error(this.translate.instant('ERRORS.WEBGL_CREATION_FAILED'), e);
+    alert(this.translate.instant('ERRORS.WEBGL_INIT_FAIL_ALERT'));
     return;
   }
 
@@ -510,16 +507,18 @@ public loadGLB(file: File): void {
 
       });
     } catch {
-      alert('❌ Error loading model. Please try again with a proper GLB format.');
+      alert(this.translate.instant('ERRORS.MODEL_LOAD_ERROR_ALERT'));
     }
   };
 
   reader.onerror = () => {
-    alert('❌ Failed to read file. Please try again.');
+    alert(this.translate.instant('ERRORS.FILE_READ_FAIL_ALERT'));
   };
 
   reader.readAsArrayBuffer(file);
 }
+
+// ******************************************************************************************
 
 uploadSceneFromFile(file: File): void {
   const reader = new FileReader();
@@ -599,10 +598,9 @@ uploadSceneFromFile(file: File): void {
 
         URL.revokeObjectURL(url);
       } catch (error) {
-        console.error(`Failed to load model: ${model.fileName}`, error);
+        console.error(this.translate.instant('ERRORS.FAILED_LOAD_MODEL', { fileName: model.fileName }), error);
       }
     }
-
     this.sceneLoaded = true;
   };
 
@@ -613,7 +611,7 @@ private loadSceneFromLocalStorage(): void {
 
   const raw = localStorage.getItem('autosavedScene');
   if (!raw) {
-    console.warn('No autosaved scene found in localStorage.');
+     console.warn(this.translate.instant('ERRORS.NO_AUTOSAVED_SCENE'));
     return;
   }
 
@@ -653,7 +651,7 @@ private loadSceneFromLocalStorage(): void {
 
       sceneData.models.forEach((modelData: any) => {
         if (!modelData.glbBase64) {
-          console.warn(`Model ${modelData.name} missing base64 data`);
+          console.warn(this.translate.instant('ERRORS.MODEL_MISSING_BASE64', { modelName: modelData.name }));
           return;
         }
 
@@ -678,14 +676,14 @@ private loadSceneFromLocalStorage(): void {
           this.scene.add(model);
           this.objects.push(model);
         }, (error) => {
-          console.error('Error loading model from base64:', error);
+          console.error(this.translate.instant('ERRORS.MODEL_LOAD_BASE64_ERROR'), error);
         });
       });
     }
 
-    console.log('Scene loaded from localStorage with base64 models.');
+    console.log(this.translate.instant('MESSAGES.SCENE_LOADED_LOCALSTORAGE'));
   } catch (err) {
-    console.error('Failed to load scene from localStorage:', err);
+     console.error(this.translate.instant('ERRORS.SCENE_LOAD_LOCALSTORAGE_ERROR'), err);
   }
 }
 
@@ -734,8 +732,8 @@ saveScene(): void {
       link.click();
       URL.revokeObjectURL(url);
 
-      this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
-      console.log('Scene export complete.');
+      this.snackBar.open(this.translate.instant('MESSAGES.SCENE_EXPORTED'), 'OK', { duration: 3000 });
+      console.log(this.translate.instant('MESSAGES.SCENE_EXPORT_COMPLETE'));
       return;
     }
 
@@ -779,17 +777,16 @@ saveScene(): void {
 
         reader.readAsArrayBuffer(glbBlob);
       },
-      (error) => {
-        console.error('Error exporting model', error);
-        exportNextModel(index + 1); // Skip and continue with next model
-      },
-      { binary: true }
-    );
-  };
 
-  console.log('Scene export started...');
-  exportNextModel(0);
-}
+(error) => {
+  console.error(this.translate.instant('ERRORS.MODEL_EXPORT_ERROR'), error);
+  exportNextModel(index + 1); // Skip and continue with next model
+},
+{ binary: true }
+);
+console.log(this.translate.instant('MESSAGES.SCENE_EXPORT_STARTED'));
+exportNextModel(0);
+}}
 
 //autosave
 private saveSceneToLocalStorage(): void {
@@ -847,11 +844,17 @@ private saveSceneToLocalStorage(): void {
       }
     };
 
+// ******************************************************************************************
+
+// 9 of 20
+
     localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
   } catch (err) {
-    console.error('Failed to save scene to localStorage:', err);
+    console.error(this.translate.instant('ERRORS.SCENE_SAVE_LOCALSTORAGE_ERROR'), err);
   }
 }
+
+// ******************************************************************************************
 
 private isColliding(position: THREE.Vector3): boolean {
   // Player height and half-height for collision box center calculation
@@ -925,14 +928,14 @@ clearScene(): void {
 // Need to update to current camera view straight ahead. NOT the floor!
 // Resets camera or scene view
 
+
 resetView(): void {
     // Implement your reset logic here (e.g., reset camera position)
     this.camera.position.set(0, this.cameraHeight, 0);
     this.camera.lookAt(0, 0, 0);
     this.controls.unlock();  // Or however you want to reset controls
-    this.snackBar.open('View reset!', 'OK', { duration: 2000 });
+    this.snackBar.open(this.translate.instant('MESSAGES.VIEW_RESET'), 'OK', { duration: 2000 });
   }
-// ************************************************************************
 
 // Toggles wireframe mode on loaded models
 toggleWireframe(): void {
@@ -943,7 +946,8 @@ toggleWireframe(): void {
       child.material.wireframe = !child.material.wireframe;
     }
   });
-  this.snackBar.open('Wireframe toggled!', 'OK', { duration: 2000 });
+
+  this.snackBar.open(this.translate.instant('MESSAGES.WIREFRAME_TOGGLED'), 'OK', { duration: 2000 });
 }
 
 // Clears the loaded model(s)
@@ -951,7 +955,7 @@ clearModel(): void {
   if (this.uploadedModel) {
     this.scene.remove(this.uploadedModel);
     this.uploadedModel = null;
-    this.snackBar.open('Model cleared!', 'OK', { duration: 2000 });
+    this.snackBar.open(this.translate.instant('MESSAGES.MODEL_CLEARED'), 'OK', { duration: 2000 });
   }
 }
 
@@ -1096,11 +1100,11 @@ onResize(width?: number, height?: number): void {
 
 public enterVR(): void {
   if (!/Mobi|Android/i.test(navigator.userAgent)) {
-    this.snackBar.open('VR mode is only available on mobile devices.', 'OK', { duration: 3000 });
+     this.snackBar.open(this.translate.instant('MESSAGES.VR_MOBILE_ONLY'), 'OK', { duration: 3000 });
     return;
   }
 
-  if (!confirm('Enter VR mode? Place your phone into a viewer like Google Cardboard.')) {
+  if (!confirm(this.translate.instant('MESSAGES.ENTER_VR_CONFIRM'))) {
     return;
   }
 
@@ -1117,17 +1121,17 @@ public enterVR(): void {
 
   if (requestFullscreen) {
     requestFullscreen.call(container).catch((err: any) => {
-      console.warn('Fullscreen failed:', err);
+      console.warn(this.translate.instant('ERRORS.FULLSCREEN_FAILED'), err);
     });
   }
 
   // Orientation lock (Android Chrome only)
   try {
     (screen.orientation as any)?.lock?.('landscape').catch((err: any) => {
-      console.warn('Orientation lock failed:', err);
+      console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err);
     });
   } catch (err) {
-    console.warn('Orientation lock not available:', err);
+    console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
   }
 
   // Save original size/aspect
@@ -1166,12 +1170,12 @@ public exitVR(): void {
   try {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch((err: any) => {
-        console.warn('Exit fullscreen failed', err);
+        console.warn(this.translate.instant('ERRORS.EXIT_FULLSCREEN_FAILED'), err);
       });
     }
     (screen.orientation as any)?.unlock?.();
   } catch (e) {
-    console.warn('Unlock orientation failed', e);
+    console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
   }
 
   if (this.renderer && this.camera && this.originalSize) {
@@ -1181,7 +1185,7 @@ public exitVR(): void {
   }
 
   this.controls.enabled = true;
-  this.snackBar.open('Exited VR mode.', 'OK', { duration: 2000 });
+  this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
 
   // Restore browser history
   if (history.state?.vr) {
@@ -1201,34 +1205,34 @@ private renderVR = () => {
 
 enterModelPlacementMode(): void {
     this.isPlacingModel = true;
-    this.snackBar.open('Model placement mode active. Click to place.', 'OK', { duration: 3000 });
+    this.snackBar.open(this.translate.instant('MESSAGES.MODEL_PLACEMENT_MODE_ACTIVE'), 'OK', { duration: 3000 });
   }
 
 //************* User Friendly UI Buttons ******************* */
 
 setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
-    this.selectedTool = mode;
-    if (this.transformControls) {
-      this.transformControls.setMode(mode);
-      this.snackBar.open(`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode activated`, 'OK', {
-        duration: 2000,
-      });
-    }
+  this.selectedTool = mode;
+  if (this.transformControls) {
+    this.transformControls.setMode(mode);
+    const modeName = mode.charAt(0).toUpperCase() + mode.slice(1);
+    this.snackBar.open(this.translate.instant(`MESSAGES.${modeName.toUpperCase()}_MODE_ACTIVATED`), 'OK', { duration: 2000 });
   }
+}
 
 onAddModel(): void {
-  this.snackBar.open('Click anywhere to place a model!', 'OK', { duration: 3000 });
+  this.snackBar.open(this.translate.instant('MESSAGES.CLICK_PLACE_MODEL'), 'OK', { duration: 3000 });
   this.enterModelPlacementMode();
 }
 
 onToggleGrid(): void {
   this.showGrid = !this.showGrid;
   this.gridHelper.visible = this.showGrid;
-  this.snackBar.open(`Grid ${this.showGrid ? 'shown' : 'hidden'}`, 'OK', { duration: 2000 });
+  const msgKey = this.showGrid ? 'MESSAGES.GRID_SHOWN' : 'MESSAGES.GRID_HIDDEN';
+  this.snackBar.open(this.translate.instant(msgKey), 'OK', { duration: 2000 });
 }
 
 onClearScene(): void {
-  const confirmClear = confirm('Are you sure you want to remove all models?');
+  const confirmClear = confirm(this.translate.instant('MESSAGES.SCENE_CLEARED_CONFIRM'));
   if (!confirmClear) return;
 
   this.scene.children
@@ -1237,7 +1241,7 @@ onClearScene(): void {
       this.scene.remove(obj);
     });
 
-  this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
+  this.snackBar.open(this.translate.instant('MESSAGES.SCENE_CLEARED'), 'OK', { duration: 2000 });
 }
 
 toggleRoomLight() {

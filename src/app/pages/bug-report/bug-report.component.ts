@@ -1,11 +1,15 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-bug-report',
   templateUrl: './bug-report.component.html',
   standalone: true,
-  imports:[FormsModule],
+  imports:[
+    FormsModule,
+    TranslateModule
+  ],
   styleUrls: ['./bug-report.component.scss']
 })
 export class BugReportComponent {

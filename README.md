@@ -7,11 +7,17 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 ## 🧬 Stack
 
 * **Frontend Framework**: [Angular 17+](https://angular.io/)
+
 * **3D Graphics**: [Three.js](https://threejs.org/)
+
 * **Panorama Viewer**: Custom + [Marzipano-like](http://www.marzipano.net/)
+
 * **File Uploads**: Supports `.glb`/`.gltf` via drag-and-drop and uploader UI
+
 * **Offline Storage**: Local scene saving/loading
+
 * **UI**: Mobile-first CSS with responsive support for tablets/desktops
+
 * **VR Mode**: Cardboard-style split screen with `deviceorientation`, fullscreen, and stereo rendering
 
 ---

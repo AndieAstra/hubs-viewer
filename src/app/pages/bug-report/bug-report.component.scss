@@ -12,6 +12,11 @@
     color: #d32f2f;
   }
 
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+
   label {
     display: block;
     margin-top: 12px;
@@ -19,6 +24,7 @@
   }
 
   input[type="text"],
+  input[type="email"],
   textarea,
   input[type="file"] {
     width: 100%;
@@ -27,6 +33,11 @@
     border: 1px solid #ccc;
     border-radius: 6px;
     font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  textarea {
+    resize: vertical;
   }
 
   button {
@@ -38,6 +49,17 @@
     border-radius: 6px;
     cursor: pointer;
     font-weight: bold;
+    align-self: flex-start;
+    transition: background-color 0.3s ease;
+
+    &:disabled {
+      background-color: #f3a1a1;
+      cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+      background-color: #b71c1c;
+    }
   }
 
   .success {
