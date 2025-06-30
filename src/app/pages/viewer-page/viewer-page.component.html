@@ -4,86 +4,54 @@
   <header class="top-toolbar">
     <div class="toolbar-center">
       <div class="upload-instructions">
-
         <p><strong>{{ 'UPLOAD.INSTRUCTIONS' | translate }}</strong></p>
-
-
-      <button (click)="onUploadClick()">
-        {{ 'UPLOAD.BUTTON_LABEL' | translate }}
-      </button>
-
-      <input
-        type="file"
-        hidden
-        #fileInput
-        (change)="onFileChange($event)"
-        accept=".glb"
-      />
-
+        <button (click)="onUploadClick()">{{ 'UPLOAD.BUTTON_LABEL' | translate }}</button>
+        <input type="file" hidden #fileInput (change)="onFileChange($event)" accept=".glb" />
       </div>
     </div>
   </header>
 
-  <!-- 🧱 Main Body: Sidebar + Canvas -->
+  <!-- 🧱 Main Area: Sidebar + Canvas -->
   <div class="main-body">
 
-    <!-- 📁 Left Sidebar: Buttons + Sliders -->
+    <!-- 📁 Sidebar -->
     <aside class="sidebar-left">
 
-      <!-- 🎛️ Top Buttons -->
-
+      <!-- 🎛 Top Buttons -->
       <div class="sidebar-button-row">
-
-      <button class="kid-button purple" (click)="startTutorial()">
-        {{ 'BUTTONS.TUTORIAL' | translate }}
-      </button>
-
-      <button class="kid-button danger small" (click)="openBugReport()">
-        {{ 'BUTTONS.BUG_REPORT' | translate }}
-      </button>
-
+        <button class="kid-button purple" (click)="startTutorial()">{{ 'BUTTONS.TUTORIAL' | translate }}</button>
+        <button class="kid-button danger small" (click)="openBugReport()">{{ 'BUTTONS.BUG_REPORT' | translate }}</button>
       </div>
 
-
-      <!-- 📱 Mobile VR Buttons -->
+      <!-- 📱 Mobile VR -->
       <div class="mobile-only-buttons">
-
-      <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
-
-        @if(viewerRef?.isVRMode) {
-
-        <button class="kid-button danger" (click)="exitVRMode()">
-          {{ 'BUTTONS.EXIT_VR' | translate }}
-        </button>
-
+        <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
+        @if (viewerRef?.isVRMode) {
+          <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
         }
       </div>
 
-      <!-- 🔧 Scene Buttons -->
+      <!-- 🔧 Scene -->
       <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
-
       <button class="kid-button" (click)="toggleWireframe()">
-        <img src="assets/icons/new_rotate.png" alt="Reset" />
+        <img src="assets/icons/new_rotate.png" alt="Wireframe" />
         <span>{{ 'BUTTONS.TOGGLE_WIREFRAME' | translate }}</span>
       </button>
 
       <button class="kid-button" (click)="resetView()">
-        <img src="assets/icons/new_rotate.png" alt="Reset" />
+        <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
         <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
       </button>
-
 
       <button class="kid-button turquoise" (click)="save()">
         <img src="assets/icons/save.jpg" alt="Save" />
         <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
       </button>
 
-
       <button class="kid-button purple" (click)="load()">
         <img src="assets/icons/upload.png" alt="Load" />
         <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
       </button>
-
 
       <!-- 💡 Lighting -->
       <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
@@ -91,48 +59,51 @@
         <img src="assets/icons/reset.png" alt="Light Color" />
         <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
       </button>
+
       <button class="kid-button orange" (click)="toggleRoomLight()">
         <img src="assets/icons/wire.jpg" alt="Room Light" />
         <span>{{ 'BUTTONS.ROOM_LIGHT' | translate }}</span>
       </button>
 
       <div class="kid-slider">
-        <label for="sunlight">{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
-        <input type="range" (input)="onSunlightInput($event)">
+        <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
+        <input type="range" (input)="onSunlightInput($event)" />
       </div>
 
-      <!-- 📐 Model Controls -->
+      <!-- 📐 Model Settings -->
       <h4>{{ 'SECTIONS.MODEL_SETTINGS' | translate }}</h4>
       <div class="kid-slider">
-        <label for="modelSize">{{ 'SLIDERS.MODEL_SIZE' | translate }}</label>
-        <input type="range" (input)="onModelSizeInput($event)">
-      </div>
-      <div class="kid-slider">
-        <label for="modelHeight">{{ 'SLIDERS.MODEL_HEIGHT' | translate }}</label>
-        <input type="range" (input)="onModelHeightInput($event)">
+        <label>{{ 'SLIDERS.MODEL_SIZE' | translate }}</label>
+        <input type="range" (input)="onModelSizeInput($event)" />
       </div>
 
-      <!-- 🎥 Camera Controls -->
+      <div class="kid-slider">
+        <label>{{ 'SLIDERS.MODEL_HEIGHT' | translate }}</label>
+        <input type="range" (input)="onModelHeightInput($event)" />
+      </div>
+
+      <!-- 🎥 Camera Movement -->
       <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
       <div class="kid-slider">
-        <label for="speed">{{ 'SLIDERS.SPEED' | translate }}</label>
-        <input type="range" (input)="onSpeedInput($event)">
+        <label>{{ 'SLIDERS.SPEED' | translate }}</label>
+        <input type="range" (input)="onSpeedInput($event)" />
       </div>
+
       <div class="kid-slider">
-        <label for="eyeLevel">{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
-        <input type="range" (input)="onEyeLevelInput($event)">
+        <label>{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
+        <input type="range" (input)="onEyeLevelInput($event)" />
       </div>
 
     </aside>
 
-    <!-- 🖼️ Canvas Display -->
+    <!-- 🖼️ Canvas -->
     <div class="canvas-container">
       <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
     </div>
 
   </div>
 
-  <!-- 📌 Bottom Console -->
+  <!-- 📌 Footer Console -->
   <footer class="bottom-bar">
     <div class="tabs">
       <button (click)="toggleConsole()">
@@ -143,16 +114,13 @@
     @if (showConsole) {
       <div class="assets-browser">
         <div class="assets-tree">
-          <div class="error-bar">
-            <ul>
-              @for (message of consoleMessages; track message) {
-                <li>{{ message }}</li>
-              }
-            </ul>
-          </div>
+          <ul class="error-bar">
+            @for (message of consoleMessages; track message) {
+              <li>{{ message }}</li>
+            }
+          </ul>
         </div>
       </div>
     }
   </footer>
-
 </div>

@@ -2,10 +2,11 @@
   "TITLE": "Virtual Agriculture System DEMO",
 
   "NAV": {
+    "MENU": "Menu",
     "VIEWER": "3D Viewer",
-    "PANORAMA": "Panorama Viewer",
-    "CONTACT": "Contact Us",
-    "BUG": "Submit a Bug"
+    "PANORAMA": "Panorama",
+    "CONTACT": "Contact",
+    "BUG": "Bug Report"
   },
 
   "UPLOAD": {

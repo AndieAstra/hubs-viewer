@@ -1,14 +1,34 @@
-<div class="">
+<!-- Title and Language -->
+<div class="title">
   <h1>{{ 'TITLE' | translate }}</h1>
+  <div class="language-select">
     <button (click)="useLanguage('en')">English</button>
     <button (click)="useLanguage('es')">Español</button>
+  </div>
 </div>
 
+<!-- Navigation Menu -->
 <nav>
-  <button (click)="navigateTo('/3dviewer')">{{ 'NAV.VIEWER' | translate }}</button>
-  <button (click)="navigateTo('/panorama')">{{ 'NAV.PANORAMA' | translate }}</button>
-  <button (click)="navigateTo('/contact')">{{ 'NAV.CONTACT' | translate }}</button>
-  <button (click)="navigateTo('/bug-report')">{{ 'NAV.BUG' | translate }}</button>
+  <!-- Mobile Dropdown -->
+  <div class="dropdown-nav">
+    <button class="dropdown-toggle" (click)="toggleDropdown()">
+      ☰ {{ 'NAV.MENU' | translate }}
+    </button>
+    <div class="dropdown-content" [class.show]="dropdownOpen">
+      <button (click)="navigateTo('/3dviewer')">{{ 'NAV.VIEWER' | translate }}</button>
+      <button (click)="navigateTo('/panorama')">{{ 'NAV.PANORAMA' | translate }}</button>
+      <button (click)="navigateTo('/contact')">{{ 'NAV.CONTACT' | translate }}</button>
+      <button (click)="navigateTo('/bug-report')">{{ 'NAV.BUG' | translate }}</button>
+    </div>
+  </div>
+
+  <!-- Desktop Button Nav -->
+  <div class="desktop-nav">
+    <button (click)="navigateTo('/3dviewer')">{{ 'NAV.VIEWER' | translate }}</button>
+    <button (click)="navigateTo('/panorama')">{{ 'NAV.PANORAMA' | translate }}</button>
+    <button (click)="navigateTo('/contact')">{{ 'NAV.CONTACT' | translate }}</button>
+    <button (click)="navigateTo('/bug-report')">{{ 'NAV.BUG' | translate }}</button>
+  </div>
 </nav>
 
 <router-outlet></router-outlet>

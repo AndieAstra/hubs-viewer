@@ -2,10 +2,11 @@
   "TITLE": "DEMO del sistema de agricultura virtual",
 
   "NAV": {
+    "MENU": "Menú",
     "VIEWER": "Visor 3D",
-    "PANORAMA": "Visor de Panorama",
-    "CONTACT": "Contáctanos",
-    "BUG": "Reportar un Error"
+    "PANORAMA": "Panorama",
+    "CONTACT": "Contacto",
+    "BUG": "Reporte de Error"
   },
 
   "UPLOAD": {

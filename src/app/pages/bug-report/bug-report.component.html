@@ -1,6 +1,8 @@
 <div class="bug-form-container">
   <h2>{{ 'BUG_REPORT.TITLE' | translate }}</h2>
 
+  @if(!successMessage) {
+
   <form (ngSubmit)="submitBug()" #bugForm="ngForm" novalidate>
     <label for="title">{{ 'BUG_REPORT.LABEL_TITLE' | translate }}</label>
     <input id="title" name="title" [(ngModel)]="bug.title" required />
@@ -19,6 +21,7 @@
 
     <button type="submit" [disabled]="!bugForm.form.valid">{{ 'BUG_REPORT.BUTTON_SUBMIT' | translate }}</button>
   </form>
+}
 
 @if(successMessage) {
 

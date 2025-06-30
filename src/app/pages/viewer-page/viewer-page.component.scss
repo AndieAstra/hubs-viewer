@@ -1,341 +1,304 @@
-/* ===================== GLOBAL RESETS ===================== */
+// ------------------------- Variables -------------------------
+$bg-main: #fdf6e3;
+$sidebar-bg: #ff6f61;
+$sidebar-color: #fff;
+$button-bg: #ffeb3b;
+$button-border: #fbc02d;
+$button-shadow: rgba(0, 0, 0, 0.15);
+$accent-color: #00bcd4;
+$font-family: 'Nunito', 'Segoe UI', sans-serif;
+$radius: 12px;
+
+// ------------------------- Base -------------------------
 html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
+  margin: 0; padding: 0; height: 100%;
+  font-family: $font-family;
+  background: $bg-main;
   user-select: none;
-  touch-action: manipulation;
+  overflow: hidden;
 }
 
-app-root, .unity-layout {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: #fdf6e3;
-
-  /* Make sure Shepherd overlay displays above everything */
-  position: relative;
-  z-index: 0;
+.unity-layout {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header"
+    "content"
+    "footer";
+  background: $bg-main;
 }
 
-/* ===================== TOP TOOLBAR ===================== */
 .top-toolbar {
-  background-color: #d3d3d3;
-  padding: 8px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 3;  /* Above main content but below Shepherd overlay */
-  position: relative;
-}
-
-.toolbar-center {
+  grid-area: header;
+  background: #d3d3d3;
+  padding: 12px 20px;
   display: flex;
   justify-content: center;
+
+  .toolbar-center {
+    max-width: 700px;
+    width: 100%;
+    background: #eef6fa;
+    border-left: 6px solid $accent-color;
+    border-radius: $radius;
+    padding: 15px;
+    color: #333;
+    text-align: center;
+
+    button {
+      margin-top: 10px;
+      padding: 10px 18px;
+      font-weight: 700;
+      background: $accent-color;
+      color: white;
+      border: none;
+      border-radius: $radius;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background: darken($accent-color, 10%);
+      }
+    }
+  }
 }
 
-.upload-instructions {
-  padding: 10px;
-  background-color: #eef6fa;
-  border-left: 4px solid #00bcd4;
-  border-radius: 6px;
-  color: #333;
-  font-family: 'Segoe UI', sans-serif;
-  max-width: 600px;
-  text-align: center;
-}
-
-/* ===================== MAIN BODY ===================== */
 .main-body {
-  display: flex;
-  flex: 1;
-  overflow: visible; /* Allow overflow so Shepherd tooltips are visible */
-  min-height: 0;
-  position: relative;
-  z-index: 1;
-}
-
-/* ===================== SIDEBAR (LEFT) ===================== */
-.sidebar-left {
-  width: 280px;
-  padding: 16px;
-  background-color: #ff6f61;
-  color: white;
-  overflow-y: auto;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-  z-index: 1;
-}
-
-/* ===================== CANVAS CONTAINER (RIGHT) ===================== */
-.canvas-container {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-grow: 1;
-  width: 100%;
-  height: 100%;
-  background: black;
+  grid-area: content;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  height: calc(100vh - 124px); // header + footer height approx
   overflow: hidden;
 
-  padding: 12px;          // Add some padding to create space around canvas
-  box-sizing: border-box; // Make sure padding doesn't increase overall size
-  border: 2px solid #ccc; // Light gray border for subtle framing
-  border-radius: 8px;     // Rounded corners for nicer look
-  z-index: 1;
-}
-
-.canvas-container canvas {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: auto;
-  touch-action: none;
-  border-radius: 6px;    // Rounded corners inside the container
-}
-
-/* ===================== RESPONSIVE LAYOUT ===================== */
-@media (max-width: 1024px) {
-  .main-body {
-    flex-direction: column;
-    overflow: visible; /* Same reason as above */
-  }
-
-  .sidebar-left {
-    width: 100%;
-    flex-direction: row;
-    flex-wrap: wrap;
-    justify-content: center;
-    align-items: flex-start;
-  }
-
-  .canvas-container {
-    flex: 1 1 auto;
-    height: 70vh;
+  @media (max-width: 1024px) {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+    height: auto;
   }
 }
 
-/* ===================== SIDEBAR BUTTON GROUP ===================== */
-.sidebar-button-row {
+// ------------------------- Sidebar -------------------------
+.sidebar-left {
+  background: $sidebar-bg;
+  color: $sidebar-color;
+  padding: 20px;
+  overflow-y: auto;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  align-items: center;
-}
+  flex-direction: column;
+  gap: 20px;
 
-.sidebar-button-row .kid-button {
-  width: 100px;
-  height: 70px;
-}
+  h4 {
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    font-size: 1.15rem;
+  }
 
-/* ===================== MOBILE-ONLY VR BUTTONS ===================== */
-.mobile-only-buttons {
-  display: none;
-}
-
-@media screen and (max-width: 1024px) {
+  .sidebar-button-row,
   .mobile-only-buttons {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
-    margin-top: 10px;
+  }
+
+  .mobile-only-buttons {
+    display: none;
+
+    @media (max-width: 768px) {
+      display: flex;
+    }
+  }
+
+  .kid-slider {
+    background: #fff59d;
+    border: 3px solid $button-border;
+    border-radius: $radius;
+    padding: 12px 16px;
+    box-shadow: 0 5px 12px $button-shadow;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    label {
+      font-size: 14px;
+      color: #4a4a4a;
+      margin-bottom: 6px;
+    }
+
+    input[type='range'] {
+      width: 100%;
+      cursor: pointer;
+      accent-color: #ffca28;
+    }
   }
 }
 
-/* ===================== UI BUTTONS ===================== */
+// ------------------------- Buttons -------------------------
 .kid-button {
-  width: 70px;
-  height: 70px;
-  background-color: #ffeb3b;
-  border: 3px solid #fbc02d;
-  border-radius: 12px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
-  margin-bottom: 10px;
-  font-weight: bold;
-  text-align: center;
-  transition: transform 0.2s ease, background-color 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.kid-button img {
-  width: 28px;
-  height: 28px;
-  margin-bottom: 4px;
-  pointer-events: none;
-}
-
-.kid-button span {
+  background: $button-bg;
+  border: 3px solid $button-border;
+  border-radius: $radius;
+  box-shadow: 0 5px 12px $button-shadow;
+  width: 72px;
+  height: 72px;
   font-weight: 700;
-  font-size: 12px;
-  color: #4a4a4a;
-  user-select: none;
-}
-
-.kid-button:hover {
-  background-color: #fff176;
-  transform: scale(1.1);
-}
-
-.kid-button.small {
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 8px;
-}
-
-.kid-button.danger {
-  background-color: #ff8a80;
-  border-color: #d32f2f;
-  color: black;
-}
-
-.kid-button.danger span {
-  color: #c62828;
-}
-
-.kid-button.danger:hover {
-  background-color: #ff5252;
-}
-
-.kid-button.green    { background-color: #1bd915; border-color: #00b1fc; }
-.kid-button.purple   { background-color: #cc83f4; border-color: #00fcc5; }
-.kid-button.orange   { background-color: #d9a115; border-color: #6d8210; }
-.kid-button.blue     { background-color: #157ed9; border-color: #411082; }
-.kid-button.turquoise{ background-color: #e600ff; border-color: #411082; }
-
-.kid-button.selected {
-  outline: 4px solid #4caf50;
-  background-color: #c8e6c9;
-}
-
-.kid-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px #4a90e2;
-}
-
-/* ===================== SLIDERS ===================== */
-.kid-slider {
-  width: 100%;
-  background-color: #fff59d;
-  border: 3px solid #fbc02d;
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font-weight: bold;
-  gap: 4px;
-  margin-bottom: 12px;
-  position: relative;
-  z-index: 1;
-}
-
-.kid-slider label {
-  font-size: 12px;
-  color: #4a4a4a;
-}
-
-.kid-slider input[type="range"] {
-  width: 100%;
-  cursor: pointer;
-  accent-color: #ffca28;
-}
-
-/* ===================== BOTTOM CONSOLE ===================== */
-.bottom-bar {
-  background-color: #fdf6e3;
-  padding: 8px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 1;
-}
-
-.tabs button {
-  background-color: #00bcd4;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  margin-right: 8px;
-  border-radius: 8px 8px 0 0;
-  font-weight: bold;
-  cursor: pointer;
-  position: relative;
-  z-index: 1;
-}
-
-.assets-browser {
-  display: flex;
-  background-color: #00bcd4;
-  border-radius: 0 0 12px 12px;
-  padding: 12px;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.assets-tree {
-  flex: 1;
-  color: white;
-}
-
-.error-bar {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  max-height: 120px;
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 12px;
-  background: #fefefe;
-  border: 1px solid #ccc;
-  padding: 8px;
-  border-radius: 6px;
+  font-size: 0.8rem;
   color: #222;
-  position: relative;
-  z-index: 1;
-}
-
-.error-bar li {
-  padding: 2px 0;
-}
-
-/* ===================== LANGUAGE TOOL ===================== */
-.language-switcher {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
   justify-content: center;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
 
-  .kid-button {
-    font-size: 14px;
-    height: 50px;
-    width: 60px;
-    padding: 6px 8px;
-    border-radius: 8px;
-    position: relative;
-    z-index: 1;
+  img {
+    width: 28px;
+    height: 28px;
+    margin-bottom: 6px;
   }
 
-  .active {
-    background-color: #ffe680;
-    font-weight: bold;
+  &:hover {
+    background: lighten($button-bg, 10%);
+    transform: scale(1.1);
+  }
+
+  &.small {
+    width: 56px;
+    height: 56px;
+    font-size: 0.7rem;
+  }
+
+  &.danger {
+    background: #ff8a80;
+    border-color: #d32f2f;
+  }
+
+  &.green {
+    background: #1bd915;
+    border-color: #00b1fc;
+  }
+
+  &.purple {
+    background: #cc83f4;
+    border-color: #00fcc5;
+  }
+
+  &.orange {
+    background: #d9a115;
+    border-color: #6d8210;
+  }
+
+  &.turquoise {
+    background: #e600ff;
+    border-color: #411082;
+  }
+}
+
+// ------------------------- Canvas -------------------------
+.canvas-container {
+  background: black;
+  border-radius: $radius;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  canvas {
+    width: 100%;
+    height: 100%;
+    border-radius: 8px;
+    pointer-events: auto;
+  }
+
+  @media (max-width: 1024px) {
+    height: 70vh;
+  }
+}
+
+// ------------------------- Bottom Bar -------------------------
+.bottom-bar {
+  grid-area: footer;
+  background: $bg-main;
+  padding: 8px 16px;
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.1);
+
+  .tabs {
+    button {
+      background: $accent-color;
+      color: white;
+      padding: 8px 20px;
+      border: none;
+      border-radius: $radius $radius 0 0;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+
+      &:hover {
+        background: darken($accent-color, 10%);
+      }
+    }
+  }
+
+  .assets-browser {
+    background: white;
+    border-radius: 0 0 $radius $radius;
+    padding: 12px;
+    max-height: 140px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: #222;
+
+    li {
+      padding: 2px 0;
+    }
+  }
+}
+
+// ------------------------- Mobile Responsive -------------------------
+@media (max-width: 768px) {
+  .kid-button {
+    width: 60px;
+    height: 60px;
+    font-size: 0.7rem;
+
+    img {
+      width: 22px;
+      height: 22px;
+      margin-bottom: 4px;
+    }
+  }
+
+  .sidebar-left {
+    padding: 12px;
+    gap: 12px;
+  }
+}
+
+// ------------------------- VR Mode -------------------------
+:host-context(.vr-mode),
+body.vr-mode {
+  .canvas-container {
+    position: fixed !important;
+    top: 0; left: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9999;
+    border-radius: 0 !important;
+  }
+
+  .sidebar-left,
+  .top-toolbar,
+  .bottom-bar {
+    display: none !important;
+  }
+
+  body {
+    margin: 0;
+    background: black;
+    overflow: hidden;
   }
 }

@@ -39,8 +39,6 @@ export class BugReportComponent {
     if (this.bug.screenshot) {
       formData.append('screenshot', this.bug.screenshot);
     }
-
-    // TODO: Replace with real HTTP request to backend or bug tracking system
     console.log('Bug Submitted:', this.bug);
 
     this.successMessage = 'Thank you! Your bug has been submitted.';

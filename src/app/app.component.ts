@@ -12,6 +12,8 @@ import {TranslateModule, TranslateService} from "@ngx-translate/core";
 })
 export class AppComponent {
 
+dropdownOpen = false;
+
 constructor(
  private router: Router,
     private translate: TranslateService
@@ -40,4 +42,9 @@ constructor(
   navigateTo(path: string): void {
     this.router.navigate([path]);
   }
+
+  toggleDropdown(): void {
+    this.dropdownOpen = !this.dropdownOpen;
+  }
+
 }

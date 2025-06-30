@@ -1,8 +1,9 @@
 <div class="contact-container" [class.submitted]="submitted">
-  <h2>{{ 'CONTACT.TITLE' | translate }}</h2>
-  <p class="info-text">{{ 'CONTACT.INFO_TEXT' | translate }}</p>
 
   @if(!submitted) {
+
+  <h2>{{ 'CONTACT.TITLE' | translate }}</h2>
+  <p class="info-text">{{ 'CONTACT.INFO_TEXT' | translate }}</p>
 
   <form (ngSubmit)="submitForm()">
     <label for="email">{{ 'CONTACT.EMAIL_LABEL' | translate }}</label>
