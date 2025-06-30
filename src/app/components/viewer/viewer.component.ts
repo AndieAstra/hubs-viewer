@@ -23,6 +23,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
 export interface SavedModel {
   name: string;
@@ -59,12 +60,9 @@ export interface SceneData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    MatSnackBarModule,],
-
-//   template: `
-//   <div #canvasContainer class="viewer-container">
-//   <canvas #canvas></canvas>
-// </div>`,
+    MatSnackBarModule,
+    TranslateModule
+  ],
 
   templateUrl: './viewer.component.html',
   styleUrls: ['./viewer.component.scss']
@@ -83,71 +81,95 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   @Input() glbFile?: File;
 
-  constructor(private snackBar: MatSnackBar) {}
-
-  //
-  //
-  sunlight = 1;
-  movementSpeed = 50;
-  modelSize = 30;
-  //
-  //
-
-  private stereoEffect!: StereoEffect;
-  public isVRMode = false;
-
-  private originalSize?: { width: number; height: number };
-  private originalCameraAspect?: number;
-  //private originalSetAnimationLoop?: typeof THREE.WebGLRenderer.prototype.setAnimationLoop;
-  private controls!: PointerLockControls;
-  private originalSetAnimationLoop: any;
-
-  modelScale = 1;
-  modelHeight = 0;
-  uploadedModel: THREE.Object3D | null = null;
+  constructor(
+    private snackBar: MatSnackBar,
+    private translate: TranslateService
+  ) {}
 
 
-  private velocity = new THREE.Vector3();
-  private direction = new THREE.Vector3();
-  private canJump = false;
-  private gravity = 9.8;
-  private jumpStrength = 5;
+// ===========================================================
+// 🎛️ Default Configuration Values
+// ===========================================================
+sunlight = 1;                // Scene sunlight intensity
+movementSpeed = 50;          // Player movement speed
+modelSize = 30;              // Default model scale factor
+modelScale = 1;              // Actual model scale applied
+modelHeight = 0;             // Vertical position offset for model
+ambientIntensity = 0.5;      // Ambient light intensity
+speed = 50;                  // Movement speed used by sliders
+cameraHeight = 2;            // Camera/player height from ground
 
-  ambientIntensity = 0.5;
-  speed = 50;
-  cameraHeight = 2;
+// ===========================================================
+// 📦 Scene and Rendering
+// ===========================================================
+private scene!: THREE.Scene;
+private camera!: THREE.PerspectiveCamera;
+public renderer!: THREE.WebGLRenderer;
+private clock = new THREE.Clock();
+private objects: THREE.Object3D[] = [];               // All interactive objects
+uploadedModel: THREE.Object3D | null = null;          // User-uploaded GLB
+private sceneLoaded = false;                          // Used to track scene initialization
+private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjustments
 
-  // State flags
-  showGrid = true;
-  isPlacingModel = false;
+
+// ===========================================================
+// 💡 Lighting System
+// ===========================================================
+private ambientLight!: THREE.AmbientLight;
+private dirLight!: THREE.DirectionalLight;
+
+// ===========================================================
+// 🕹️ Controls & Tools
+// ===========================================================
+private controls!: PointerLockControls;               // FPS-style movement
+transformControls!: TransformControls;                // 3D object transform tools
+selectedTool = '';                                    // Currently selected tool (e.g., translate/rotate)
+
+// ===========================================================
+// 🧭 Input & Keyboard Navigation
+// ===========================================================
+private keysPressed = {
+  forward: false,
+  backward: false,
+  left: false,
+  right: false,
+};
+
+// ===========================================================
+// 🎮 Player Physics / Motion
+// ===========================================================
+private velocity = new THREE.Vector3();
+private direction = new THREE.Vector3();
+private canJump = false;
+private gravity = 9.8;         // Gravitational force
+private jumpStrength = 5;      // Jump height multiplier
+
+// ===========================================================
+// 🧰 VR and Stereo Settings
+// ===========================================================
+private stereoEffect!: StereoEffect;
+public isVRMode = false;
+private originalSize?: { width: number; height: number };    // For restoring size after VR
+private originalCameraAspect?: number;                       // Used to reset camera aspect
+private originalSetAnimationLoop: any;                       // Backup of setAnimationLoop
+
+// ===========================================================
+// 📱 Device Context
+// ===========================================================
+private isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+// ===========================================================
+// 🧱 Helpers
+// ===========================================================
+gridHelper!: THREE.GridHelper;
+showGrid = true;                  // Toggle grid visibility
+
+// ===========================================================
+// ⚙️ UI State
+// ===========================================================
+isPlacingModel = false;           // Whether user is placing a model in the scene
 
 
-  // References
-  gridHelper!: THREE.GridHelper;
-
-  private scene!: THREE.Scene;
-  private camera!: THREE.PerspectiveCamera;
-  public renderer!: THREE.WebGLRenderer;
-  //private controls!: PointerLockControls;
-  private clock = new THREE.Clock();
-  private objects: THREE.Object3D[] = [];
-  private ambientLight!: THREE.AmbientLight;
-  private dirLight!: THREE.DirectionalLight;
-  private gui!: GUI;
-  private sceneLoaded = false;
-  transformControls!: TransformControls;
-
-  //private controls!: PointerLockControls | OrbitControls;
-  private isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-  selectedTool = '';
-
-  private keysPressed = {
-    forward: false,
-    backward: false,
-    left: false,
-    right: false,
-  };
 
 ngOnInit() {
     document.addEventListener('keydown', this.onKeyDown);
@@ -322,7 +344,6 @@ Object.assign(canvas.style, {
   });
 }
 
-
   //********* UI Controls for the ThreeJS Scene *********/
 
 private initScene() {
@@ -368,7 +389,7 @@ private initScene() {
   this.scene.add(this.controls.getObject());
 
   const instructions = document.createElement('div');
-  instructions.innerText = 'Click to start walking!';
+
   instructions.style.position = 'absolute';
   instructions.style.top = '50%';
   instructions.style.left = '50%';
@@ -468,15 +489,6 @@ public loadGLB(file: File): void {
     try {
       loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
         const model = gltf.scene;
-
-        // Traverse the model and set collidable properties
-        // model.traverse((child) => {
-        //   if ((child as THREE.Mesh).isMesh) {
-        //     (child as THREE.Mesh).geometry.computeBoundingBox();
-        //     this.objects.push(child);
-        //     child.userData['collidable'] = true;
-        //   }
-        // });
 
         // Set metadata
         model.userData['isLoadedModel'] = true;
@@ -913,7 +925,7 @@ clearScene(): void {
 // Need to update to current camera view straight ahead. NOT the floor!
 // Resets camera or scene view
 
-  resetView(): void {
+resetView(): void {
     // Implement your reset logic here (e.g., reset camera position)
     this.camera.position.set(0, this.cameraHeight, 0);
     this.camera.lookAt(0, 0, 0);
@@ -1063,17 +1075,6 @@ private resizeListener = () => {
   this.renderer.setSize(container.clientWidth, container.clientHeight);
 };
 
-// onResize(width?: number, height?: number): void {
-//   const container = this.containerRef.nativeElement;
-//   const w = width ?? container.clientWidth;
-//   const h = height ?? container.clientHeight;
-
-//   if (this.renderer && this.camera) {
-//     this.renderer.setSize(w, h);
-//     this.camera.aspect = w / h;
-//     this.camera.updateProjectionMatrix();
-//   }
-
 onResize(width?: number, height?: number): void {
   const container = this.containerRef.nativeElement;
   const w = width ?? container.clientWidth;
@@ -1090,7 +1091,6 @@ onResize(width?: number, height?: number): void {
     this.stereoEffect.setSize(w, h);
   }
 }
-
 
 //************* VR Integration ******************* */
 
@@ -1192,14 +1192,10 @@ public exitVR(): void {
   window.onpopstate = null;
 }
 
-
 private renderVR = () => {
   this.camera.position.y = this.cameraHeight;
   this.stereoEffect.render(this.scene, this.camera);
 };
-
- // ****************************************************************************
-
 
 //************* Page Load Popup*************** */
 
@@ -1243,9 +1239,6 @@ onClearScene(): void {
 
   this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
 }
-
-// ********************************
-// ** NEW Fun Controls **
 
 toggleRoomLight() {
   this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;

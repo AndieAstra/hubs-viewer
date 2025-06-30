@@ -84,62 +84,23 @@ export class ViewerPageComponent implements AfterViewInit {
     this.resizeCanvas();
   }
 
-  // resizeCanvas() {
-  //   if (!this.canvasRef) return;
+  resizeCanvas() {
+    if (!this.canvasRef || !this.viewer) return;
 
-  //   const canvas = this.canvasRef.nativeElement;
-  //   const container = canvas.parentElement;
+    const canvas = this.canvasRef.nativeElement;
+    const container = canvas.parentElement;
 
-  //   if (container) {
-  //     const width = container.clientWidth;
-  //     const height = container.clientHeight;
+    if (container) {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
 
-  //     canvas.width = width;
-  //     canvas.height = height;
+      canvas.width = width;
+      canvas.height = height;
 
-  //     if (this.viewer?.onResize) {
-  //       this.viewer.onResize(width, height);
-  //     }
-  //   }
-  // }
-
-// resizeCanvas() {
-//   const canvas = this.canvasRef.nativeElement;
-//   const container = canvas.parentElement;
-//   if (container) {
-//     const width = container.clientWidth;
-//     const height = container.clientHeight;
-
-//     canvas.width = width;
-//     canvas.height = height;
-
-//     if (this.viewer?.onResize) {
-//       this.viewer.onResize(width, height);
-//     }
-
-//     this.viewer?.renderer?.setSize(width, height, false);
-//   }
-// }
-
-resizeCanvas() {
-  if (!this.canvasRef || !this.viewer) return;
-
-  const canvas = this.canvasRef.nativeElement;
-  const container = canvas.parentElement;
-
-  if (container) {
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    this.viewer.onResize?.(width, height);
-    this.viewer.renderer?.setSize?.(width, height); // ✅ Ensures Three.js resizes properly
+      this.viewer.onResize?.(width, height);
+      this.viewer.renderer?.setSize?.(width, height); // ✅ Ensures Three.js resizes properly
+    }
   }
-}
-
-
 
   onFileLoaded(file: File): void {
     this.selectedFile = file;
@@ -153,6 +114,8 @@ resizeCanvas() {
       this.onFileLoaded(file);
     }
   }
+
+// ******************* Buttons ***********************
 
   resetView(): void {
     this.viewer?.resetView?.();
@@ -243,6 +206,9 @@ resizeCanvas() {
     this.router.navigate(['/bug-report']);
   }
 
+
+//  ****************** Shephard Tutorial ********************
+
   startTutorial(): void {
     const t = (key: string) => this.translate.instant(key);
 
@@ -267,7 +233,7 @@ resizeCanvas() {
 
     tour.addStep({
       id: 'welcome',
-      text: t('TITLE'),
+      text: t('TITLE_SHEPHARD'),
       buttons: [{ text: 'Next', action: tour.next }]
     });
 
@@ -304,7 +270,7 @@ resizeCanvas() {
     tour.addStep({
       id: 'console',
       attachTo: { element: '.bottom-bar', on: 'top' },
-      text: t('CONSOLE'),
+      text: t('CONSOLE_SHEPHARD'),
       buttons: [
         { text: 'Back', action: tour.back },
         { text: 'Next', action: tour.next }
@@ -341,11 +307,15 @@ resizeCanvas() {
     tour.start();
   }
 
-  // enterVRMode() {
-  //   this.viewerRef?.enterVR();
-  // }
+    switchLanguage(lang: 'en' | 'es'): void {
+    this.currentLang = lang;
+    this.translate.use(lang);
+    localStorage.setItem('preferredLang', lang);
+  }
 
-enterVRMode() {
+// ************* VR Mode *********************
+
+  enterVRMode() {
   this.viewerRef?.enterVR();
 
   // Apply forced styles if necessary
@@ -363,18 +333,10 @@ enterVRMode() {
 
   // Resize again after small delay (some mobile browsers need this)
   setTimeout(() => this.resizeCanvas(), 200);
-}
-
+  }
 
   exitVRMode() {
     this.viewerRef?.exitVR();
   }
-
-
-switchLanguage(lang: 'en' | 'es'): void {
-  this.currentLang = lang;
-  this.translate.use(lang);
-  localStorage.setItem('preferredLang', lang);
-}
 
 }

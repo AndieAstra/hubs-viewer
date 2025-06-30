@@ -1,24 +1,61 @@
 {
-  "TITLE": "Visor 3D",
-  "TUTORIAL": "Tutorial",
-  "BUG_REPORT": "¿Algo no funciona?",
-  "UPLOAD_INSTRUCTION": "Elige tu modelo 3D (glb)",
-  "MOVEMENT_TIPS": "luego usa las teclas WASD para moverte y ESPACIO para saltar.",
-  "ENTER_VR": "Entrar en VR",
-  "EXIT_VR": "Salir de VR",
-  "SCENE_SETTINGS": "Configuración de Escena",
-  "RESET_CAMERA": "Restablecer Cámara",
-  "SAVE_SCENE": "Guardar Escena",
-  "LOAD_SCENE": "Cargar Escena",
-  "LIGHTING": "Iluminación",
-  "SUNLIGHT_COLOR": "Color de la Luz Solar",
-  "ROOM_LIGHT": "Luz Interior",
-  "SUNLIGHT": "Luz Solar",
-  "MODEL_SETTINGS": "Configuración del Modelo",
-  "SIZE": "Tamaño",
-  "HEIGHT": "Altura",
-  "CAMERA_MOVEMENT": "Movimiento de Cámara",
-  "SPEED": "Velocidad",
-  "EYE_LEVEL": "Altura de Vista",
-  "CONSOLE": "Consola"
+  "TITLE": "Virtual Agriculture System DEMO",
+
+  "NAV": {
+    "VIEWER": "3D Viewer",
+    "PANORAMA": "Panorama Viewer",
+    "CONTACT": "Contact Us",
+    "BUG": "Submit a Bug"
+  },
+
+  "UPLOAD": {
+    "INSTRUCTIONS": "Choose your 3D model (glb), then use the WASD keys to move around, SPACE to jump."
+  },
+
+    "INSTRUCTION_THREE": {
+    "START_WALKING": "Click to start walking!"
+  },
+
+  "BUTTONS": {
+    "TUTORIAL": "🎓 Tutorial",
+    "BUG_REPORT": "🐞 Something not working?",
+    "ENTER_VR": "🕶 Enter VR",
+    "EXIT_VR": "🚪 Exit VR",
+    "RESET_CAMERA": "Reset Camera",
+    "SAVE_SCENE": "Save Scene",
+    "LOAD_SCENE": "Load Scene",
+    "SUNLIGHT_COLOR": "Sunlight Color",
+    "ROOM_LIGHT": "Room Light"
+  },
+
+  "SECTIONS": {
+    "SCENE_SETTINGS": "Scene Settings",
+    "LIGHTING": "Lighting",
+    "MODEL_SETTINGS": "Model Settings",
+    "CAMERA_MOVEMENT": "Camera Movement"
+  },
+
+  "SLIDERS": {
+    "SUNLIGHT": "☀️ Sunlight",
+    "MODEL_SIZE": "📏 Size",
+    "MODEL_HEIGHT": "⬆️ Height",
+    "SPEED": "🏃 Speed",
+    "EYE_LEVEL": "👁️ Eye Level"
+  },
+
+  "CONSOLE": {
+    "TOGGLE": "Console"
+  },
+
+
+  "TITLE_SHEPHARD": "Virtual Agriculture System Demo",
+  "UPLOAD_INSTRUCTION": "Choose your 3D model (glb)",
+  "MOVEMENT_TIPS": "then use the WASD keys to move and SPACE to jump.",
+  "SCENE_SETTINGS": "Scene Settings",
+  "MODEL_SETTINGS": "Model Settings",
+  "CONSOLE_SHEPHARD": "Console",
+  "CAMERA_MOVEMENT": "Camera Movement",
+  "SIZE": "Size",
+  "HEIGHT": "Height"
+
 }

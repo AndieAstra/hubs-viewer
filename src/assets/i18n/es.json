@@ -1,24 +1,59 @@
 {
-  "TITLE": "3D Viewer",
-  "TUTORIAL": "Tutorial",
-  "BUG_REPORT": "Something not working?",
-  "UPLOAD_INSTRUCTION": "Choose your 3D model (glb)",
-  "MOVEMENT_TIPS": "then use the WASD keys to move around, SPACE to jump.",
-  "ENTER_VR": "Enter VR",
-  "EXIT_VR": "Exit VR",
-  "SCENE_SETTINGS": "Scene Settings",
-  "RESET_CAMERA": "Reset Camera",
-  "SAVE_SCENE": "Save Scene",
-  "LOAD_SCENE": "Load Scene",
-  "LIGHTING": "Lighting",
-  "SUNLIGHT_COLOR": "Sunlight Color",
-  "ROOM_LIGHT": "Room Light",
-  "SUNLIGHT": "Sunlight",
-  "MODEL_SETTINGS": "Model Settings",
-  "SIZE": "Size",
-  "HEIGHT": "Height",
-  "CAMERA_MOVEMENT": "Camera Movement",
-  "SPEED": "Speed",
-  "EYE_LEVEL": "Eye Level",
-  "CONSOLE": "Console"
+  "TITLE": "DEMO del sistema de agricultura virtual",
+
+  "NAV": {
+    "VIEWER": "Visor 3D",
+    "PANORAMA": "Visor de Panorama",
+    "CONTACT": "Contáctanos",
+    "BUG": "Reportar un Error"
+  },
+
+  "UPLOAD": {
+    "INSTRUCTIONS": "Elige tu modelo 3D (glb), luego usa las teclas WASD para moverte y ESPACIO para saltar."
+  },
+
+  "INSTRUCTION_THREE": {
+    "START_WALKING": "¡Haz clic para empezar a caminar!"
+  },
+
+  "BUTTONS": {
+    "TUTORIAL": "🎓 Tutorial",
+    "BUG_REPORT": "🐞 ¿Algo no funciona?",
+    "ENTER_VR": "🕶 Entrar en VR",
+    "EXIT_VR": "🚪 Salir de VR",
+    "RESET_CAMERA": "Restablecer Cámara",
+    "SAVE_SCENE": "Guardar Escena",
+    "LOAD_SCENE": "Cargar Escena",
+    "SUNLIGHT_COLOR": "Color del Sol",
+    "ROOM_LIGHT": "Luz de la Habitación"
+  },
+
+  "SECTIONS": {
+    "SCENE_SETTINGS": "Configuración de Escena",
+    "LIGHTING": "Iluminación",
+    "MODEL_SETTINGS": "Configuración del Modelo",
+    "CAMERA_MOVEMENT": "Movimiento de Cámara"
+  },
+
+  "SLIDERS": {
+    "SUNLIGHT": "☀️ Luz Solar",
+    "MODEL_SIZE": "📏 Tamaño",
+    "MODEL_HEIGHT": "⬆️ Altura",
+    "SPEED": "🏃 Velocidad",
+    "EYE_LEVEL": "👁️ Nivel de Vista"
+  },
+
+  "CONSOLE": {
+    "TOGGLE": "Consola"
+  },
+
+  "TITLE_SHEPHARD": "DEMO del sistema de agricultura virtual",
+  "UPLOAD_INSTRUCTION": "Elige tu modelo 3D (glb)",
+  "MOVEMENT_TIPS": "luego usa las teclas WASD para moverte y ESPACIO para saltar.",
+  "SCENE_SETTINGS": "Configuración de Escena",
+  "MODEL_SETTINGS": "Configuración del Modelo",
+  "CONSOLE_SHEPHARD": "Consola",
+  "CAMERA_MOVEMENT": "Movimiento de Cámara",
+  "SIZE": "Tamaño",
+  "HEIGHT": "Altura"
 }
