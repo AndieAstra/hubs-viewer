@@ -67,11 +67,11 @@
       </div>
     </aside>
 
-    <!-- 🖥 Canvas Center -->
-    <div class="canvas-container">
-      <canvas #viewerCanvas></canvas>
-      <app-viewer [glbFile]="selectedFile"></app-viewer>
-    </div>
+      <!-- 🖥 Canvas Center -->
+      <div class="canvas-container">
+        <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
+      </div>
+
 
     <!-- 🛠 Sidebar Right -->
     <aside class="sidebar-right">

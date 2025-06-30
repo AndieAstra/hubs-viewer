@@ -37,9 +37,10 @@ export class ViewerPageComponent implements AfterViewInit {
     this.translate.use(this.currentLang);
   }
 
-  @ViewChild(ViewerComponent) viewerRef?: ViewerComponent;
+  @ViewChild(ViewerComponent) viewerRef!: ViewerComponent;
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
+
 
   @HostListener('document:fullscreenchange')
   onFullscreenChange() {

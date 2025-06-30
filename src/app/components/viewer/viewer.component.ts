@@ -8,6 +8,7 @@ import {
   AfterViewInit,
   ViewChild,
   OnDestroy,
+  HostListener,
 } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -60,7 +61,13 @@ export interface SceneData {
     MatTooltipModule,
     MatSnackBarModule,],
 
-  template: `<div #canvasContainer class="viewer-container"></div>`,
+//   template: `
+//   <div #canvasContainer class="viewer-container">
+//   <canvas #canvas></canvas>
+// </div>`,
+
+  templateUrl: './viewer.component.html',
+  styleUrls: ['./viewer.component.scss']
 })
 
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
@@ -69,6 +76,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
 
+  @HostListener('document:webkitfullscreenchange')
+  onWebkitFullscreenChange() {
+    this.onResize();
+  }
 
   @Input() glbFile?: File;
 
@@ -172,105 +183,145 @@ ngOnChanges(changes: SimpleChanges) {
   else if (!this.glbFile && !this.sceneLoaded && !changes['glbFile']?.isFirstChange()) {
     alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
   }
+
 }
 
 
 ngAfterViewInit() {
-    this.initScene();
+  this.initScene();
 
-    if (this.glbFile) this.loadGLB(this.glbFile);
-    this.animate();
-
-    if (!this.renderer) {
-      console.warn('Renderer not available — possibly failed to create WebGL context');
-      return;
-    }
+  this.resizeListener = () => this.onResize();
+  window.addEventListener('resize', this.resizeListener);
 
 
-    this.renderer.domElement.addEventListener('dragover', (event) => {
+  if (this.glbFile) {
+    this.loadGLB(this.glbFile);
+  }
+
+  // ✅ SAFELY SETUP canvas + renderer DOM
+  if (!this.renderer || !this.renderer.domElement) {
+    console.warn('Renderer not available — possibly failed to create WebGL context');
+    return;
+  }
+
+  const canvas = this.renderer.domElement;
+  const container = this.containerRef.nativeElement;
+
+// ✅ ENSURE canvas is added to container and assigned to canvasRef
+if (!canvas.parentElement || canvas.parentElement !== container) {
+  container.appendChild(canvas);
+}
+
+// 🔍 Add debug borders here
+Object.assign(container.style, {
+  border: '2px dashed red',
+});
+
+Object.assign(canvas.style, {
+  border: '2px solid lime',
+});
+
+  // ✅ Optional: Assign to canvasRef if needed elsewhere
+  this.canvasRef = new ElementRef(canvas);
+
+  // ✅ Style the canvas for layout consistency
+  Object.assign(canvas.style, {
+    position: 'absolute',
+    top: '0',
+    left: '0',
+    width: '100%',
+    height: '100%',
+    display: 'block',
+    touchAction: 'none',
+    zIndex: '0',
+  });
+
+  // ✅ Resize renderer based on container
+  this.renderer.setSize(container.clientWidth, container.clientHeight);
+  this.animate();
+
+  // ✅ Drag-and-drop events
+  canvas.addEventListener('dragover', (event) => {
     event.preventDefault();
-    });
+  });
 
-    this.renderer.domElement.addEventListener('drop', (event) => {
-      event.preventDefault();
-      const file = event.dataTransfer?.files?.[0];
-      if (file && file.name.endsWith('.glb')) {
-        if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
-        this.clearScene();
-        this.loadGLB(file);
-      }
-    });
+  canvas.addEventListener('drop', (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file && file.name.endsWith('.glb')) {
+      if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
+      this.clearScene();
+      this.loadGLB(file);
+    }
+  });
 
-    this.renderer.domElement.addEventListener('click', (event) => {
-      const mouse = new THREE.Vector2();
-      const rect = this.renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  // ✅ Raycasting click handler
+  canvas.addEventListener('click', (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouse = new THREE.Vector2(
+      ((event.clientX - rect.left) / rect.width) * 2 - 1,
+      -((event.clientY - rect.top) / rect.height) * 2 + 1
+    );
 
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-      const intersects = raycaster.intersectObjects(this.scene.children, true);
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
 
-      if (intersects.length > 0) {
-        const selected = intersects[0].object;
-        console.log('Selected object:', selected.name || selected.uuid);
-        // Optional: highlight or transform
-      }
-    });
+    const intersects = raycaster.intersectObjects(this.scene.children, true);
+    if (intersects.length > 0) {
+      const selected = intersects[0].object;
+      console.log('Selected object:', selected.name || selected.uuid);
+    }
+  });
 
-    const canvas = this.renderer.domElement;
-
-  // Click inside to start walking (existing logic)
-  const instructions = document.createElement('div');
-  this.containerRef.nativeElement.appendChild(instructions);
-
+  // ✅ Pointer lock control logic
   canvas.addEventListener('click', () => {
     this.controls.lock();
-    // if (instructions.parentNode) {
-    //   instructions.parentNode.removeChild(instructions);
-    // }
 
-    // 👶 Automatically unlock after 10 seconds
+    // 👶 Auto unlock after 10 seconds
     setTimeout(() => {
       if (this.controls.isLocked) {
         this.controls.unlock();
       }
-    }, 1000);
+    }, 10000);
   });
 
-  // 👆 Click *outside* canvas to unlock
   document.addEventListener('click', (e) => {
     if (!canvas.contains(e.target as Node) && this.controls.isLocked) {
       this.controls.unlock();
     }
   });
 
-    this.gridHelper = new THREE.GridHelper(10, 10);
-    this.scene.add(this.gridHelper);
-    this.gridHelper.visible = this.showGrid;
+  // ✅ Grid Helper
+  this.gridHelper = new THREE.GridHelper(10, 10);
+  this.scene.add(this.gridHelper);
+  this.gridHelper.visible = this.showGrid;
 
-    // Auto save TBA NOT FUNCTIONAL YET
+  // ****************************************************************************
 
-  // VR Integration
+  // ✅ Stereo VR effect
   this.stereoEffect = new StereoEffect(this.renderer);
   this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
 
+ // ****************************************************************************
+
+  // ✅ VR auto-toggle on mobile orientation
   window.addEventListener('orientationchange', () => {
-      const isLandscape = window.innerWidth > window.innerHeight;
-      if (isLandscape && !this.isVRMode) {
-        this.enterVR();
-      } else if (!isLandscape && this.isVRMode) {
-        this.exitVR();
-      }
-    });
+    const isLandscape = window.innerWidth > window.innerHeight;
+    if (isLandscape && !this.isVRMode) {
+      this.enterVR();
+    } else if (!isLandscape && this.isVRMode) {
+      this.exitVR();
+    }
+  });
 
-    window.addEventListener('popstate', () => {
-      if (this.isVRMode) {
-        this.exitVR();
-      }
-    });
+  // ✅ VR exit on back navigation
+  window.addEventListener('popstate', () => {
+    if (this.isVRMode) {
+      this.exitVR();
+    }
+  });
+}
 
-  }
 
   //********* UI Controls for the ThreeJS Scene *********/
 
@@ -861,13 +912,14 @@ clearScene(): void {
 // ************************************************************************
 // Need to update to current camera view straight ahead. NOT the floor!
 // Resets camera or scene view
-resetView(): void {
-  // Implement your reset logic here (e.g., reset camera position)
-  this.camera.position.set(0, this.cameraHeight, 0);
-  this.camera.lookAt(0, 0, 0);
-  this.controls.unlock();  // Or however you want to reset controls
-  this.snackBar.open('View reset!', 'OK', { duration: 2000 });
-}
+
+  resetView(): void {
+    // Implement your reset logic here (e.g., reset camera position)
+    this.camera.position.set(0, this.cameraHeight, 0);
+    this.camera.lookAt(0, 0, 0);
+    this.controls.unlock();  // Or however you want to reset controls
+    this.snackBar.open('View reset!', 'OK', { duration: 2000 });
+  }
 // ************************************************************************
 
 // Toggles wireframe mode on loaded models
@@ -954,7 +1006,6 @@ private animate = () => {
   this.renderer.render(this.scene, this.camera);
 };
 
-
 private onKeyDown = (event: KeyboardEvent) => {
   switch (event.code) {
     case 'ArrowUp':
@@ -1012,6 +1063,17 @@ private resizeListener = () => {
   this.renderer.setSize(container.clientWidth, container.clientHeight);
 };
 
+// onResize(width?: number, height?: number): void {
+//   const container = this.containerRef.nativeElement;
+//   const w = width ?? container.clientWidth;
+//   const h = height ?? container.clientHeight;
+
+//   if (this.renderer && this.camera) {
+//     this.renderer.setSize(w, h);
+//     this.camera.aspect = w / h;
+//     this.camera.updateProjectionMatrix();
+//   }
+
 onResize(width?: number, height?: number): void {
   const container = this.containerRef.nativeElement;
   const w = width ?? container.clientWidth;
@@ -1023,9 +1085,10 @@ onResize(width?: number, height?: number): void {
     this.camera.updateProjectionMatrix();
   }
 
-  // ✅ Attach resize only once
-  window.removeEventListener('resize', this.resizeListener);
-  window.addEventListener('resize', this.resizeListener);
+  // ✅ Ensure stereo effect resizes in VR
+  if (this.isVRMode && this.stereoEffect) {
+    this.stereoEffect.setSize(w, h);
+  }
 }
 
 
@@ -1129,10 +1192,13 @@ public exitVR(): void {
   window.onpopstate = null;
 }
 
+
 private renderVR = () => {
   this.camera.position.y = this.cameraHeight;
   this.stereoEffect.render(this.scene, this.camera);
 };
+
+ // ****************************************************************************
 
 
 //************* Page Load Popup*************** */
@@ -1230,6 +1296,5 @@ save(): void {
 load(): void {
   this.triggerSceneUpload?.();
 }
-// ********************************
 
 }
