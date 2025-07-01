@@ -9,6 +9,7 @@ import {
   ViewChild,
   OnDestroy,
   HostListener,
+  NgZone,
 } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -22,8 +23,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { VrControllerHelper } from '../helpers/vr-controller.helper';
+import { PlayerMovementHelper } from '../helpers/player-movement.helper';
 
 export interface SavedModel {
   name: string;
@@ -83,7 +85,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   constructor(
     private snackBar: MatSnackBar,
-    private translate: TranslateService
+    private translate: TranslateService,
+    private ngZone: NgZone
   ) {}
 
 
@@ -113,6 +116,17 @@ private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjus
 
 
 // ===========================================================
+// VR Integration
+// ===========================================================
+
+vrActive = false;
+private animationId: number | null = null;
+vrControllerActive = false;
+private vrHelper = new VrControllerHelper(3.0); // Move speed
+public controllerSpeed = 3.0;
+
+
+// ===========================================================
 // 💡 Lighting System
 // ===========================================================
 private ambientLight!: THREE.AmbientLight;
@@ -121,6 +135,9 @@ private dirLight!: THREE.DirectionalLight;
 // ===========================================================
 // 🕹️ Controls & Tools
 // ===========================================================
+
+private movementHelper!: PlayerMovementHelper;
+
 private controls!: PointerLockControls;               // FPS-style movement
 transformControls!: TransformControls;                // 3D object transform tools
 selectedTool = '';                                    // Currently selected tool (e.g., translate/rotate)
@@ -169,21 +186,60 @@ showGrid = true;                  // Toggle grid visibility
 // ===========================================================
 isPlacingModel = false;           // Whether user is placing a model in the scene
 
-
-
 ngOnInit() {
-    document.addEventListener('keydown', this.onKeyDown);
-    document.addEventListener('keyup', this.onKeyUp);
-    this.loadSceneFromLocalStorage();
-    this.canJump = true;
-    //this.initThree();
-  }
+  document.addEventListener('keydown', this.onKeyDown);
+  document.addEventListener('keyup', this.onKeyUp);
+  this.loadSceneFromLocalStorage();
+  this.canJump = true;
+
+  this.vrHelper.enabled = true;
+
+  this.movementHelper = new PlayerMovementHelper(
+    3.0,
+    this.gravity,
+    this.jumpStrength,
+    this.cameraHeight
+  );
+}
+
 
 ngOnDestroy() {
-    document.removeEventListener('keydown', this.onKeyDown);
-    document.removeEventListener('keyup', this.onKeyUp);
-    window.removeEventListener('resize', this.resizeListener);
+  document.removeEventListener('keydown', this.onKeyDown);
+  document.removeEventListener('keyup', this.onKeyUp);
+  window.removeEventListener('resize', this.resizeListener);
+
+  // Clean up VR helper
+  if (this.vrHelper) {
+    this.vrHelper.stop();
   }
+
+  // Cancel animation frame if running
+  if (this.animationId) {
+    cancelAnimationFrame(this.animationId);
+    this.animationId = null;
+  }
+
+  // Clean up Three.js
+  if (this.renderer) {
+    this.renderer.dispose();
+  }
+
+  if (this.scene) {
+    this.scene.traverse((obj) => {
+      if ((obj as THREE.Mesh).geometry) {
+        (obj as THREE.Mesh).geometry.dispose();
+      }
+      if ((obj as THREE.Mesh).material) {
+        const material = (obj as THREE.Mesh).material;
+        if (Array.isArray(material)) {
+          material.forEach((m) => m.dispose());
+        } else {
+          material.dispose();
+        }
+      }
+    });
+  }
+}
 
 ngOnChanges(changes: SimpleChanges) {
   if (changes['glbFile'] && changes['glbFile'].currentValue) {
@@ -208,9 +264,9 @@ ngOnChanges(changes: SimpleChanges) {
 
 }
 
-
 ngAfterViewInit() {
   this.initScene();
+  this.animate();
 
   this.resizeListener = () => this.onResize();
   window.addEventListener('resize', this.resizeListener);
@@ -431,6 +487,8 @@ private initScene() {
   const axesHelper = new THREE.AxesHelper(5);
   this.scene.add(axesHelper);
 }
+
+
 
 //************* Update/Model Transform ******************* */
 
@@ -959,116 +1017,37 @@ clearModel(): void {
   }
 }
 
-//************* Animation/ WSAD Keys ******************* */
+//************* Animation/ Controller Pad and Keys ******************* */
 
 private animate = () => {
-  requestAnimationFrame(this.animate);
-
+  this.animationId = requestAnimationFrame(this.animate);
   const delta = this.clock.getDelta();
 
-  // Friction (XZ plane)
-  const friction = 5.0;
-  this.velocity.x -= this.velocity.x * friction * delta;
-  this.velocity.z -= this.velocity.z * friction * delta;
+  this.vrHelper.update(); // ✅ IMPORTANT: Update gamepad state
 
-  // Reset direction
-  this.direction.set(0, 0, 0);
+  this.movementHelper.applyFriction(delta, 5.0);
+  this.movementHelper.updateKeyboardMovement(delta, this.speed);
+  this.movementHelper.applyGravity(delta);
+  this.movementHelper.applyMovement(this.controls.object, delta, this.controls, this.isColliding.bind(this));
+  this.movementHelper.applyVRMovement(delta, this.vrHelper.movementVector, this.camera.quaternion);
+  this.movementHelper.enforceGround(this.controls.object);
 
-  // ✅ REVERSED: Z is flipped
-  if (this.keysPressed.forward) this.direction.z += 1;   // forward = +Z
-  if (this.keysPressed.backward) this.direction.z -= 1;  // backward = -Z
-  if (this.keysPressed.left) this.direction.x -= 1;      // left = -X
-  if (this.keysPressed.right) this.direction.x += 1;     // right = +X
-
-  this.direction.normalize();
-
-  // Apply movement
-  if (this.direction.length() > 0) {
-    this.velocity.x += this.direction.x * this.speed * delta;
-    this.velocity.z += this.direction.z * this.speed * delta;
-  }
-
-  const moveX = this.velocity.x * delta;
-  const moveZ = this.velocity.z * delta;
-
-  const playerObj = this.controls.object;
-  const oldX = playerObj.position.x;
-  const oldZ = playerObj.position.z;
-
-  // Try move right/left (X)
-  this.controls.moveRight(moveX);
-  if (this.isColliding(playerObj.position)) {
-    playerObj.position.x = oldX; // only undo X movement
-  }
-
-  // Try move forward/backward (Z)
-  this.controls.moveForward(moveZ);
-  if (this.isColliding(playerObj.position)) {
-    playerObj.position.z = oldZ; // only undo Z movement
-  }
-
-  // Gravity
-  this.velocity.y -= this.gravity * delta;
-
-  // Prevent falling below ground level
-  const minY = this.cameraHeight;
-  this.controls.object.position.y += this.velocity.y * delta;
-  if (this.controls.object.position.y < minY) {
-    this.velocity.y = 0;
-    this.controls.object.position.y = minY;
-    this.canJump = true;
-  }
+  // Optional: Apply look-around based on orientation (disabled for now)
+  // this.vrHelper.applyRotation(this.camera, 0.3);
 
   this.renderer.render(this.scene, this.camera);
+
+  console.log('Joystick Movement:', this.vrHelper.movementVector);
 };
 
 private onKeyDown = (event: KeyboardEvent) => {
-  switch (event.code) {
-    case 'ArrowUp':
-    case 'KeyW':
-      this.keysPressed.forward = true;
-      break;
-    case 'ArrowLeft':
-    case 'KeyA':
-      this.keysPressed.left = true;
-      break;
-    case 'ArrowDown':
-    case 'KeyS':
-      this.keysPressed.backward = true;
-      break;
-    case 'ArrowRight':
-    case 'KeyD':
-      this.keysPressed.right = true;
-      break;
-    case 'Space':
-      if (this.canJump) {
-        this.velocity.y = this.jumpStrength;
-        this.canJump = false;
-      }
-      break;
-  }
+  this.movementHelper.onKeyDown(event.code);
 };
 
 private onKeyUp = (event: KeyboardEvent) => {
-  switch (event.code) {
-    case 'ArrowUp':
-    case 'KeyW':
-      this.keysPressed.forward = false;
-      break;
-    case 'ArrowLeft':
-    case 'KeyA':
-      this.keysPressed.left = false;
-      break;
-    case 'ArrowDown':
-    case 'KeyS':
-      this.keysPressed.backward = false;
-      break;
-    case 'ArrowRight':
-    case 'KeyD':
-      this.keysPressed.right = false;
-      break;
-  }
+  this.movementHelper.onKeyUp(event.code);
 };
+
 
 //************* Screen Sizing ******************* */
 
@@ -1097,6 +1076,11 @@ onResize(width?: number, height?: number): void {
 }
 
 //************* VR Integration ******************* */
+
+// startVrControls() {
+//   this.vrHelper.start();
+//   this.vrActive = true;
+// }
 
 public enterVR(): void {
   if (!/Mobi|Android/i.test(navigator.userAgent)) {

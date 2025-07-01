@@ -1,0 +1,84 @@
+import * as THREE from 'three';
+
+export class VrControllerHelper {
+  private deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
+  public enabled = false;
+
+  // Smoothed target quaternion for camera rotation
+  private targetQuaternion = new THREE.Quaternion();
+
+  // Movement vector to apply (axes from gamepad)
+  public movementVector = new THREE.Vector3(0, 0, 0);
+
+  public moveSpeed = 3.0;
+
+  constructor(moveSpeed = 3.0) {
+    this.moveSpeed = moveSpeed;
+  }
+
+  async start() {
+    if (this.enabled) return;
+    this.enabled = true;
+
+    if ((DeviceOrientationEvent as any).requestPermission) {
+      try {
+        const res = await (DeviceOrientationEvent as any).requestPermission();
+        if (res === 'granted') {
+          window.addEventListener('deviceorientation', this.handleDeviceOrientation);
+        } else {
+          console.warn('DeviceOrientation permission denied');
+        }
+      } catch (err) {
+        console.error('DeviceOrientation permission error', err);
+      }
+    } else {
+      window.addEventListener('deviceorientation', this.handleDeviceOrientation);
+    }
+  }
+
+  stop() {
+    this.enabled = false;
+    window.removeEventListener('deviceorientation', this.handleDeviceOrientation);
+  }
+
+  private handleDeviceOrientation = (event: DeviceOrientationEvent) => {
+    this.deviceOrientation.alpha = event.alpha ?? 0;
+    this.deviceOrientation.beta = event.beta ?? 0;
+    this.deviceOrientation.gamma = event.gamma ?? 0;
+  };
+
+  // Get quaternion from device orientation angles
+  getDeviceQuaternion(): THREE.Quaternion {
+    const x = THREE.MathUtils.degToRad(this.deviceOrientation.beta);
+    const y = THREE.MathUtils.degToRad(this.deviceOrientation.alpha);
+    const z = THREE.MathUtils.degToRad(this.deviceOrientation.gamma);
+
+    // Use Euler angles in ZXY order for correct orientation
+    const euler = new THREE.Euler(x, y, z, 'ZXY');
+    const q = new THREE.Quaternion();
+    q.setFromEuler(euler);
+    return q;
+  }
+
+  update() {
+  if (!this.enabled) return;
+
+  const gp = navigator.getGamepads?.()[0];
+
+  if (gp) {
+    const axisX = gp.axes[0] || 0;
+    const axisY = gp.axes[1] || 0;
+
+    // 🚨 Invert Y-axis for natural movement
+    this.movementVector.set(axisX * this.moveSpeed, 0, -axisY * this.moveSpeed);
+  } else {
+    this.movementVector.set(0, 0, 0);
+  }
+}
+
+
+  // Apply the orientation smoothing to camera quaternion (call from animate)
+  applyRotation(camera: THREE.PerspectiveCamera, lerpFactor = 0.3) {
+    camera.quaternion.slerp(this.targetQuaternion, lerpFactor);
+  }
+}
