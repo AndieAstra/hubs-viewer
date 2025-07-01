@@ -9,14 +9,17 @@
         <input type="file" hidden #fileInput (change)="onFileChange($event)" accept=".glb" />
       </div>
     </div>
+    <!-- 📱 Sidebar Toggle Button -->
+    <button class="sidebar-toggle" (click)="toggleSidebar()">
+      ☰
+    </button>
   </header>
 
-  <!-- 🧱 Main Area: Sidebar + Canvas -->
+  <!-- 🧱 Main Layout -->
   <div class="main-body">
 
     <!-- 📁 Sidebar -->
-    <aside class="sidebar-left">
-
+    <aside class="sidebar-left" [class.collapsed]="sidebarCollapsed">
       <!-- 🎛 Top Buttons -->
       <div class="sidebar-button-row">
         <button class="kid-button purple" (click)="startTutorial()">{{ 'BUTTONS.TUTORIAL' | translate }}</button>
@@ -32,78 +35,84 @@
       </div>
 
       <!-- 🔧 Scene -->
-      <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
-      <button class="kid-button" (click)="toggleWireframe()">
-        <img src="assets/icons/new_rotate.png" alt="Wireframe" />
-        <span>{{ 'BUTTONS.TOGGLE_WIREFRAME' | translate }}</span>
-      </button>
-
-      <button class="kid-button" (click)="resetView()">
-        <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
-        <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
-      </button>
-
-      <button class="kid-button turquoise" (click)="save()">
-        <img src="assets/icons/save.jpg" alt="Save" />
-        <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-      </button>
-
-      <button class="kid-button purple" (click)="load()">
-        <img src="assets/icons/upload.png" alt="Load" />
-        <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
-      </button>
+      <section>
+        <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
+        <button class="kid-button" (click)="toggleWireframe()">
+          <img src="assets/icons/new_rotate.png" alt="Wireframe" />
+          <span>{{ 'BUTTONS.TOGGLE_WIREFRAME' | translate }}</span>
+        </button>
+        <button class="kid-button" (click)="resetView()">
+          <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
+          <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
+        </button>
+        <button class="kid-button turquoise" (click)="save()">
+          <img src="assets/icons/save.jpg" alt="Save" />
+          <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
+        </button>
+        <button class="kid-button purple" (click)="load()">
+          <img src="assets/icons/upload.png" alt="Load" />
+          <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
+        </button>
+      </section>
 
       <!-- 💡 Lighting -->
-      <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
-      <button class="kid-button green" (click)="toggleLightcolor()">
-        <img src="assets/icons/reset.png" alt="Light Color" />
-        <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
-      </button>
-
-      <button class="kid-button orange" (click)="toggleRoomLight()">
-        <img src="assets/icons/wire.jpg" alt="Room Light" />
-        <span>{{ 'BUTTONS.ROOM_LIGHT' | translate }}</span>
-      </button>
-
-      <div class="kid-slider">
-        <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
-        <input type="range" (input)="onSunlightInput($event)" />
-      </div>
+      <section>
+        <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
+        <button class="kid-button green" (click)="toggleLightcolor()">
+          <img src="assets/icons/reset.png" alt="Light Color" />
+          <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
+        </button>
+        <button class="kid-button orange" (click)="toggleRoomLight()">
+          <img src="assets/icons/wire.jpg" alt="Room Light" />
+          <span>{{ 'BUTTONS.ROOM_LIGHT' | translate }}</span>
+        </button>
+        <div class="kid-slider">
+          <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
+          <input type="range" (input)="onSunlightInput($event)" />
+        </div>
+      </section>
 
       <!-- 📐 Model Settings -->
-      <h4>{{ 'SECTIONS.MODEL_SETTINGS' | translate }}</h4>
-      <div class="kid-slider">
-        <label>{{ 'SLIDERS.MODEL_SIZE' | translate }}</label>
-        <input type="range" (input)="onModelSizeInput($event)" />
-      </div>
-
-      <div class="kid-slider">
-        <label>{{ 'SLIDERS.MODEL_HEIGHT' | translate }}</label>
-        <input type="range" (input)="onModelHeightInput($event)" />
-      </div>
+      <section>
+        <h4>{{ 'SECTIONS.MODEL_SETTINGS' | translate }}</h4>
+        <div class="kid-slider">
+          <label>{{ 'SLIDERS.MODEL_SIZE' | translate }}</label>
+          <input type="range" (input)="onModelSizeInput($event)" />
+        </div>
+        <div class="kid-slider">
+          <label>{{ 'SLIDERS.MODEL_HEIGHT' | translate }}</label>
+          <input type="range" (input)="onModelHeightInput($event)" />
+        </div>
+      </section>
 
       <!-- 🎥 Camera Movement -->
-      <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
-      <div class="kid-slider">
-        <label>{{ 'SLIDERS.SPEED' | translate }}</label>
-        <input type="range" (input)="onSpeedInput($event)" />
-      </div>
-
-      <div class="kid-slider">
-        <label>{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
-        <input type="range" (input)="onEyeLevelInput($event)" />
-      </div>
-
+      <section>
+        <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
+        <div class="kid-slider">
+          <label>{{ 'SLIDERS.SPEED' | translate }}</label>
+          <input type="range" (input)="onSpeedInput($event)" />
+        </div>
+        <div class="kid-slider">
+          <label>{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
+          <input type="range" (input)="onEyeLevelInput($event)" />
+        </div>
+      </section>
     </aside>
 
     <!-- 🖼️ Canvas -->
-    <div class="canvas-container">
+    <section class="canvas-container">
       <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
-    </div>
 
+      <!-- 👓 Exit VR Button -->
+      @if(viewerRef?.isVRMode) {
+      <button class="vr-exit-button" (click)="exitVRMode()">
+        ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
+      </button>
+    }
+    </section>
   </div>
 
-  <!-- 📌 Footer Console -->
+  <!-- 📌 Bottom Console -->
   <footer class="bottom-bar">
     <div class="tabs">
       <button (click)="toggleConsole()">

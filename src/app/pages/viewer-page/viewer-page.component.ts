@@ -42,10 +42,12 @@ export class ViewerPageComponent implements AfterViewInit {
 
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
-  @HostListener('document:fullscreenchange')
+  @HostListener('document:fullscreenchange', )
   onFullscreenChange() {
     this.resizeCanvas();
   }
+
+  @HostListener('window:resize')
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -79,7 +81,10 @@ export class ViewerPageComponent implements AfterViewInit {
     this.showConsole = !this.showConsole;
   }
 
-  @HostListener('window:resize')
+  toggleSidebar() {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
   onWindowResize() {
     this.resizeCanvas();
   }
