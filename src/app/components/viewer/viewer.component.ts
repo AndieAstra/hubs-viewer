@@ -1245,6 +1245,8 @@ updateSunlight(value: number): void {
 
 updateSpeed(value: number): void {
   this.speed = value;
+  this.movementHelper.moveSpeed = value;
+  this.vrHelper.moveSpeed = value;
 }
 
 updateEyeLevel(value: number): void {

@@ -16,7 +16,7 @@ export class PlayerMovementHelper {
   readonly EPSILON = 0.001;
 
   constructor(
-    private moveSpeed: number,
+    public moveSpeed: number,
     private gravity: number,
     private jumpStrength: number,
     private cameraHeight: number
@@ -75,15 +75,11 @@ applyVRMovement(
   movementVector: THREE.Vector3,
   cameraQuat: THREE.Quaternion
 ) {
-
-  // Apply deadzone filtering here BEFORE anything else
   const DEADZONE = 0.15;
-  if (Math.abs(movementVector.x) < DEADZONE) movementVector.x = 0;
-  if (Math.abs(movementVector.z) < DEADZONE) movementVector.z = 0;
+  const x = Math.abs(movementVector.x) < DEADZONE ? 0 : movementVector.x;
+  const z = Math.abs(movementVector.z) < DEADZONE ? 0 : movementVector.z;
 
-   // If after deadzone filtering the vector is zero, no movement
-  if (movementVector.lengthSq() === 0) {
-    // Also optionally zero velocity here to prevent drift
+  if (x === 0 && z === 0) {
     this.velocity.x = 0;
     this.velocity.z = 0;
     return;
@@ -93,16 +89,18 @@ applyVRMovement(
   this.velocity.x *= Math.max(0, 1 - this.friction * delta);
   this.velocity.z *= Math.max(0, 1 - this.friction * delta);
 
-  // Clamp small values to zero to stop drifting
+  // Transform joystick direction by camera rotation
+  const moveVec = new THREE.Vector3(x, 0, z).applyQuaternion(cameraQuat).setY(0).normalize();
+
+  // Apply movement speed here (once)
+  this.velocity.x += moveVec.x * this.moveSpeed * delta;
+  this.velocity.z += moveVec.z * this.moveSpeed * delta;
+
+  // Clamp very small drift
   if (Math.abs(this.velocity.x) < this.EPSILON) this.velocity.x = 0;
   if (Math.abs(this.velocity.z) < this.EPSILON) this.velocity.z = 0;
-
-  if (movementVector.lengthSq() > 0) {
-    const moveDir = movementVector.clone().applyQuaternion(cameraQuat).setY(0).normalize();
-    this.velocity.x += moveDir.x * this.moveSpeed * delta;
-    this.velocity.z += moveDir.z * this.moveSpeed * delta;
-  }
 }
+
 
   enforceGround(playerObj: THREE.Object3D) {
     if (playerObj.position.y < this.cameraHeight) {

@@ -10,7 +10,7 @@ export class VrControllerHelper {
   // Movement vector to apply (axes from gamepad)
   public movementVector = new THREE.Vector3(0, 0, 0);
 
-  public moveSpeed = 3.0;
+  public moveSpeed: number;
 
   constructor(moveSpeed = 3.0) {
     this.moveSpeed = moveSpeed;
@@ -60,21 +60,23 @@ export class VrControllerHelper {
     return q;
   }
 
+
   update() {
-  if (!this.enabled) return;
+    if (!this.enabled) return;
 
-  const gp = navigator.getGamepads?.()[0];
+    const gp = navigator.getGamepads?.()[0];
 
-  if (gp) {
-    const axisX = gp.axes[0] || 0;
-    const axisY = gp.axes[1] || 0;
+    if (gp) {
+      const axisX = gp.axes[0] || 0;
+      const axisY = gp.axes[1] || 0;
 
-    // 🚨 Invert Y-axis for natural movement
-    this.movementVector.set(axisX * this.moveSpeed, 0, -axisY * this.moveSpeed);
-  } else {
-    this.movementVector.set(0, 0, 0);
+      // Store raw values (invert Y for natural movement)
+      this.movementVector.set(axisX, 0, -axisY);
+    } else {
+      this.movementVector.set(0, 0, 0);
+    }
   }
-}
+
 
 
   // Apply the orientation smoothing to camera quaternion (call from animate)
