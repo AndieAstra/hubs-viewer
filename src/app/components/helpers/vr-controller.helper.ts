@@ -61,22 +61,24 @@ export class VrControllerHelper {
   }
 
 
-  update() {
-    if (!this.enabled) return;
+update() {
+  if (!this.enabled) return;
 
-    const gp = navigator.getGamepads?.()[0];
+  const gp = navigator.getGamepads?.()[0];
+  if (gp) {
+    const axisX = gp.axes[0] || 0;
+    const axisY = gp.axes[1] || 0;
 
-    if (gp) {
-      const axisX = gp.axes[0] || 0;
-      const axisY = gp.axes[1] || 0;
+    const DEADZONE = 0.15;
+    const x = Math.abs(axisX) < DEADZONE ? 0 : axisX;
+    const y = Math.abs(axisY) < DEADZONE ? 0 : axisY;
 
-      // Store raw values (invert Y for natural movement)
-      this.movementVector.set(axisX, 0, -axisY);
-    } else {
-      this.movementVector.set(0, 0, 0);
-    }
+    // Set normalized direction vector — NOT scaled
+    this.movementVector.set(x, 0, -y);
+  } else {
+    this.movementVector.set(0, 0, 0);
   }
-
+}
 
 
   // Apply the orientation smoothing to camera quaternion (call from animate)

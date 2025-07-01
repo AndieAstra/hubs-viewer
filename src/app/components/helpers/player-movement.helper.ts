@@ -45,62 +45,69 @@ export class PlayerMovementHelper {
     this.velocity.y -= this.gravity * delta;
   }
 
-  applyMovement(
-    playerObj: THREE.Object3D,
-    delta: number,
-    controls: PointerLockControls,
-    isColliding: (pos: THREE.Vector3) => boolean
-  ) {
-    const moveX = this.velocity.x * delta;
-    const moveZ = this.velocity.z * delta;
-
-    const oldX = playerObj.position.x;
-    const oldZ = playerObj.position.z;
-
-    controls.moveRight(moveX);
-    if (isColliding(playerObj.position)) {
-      playerObj.position.x = oldX;
-    }
-
-    controls.moveForward(moveZ);
-    if (isColliding(playerObj.position)) {
-      playerObj.position.z = oldZ;
-    }
-
-    playerObj.position.y += this.velocity.y * delta;
-  }
-
-applyVRMovement(
+applyCombinedMovement(
   delta: number,
-  movementVector: THREE.Vector3,
-  cameraQuat: THREE.Quaternion
+  playerObj: THREE.Object3D,
+  controls: PointerLockControls,
+  keyboardInput: { forward: boolean; backward: boolean; left: boolean; right: boolean },
+  vrVector: THREE.Vector3,
+  cameraQuat: THREE.Quaternion,
+  isColliding: (pos: THREE.Vector3) => boolean
 ) {
-  const DEADZONE = 0.15;
-  const x = Math.abs(movementVector.x) < DEADZONE ? 0 : movementVector.x;
-  const z = Math.abs(movementVector.z) < DEADZONE ? 0 : movementVector.z;
+  const inputVelocity = new THREE.Vector3();
 
-  if (x === 0 && z === 0) {
-    this.velocity.x = 0;
-    this.velocity.z = 0;
-    return;
+  // 🎮 VR joystick input
+  if (vrVector.lengthSq() > 0.001) {
+    const DEADZONE = 0.15;
+    const filteredVR = vrVector.clone();
+
+    // Deadzone filter
+    if (Math.abs(filteredVR.x) < DEADZONE) filteredVR.x = 0;
+    if (Math.abs(filteredVR.z) < DEADZONE) filteredVR.z = 0;
+
+    // Rotate joystick movement to camera direction
+    const moveDir = filteredVR.applyQuaternion(cameraQuat);
+    moveDir.y = 0;
+    moveDir.normalize();
+
+    inputVelocity.add(moveDir.multiplyScalar(this.moveSpeed));
   }
 
-  // Apply friction/damping
+  // ⌨️ Keyboard input
+  const direction = new THREE.Vector3();
+  if (keyboardInput.forward) direction.z -= 1;
+  if (keyboardInput.backward) direction.z += 1;
+  if (keyboardInput.left) direction.x -= 1;
+  if (keyboardInput.right) direction.x += 1;
+
+  if (direction.lengthSq() > 0) {
+    direction.normalize();
+    // Rotate direction to camera
+    const rotated = direction.applyQuaternion(cameraQuat);
+    rotated.y = 0;
+    inputVelocity.add(rotated.multiplyScalar(this.moveSpeed));
+  }
+
+  // 🧼 Apply friction
   this.velocity.x *= Math.max(0, 1 - this.friction * delta);
   this.velocity.z *= Math.max(0, 1 - this.friction * delta);
 
-  // Transform joystick direction by camera rotation
-  const moveVec = new THREE.Vector3(x, 0, z).applyQuaternion(cameraQuat).setY(0).normalize();
+  // ➕ Add blended velocity
+  this.velocity.addScaledVector(inputVelocity, delta);
 
-  // Apply movement speed here (once)
-  this.velocity.x += moveVec.x * this.moveSpeed * delta;
-  this.velocity.z += moveVec.z * this.moveSpeed * delta;
+  // 🚶 Move with collision checks
+  const moveX = this.velocity.x * delta;
+  const moveZ = this.velocity.z * delta;
+  const oldPos = playerObj.position.clone();
 
-  // Clamp very small drift
-  if (Math.abs(this.velocity.x) < this.EPSILON) this.velocity.x = 0;
-  if (Math.abs(this.velocity.z) < this.EPSILON) this.velocity.z = 0;
+  playerObj.position.x += moveX;
+  if (isColliding(playerObj.position)) playerObj.position.x = oldPos.x;
+
+  playerObj.position.z += moveZ;
+  if (isColliding(playerObj.position)) playerObj.position.z = oldPos.z;
+
+  playerObj.position.y += this.velocity.y * delta;
 }
-
 
   enforceGround(playerObj: THREE.Object3D) {
     if (playerObj.position.y < this.cameraHeight) {

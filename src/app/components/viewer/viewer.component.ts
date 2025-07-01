@@ -576,8 +576,6 @@ public loadGLB(file: File): void {
   reader.readAsArrayBuffer(file);
 }
 
-// ******************************************************************************************
-
 uploadSceneFromFile(file: File): void {
   const reader = new FileReader();
   reader.onload = async (event: ProgressEvent<FileReader>) => {
@@ -912,8 +910,6 @@ private saveSceneToLocalStorage(): void {
   }
 }
 
-// ******************************************************************************************
-
 private isColliding(position: THREE.Vector3): boolean {
   // Player height and half-height for collision box center calculation
   const playerHeight = 1.6;
@@ -982,15 +978,10 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
-// ************************************************************************
-// Need to update to current camera view straight ahead. NOT the floor!
-// Resets camera or scene view
-
-
 resetView(): void {
     // Implement your reset logic here (e.g., reset camera position)
-    this.camera.position.set(0, this.cameraHeight, 0);
-    this.camera.lookAt(0, 0, 0);
+    this.camera.position.set(0, this.cameraHeight, 10);
+    this.camera.lookAt(0, this.cameraHeight, 0);
     this.controls.unlock();  // Or however you want to reset controls
     this.snackBar.open(this.translate.instant('MESSAGES.VIEW_RESET'), 'OK', { duration: 2000 });
   }
@@ -1023,20 +1014,30 @@ private animate = () => {
   this.animationId = requestAnimationFrame(this.animate);
   const delta = this.clock.getDelta();
 
-  this.vrHelper.update(); // ✅ IMPORTANT: Update gamepad state
+  this.vrHelper.update(); // Update joystick
 
-  this.movementHelper.applyFriction(delta, 5.0);
-  this.movementHelper.updateKeyboardMovement(delta, this.speed);
-  this.movementHelper.applyGravity(delta);
-  this.movementHelper.applyMovement(this.controls.object, delta, this.controls, this.isColliding.bind(this));
-  this.movementHelper.applyVRMovement(delta, this.vrHelper.movementVector, this.camera.quaternion);
-  this.movementHelper.enforceGround(this.controls.object);
+this.movementHelper.applyFriction(delta, 5.0);
+this.movementHelper.updateKeyboardMovement(delta, this.speed); // Only updates velocity.y (gravity/jump)
+
+this.movementHelper.applyCombinedMovement(
+  delta,
+  this.controls.getObject(),
+  this.controls,
+  this.keysPressed, // WASD
+  this.vrHelper.movementVector, // joystick
+  this.controls.getObject().quaternion, // direction of player
+  this.isColliding.bind(this)
+);
+
+this.movementHelper.enforceGround(this.controls.object);
+
 
   // Optional: Apply look-around based on orientation (disabled for now)
   // this.vrHelper.applyRotation(this.camera, 0.3);
 
   this.renderer.render(this.scene, this.camera);
 
+  console.log('Facing quaternion:', this.controls.getObject().quaternion);
   console.log('Joystick Movement:', this.vrHelper.movementVector);
 };
 
@@ -1076,11 +1077,6 @@ onResize(width?: number, height?: number): void {
 }
 
 //************* VR Integration ******************* */
-
-// startVrControls() {
-//   this.vrHelper.start();
-//   this.vrActive = true;
-// }
 
 public enterVR(): void {
   if (!/Mobi|Android/i.test(navigator.userAgent)) {
