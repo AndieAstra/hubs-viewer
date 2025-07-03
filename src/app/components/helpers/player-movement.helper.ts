@@ -61,11 +61,9 @@ applyCombinedMovement(
     const DEADZONE = 0.15;
     const filteredVR = vrVector.clone();
 
-    // Deadzone filter
     if (Math.abs(filteredVR.x) < DEADZONE) filteredVR.x = 0;
     if (Math.abs(filteredVR.z) < DEADZONE) filteredVR.z = 0;
 
-    // Rotate joystick movement to camera direction
     const moveDir = filteredVR.applyQuaternion(cameraQuat);
     moveDir.y = 0;
     moveDir.normalize();
@@ -82,28 +80,32 @@ applyCombinedMovement(
 
   if (direction.lengthSq() > 0) {
     direction.normalize();
-    // Rotate direction to camera
     const rotated = direction.applyQuaternion(cameraQuat);
     rotated.y = 0;
     inputVelocity.add(rotated.multiplyScalar(this.moveSpeed));
   }
 
-  // 🧼 Apply friction
+  // ➕ Add blended velocity
+  this.velocity.addScaledVector(inputVelocity, delta);
+
+  // 🧼 Apply friction after velocity update
   this.velocity.x *= Math.max(0, 1 - this.friction * delta);
   this.velocity.z *= Math.max(0, 1 - this.friction * delta);
 
-  // ➕ Add blended velocity
-  this.velocity.addScaledVector(inputVelocity, delta);
+  // Clamp small velocity to zero to stop drift
+  const EPSILON = 0.001;
+  if (Math.abs(this.velocity.x) < EPSILON) this.velocity.x = 0;
+  if (Math.abs(this.velocity.z) < EPSILON) this.velocity.z = 0;
 
   // 🚶 Move with collision checks
   const moveX = this.velocity.x * delta;
   const moveZ = this.velocity.z * delta;
   const oldPos = playerObj.position.clone();
 
-  playerObj.position.x += moveX;
+  controls.moveRight(moveX);
   if (isColliding(playerObj.position)) playerObj.position.x = oldPos.x;
 
-  playerObj.position.z += moveZ;
+  controls.moveForward(moveZ);
   if (isColliding(playerObj.position)) playerObj.position.z = oldPos.z;
 
   playerObj.position.y += this.velocity.y * delta;

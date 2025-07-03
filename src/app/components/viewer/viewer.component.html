@@ -1,3 +1,15 @@
 <div #canvasContainer class="viewer-container">
   <canvas #canvas></canvas>
 </div>
+
+<!-- Fullscreen Button -->
+<button class="fullscreen-btn" (click)="toggleFullscreen()">
+  ⛶ Fullscreen (Use WASD / Arrow keys to move)
+</button>
+
+@if (showEscHint) {
+<!-- ESC hint (show only in fullscreen) -->
+<div class="esc-hint">
+  🔙 Press <strong>ESC</strong> to exit fullscreen
+</div>
+}

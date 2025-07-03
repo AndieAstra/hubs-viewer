@@ -114,6 +114,11 @@ uploadedModel: THREE.Object3D | null = null;          // User-uploaded GLB
 private sceneLoaded = false;                          // Used to track scene initialization
 private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjustments
 
+showEscHint = false;
+
+private container!: HTMLElement;
+private escHint!: HTMLDivElement;
+private escHintSprite!: THREE.Sprite;
 
 // ===========================================================
 // VR Integration
@@ -189,6 +194,12 @@ isPlacingModel = false;           // Whether user is placing a model in the scen
 ngOnInit() {
   document.addEventListener('keydown', this.onKeyDown);
   document.addEventListener('keyup', this.onKeyUp);
+
+  document.addEventListener('fullscreenchange', () => {
+    this.escHint.style.display = document.fullscreenElement === this.container ? 'block' : 'none';
+  });
+
+
   this.loadSceneFromLocalStorage();
   this.canJump = true;
 
@@ -201,7 +212,6 @@ ngOnInit() {
     this.cameraHeight
   );
 }
-
 
 ngOnDestroy() {
   document.removeEventListener('keydown', this.onKeyDown);
@@ -268,43 +278,64 @@ ngAfterViewInit() {
   this.initScene();
   this.animate();
 
+  this.container = this.containerRef.nativeElement;
+
+  // ✅ Listen for window resize
   this.resizeListener = () => this.onResize();
   window.addEventListener('resize', this.resizeListener);
 
+  // ✅ Setup ESC hint overlay <div>
+  this.escHint = document.createElement('div');
+  this.escHint.classList.add('esc-hint');
+  this.escHint.innerHTML = '🔙 Press <strong>ESC</strong> to exit fullscreen';
+  this.escHint.style.display = 'none';
+  this.container.appendChild(this.escHint);
 
-  if (this.glbFile) {
-    this.loadGLB(this.glbFile);
-  }
 
-  // ✅ SAFELY SETUP canvas + renderer DOM
+
+
+  // Show ESC hint if either renderer or container is fullscreen (normal or VR mode)
+
+  document.addEventListener('fullscreenchange', () => {
+    const fsEl = document.fullscreenElement;
+
+    const isFullscreen =
+      fsEl === this.renderer?.domElement || fsEl === this.container;
+
+    this.showEscHint = isFullscreen;
+
+    if (this.escHint) {
+      this.escHint.style.display = isFullscreen ? 'block' : 'none';
+    }
+
+    if (this.escHintSprite) {
+      this.escHintSprite.visible = isFullscreen;
+    }
+  });
+
+
+
+
+  // ✅ Ensure canvas is present and sized correctly
   if (!this.renderer || !this.renderer.domElement) {
-    const msg = this.translate.instant('ERRORS.RENDERER_NOT_AVAILABLE');
-    console.warn(msg);
+    console.warn(this.translate.instant('ERRORS.RENDERER_NOT_AVAILABLE'));
     return;
   }
 
   const canvas = this.renderer.domElement;
   const container = this.containerRef.nativeElement;
 
-// ✅ ENSURE canvas is added to container and assigned to canvasRef
-if (!canvas.parentElement || canvas.parentElement !== container) {
-  container.appendChild(canvas);
-}
+  if (!canvas.parentElement || canvas.parentElement !== container) {
+    container.appendChild(canvas);
+  }
 
-// 🔍 Add debug borders here
-Object.assign(container.style, {
-  border: '2px dashed red',
-});
+  Object.assign(container.style, {
+    border: '2px dashed red',
+    position: 'relative'
+  });
 
-Object.assign(canvas.style, {
-  border: '2px solid lime',
-});
-
-  // ✅ Optional: Assign to canvasRef if needed elsewhere
-  this.canvasRef = new ElementRef(canvas);
-
-  // ✅ Style the canvas for layout consistency
   Object.assign(canvas.style, {
+    border: '2px solid lime',
     position: 'absolute',
     top: '0',
     left: '0',
@@ -312,39 +343,39 @@ Object.assign(canvas.style, {
     height: '100%',
     display: 'block',
     touchAction: 'none',
-    zIndex: '0',
+    zIndex: '0'
   });
 
-  // ✅ Resize renderer based on container
+  this.canvasRef = new ElementRef(canvas);
+
   this.renderer.setSize(container.clientWidth, container.clientHeight);
-  this.animate();
 
-  // ✅ Drag-and-drop events
-  canvas.addEventListener('dragover', (event) => {
+  // ✅ ESC Hint Sprite (optional 3D overlay)
+  this.escHintSprite = this.createEscHintSprite();
+  this.escHintSprite.visible = false;
+  this.scene.add(this.escHintSprite);
+
+  // ✅ Drag-and-drop
+  canvas.addEventListener('dragover', (event) => event.preventDefault());
+  canvas.addEventListener('drop', (event) => {
     event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file && file.name.endsWith('.glb')) {
+      if (this.sceneLoaded && !confirm(this.translate.instant('ERRORS.DROP_REPLACE_CONFIRM'))) return;
+      this.clearScene();
+      this.loadGLB(file);
+    }
   });
 
-  canvas.addEventListener('drop', (event) => {
-  event.preventDefault();
-  const file = event.dataTransfer?.files?.[0];
-  if (file && file.name.endsWith('.glb')) {
-    if (this.sceneLoaded && !confirm(this.translate.instant('ERRORS.DROP_REPLACE_CONFIRM'))) return;
-    this.clearScene();
-    this.loadGLB(file);
-  }
-});
-
-  // ✅ Raycasting click handler
+  // ✅ Object selection with raycasting
   canvas.addEventListener('click', (event) => {
     const rect = canvas.getBoundingClientRect();
     const mouse = new THREE.Vector2(
       ((event.clientX - rect.left) / rect.width) * 2 - 1,
       -((event.clientY - rect.top) / rect.height) * 2 + 1
     );
-
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, this.camera);
-
     const intersects = raycaster.intersectObjects(this.scene.children, true);
     if (intersects.length > 0) {
       const selected = intersects[0].object;
@@ -352,15 +383,11 @@ Object.assign(canvas.style, {
     }
   });
 
-  // ✅ Pointer lock control logic
+  // ✅ Pointer Lock Controls
   canvas.addEventListener('click', () => {
     this.controls.lock();
-
-    // 👶 Auto unlock after 10 seconds
     setTimeout(() => {
-      if (this.controls.isLocked) {
-        this.controls.unlock();
-      }
+      if (this.controls.isLocked) this.controls.unlock();
     }, 10000);
   });
 
@@ -370,16 +397,16 @@ Object.assign(canvas.style, {
     }
   });
 
-  // ✅ Grid Helper
+  // ✅ Grid helper
   this.gridHelper = new THREE.GridHelper(10, 10);
-  this.scene.add(this.gridHelper);
   this.gridHelper.visible = this.showGrid;
+  this.scene.add(this.gridHelper);
 
-  // ✅ Stereo VR effect
+  // ✅ VR Stereo Effect
   this.stereoEffect = new StereoEffect(this.renderer);
   this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
 
-  // ✅ VR auto-toggle on mobile orientation
+  // ✅ Mobile VR mode on orientation change
   window.addEventListener('orientationchange', () => {
     const isLandscape = window.innerWidth > window.innerHeight;
     if (isLandscape && !this.isVRMode) {
@@ -389,7 +416,7 @@ Object.assign(canvas.style, {
     }
   });
 
-  // ✅ VR exit on back navigation
+  // ✅ Exit VR if navigating back
   window.addEventListener('popstate', () => {
     if (this.isVRMode) {
       this.exitVR();
@@ -397,7 +424,8 @@ Object.assign(canvas.style, {
   });
 }
 
-  //********* UI Controls for the ThreeJS Scene *********/
+
+//********* UI Controls for the ThreeJS Scene *********/
 
 private initScene() {
   const container = this.containerRef.nativeElement;
@@ -428,6 +456,22 @@ private initScene() {
     alert(this.translate.instant('ERRORS.WEBGL_INIT_FAIL_ALERT'));
     return;
   }
+
+
+// ngAfterViewInit or initScene:
+this.container = this.containerRef.nativeElement;
+this.container.style.position = 'relative'; // critical
+
+this.escHint = document.createElement('div');
+this.escHint.classList.add('esc-hint');
+this.escHint.innerHTML = '🔙 Press <strong>ESC</strong> to exit fullscreen';
+this.escHint.style.display = 'none';
+
+this.container.appendChild(this.escHint);
+
+
+
+
 
   // 💡 Lighting
   this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -487,8 +531,6 @@ private initScene() {
   const axesHelper = new THREE.AxesHelper(5);
   this.scene.add(axesHelper);
 }
-
-
 
 //************* Update/Model Transform ******************* */
 
@@ -986,19 +1028,6 @@ resetView(): void {
     this.snackBar.open(this.translate.instant('MESSAGES.VIEW_RESET'), 'OK', { duration: 2000 });
   }
 
-// Toggles wireframe mode on loaded models
-toggleWireframe(): void {
-  if (!this.uploadedModel) return;
-
-  this.uploadedModel.traverse((child: any) => {
-    if (child.isMesh) {
-      child.material.wireframe = !child.material.wireframe;
-    }
-  });
-
-  this.snackBar.open(this.translate.instant('MESSAGES.WIREFRAME_TOGGLED'), 'OK', { duration: 2000 });
-}
-
 // Clears the loaded model(s)
 clearModel(): void {
   if (this.uploadedModel) {
@@ -1016,24 +1045,46 @@ private animate = () => {
 
   this.vrHelper.update(); // Update joystick
 
-this.movementHelper.applyFriction(delta, 5.0);
-this.movementHelper.updateKeyboardMovement(delta, this.speed); // Only updates velocity.y (gravity/jump)
+  this.movementHelper.applyFriction(delta, 5.0);
+  this.movementHelper.updateKeyboardMovement(delta, this.speed); // Only updates velocity.y (gravity/jump)
 
-this.movementHelper.applyCombinedMovement(
-  delta,
-  this.controls.getObject(),
-  this.controls,
-  this.keysPressed, // WASD
-  this.vrHelper.movementVector, // joystick
-  this.controls.getObject().quaternion, // direction of player
-  this.isColliding.bind(this)
-);
+  // Inside animate()
+  if (this.escHintSprite) {
+    const offset = new THREE.Vector3(0, -0.8, -2.5);
+    this.escHintSprite.position.copy(this.camera.localToWorld(offset.clone()));
+  }
 
-this.movementHelper.enforceGround(this.controls.object);
+  if (this.escHintSprite) {
+  const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
+  this.escHintSprite.visible = isInFullscreen;
+}
 
+  this.movementHelper.applyCombinedMovement(
+    delta,
+    this.controls.getObject(),
+    this.controls,
+    this.keysPressed, // WASD
+    this.vrHelper.movementVector, // joystick
+    this.controls.getObject().quaternion, // direction of player
+    this.isColliding.bind(this)
+  );
 
-  // Optional: Apply look-around based on orientation (disabled for now)
-  // this.vrHelper.applyRotation(this.camera, 0.3);
+  this.movementHelper.enforceGround(this.controls.object);
+
+  // Update ESC hint sprite position & orientation if visible
+  if (this.escHintSprite && this.escHintSprite.visible) {
+    // Get camera forward direction
+    const cameraDirection = new THREE.Vector3();
+    this.camera.getWorldDirection(cameraDirection);
+
+    // Position sprite 2 units in front of camera and a bit below
+    const cameraPosition = this.camera.position.clone();
+    this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
+    this.escHintSprite.position.y -= 1.2;
+
+    // Make it face camera
+    this.escHintSprite.quaternion.copy(this.camera.quaternion);
+  }
 
   this.renderer.render(this.scene, this.camera);
 
@@ -1049,15 +1100,35 @@ private onKeyUp = (event: KeyboardEvent) => {
   this.movementHelper.onKeyUp(event.code);
 };
 
-
 //************* Screen Sizing ******************* */
 
+// private resizeListener = () => {
+//   const container = this.containerRef.nativeElement;
+//   this.camera.aspect = container.clientWidth / container.clientHeight;
+//   this.camera.updateProjectionMatrix();
+//   this.renderer.setSize(container.clientWidth, container.clientHeight);
+// };
+
 private resizeListener = () => {
-  const container = this.containerRef.nativeElement;
-  this.camera.aspect = container.clientWidth / container.clientHeight;
-  this.camera.updateProjectionMatrix();
-  this.renderer.setSize(container.clientWidth, container.clientHeight);
+  this.onResize();
 };
+
+// onResize(width?: number, height?: number): void {
+//   const container = this.containerRef.nativeElement;
+//   const w = width ?? container.clientWidth;
+//   const h = height ?? container.clientHeight;
+
+//   if (this.renderer && this.camera) {
+//     this.renderer.setSize(w, h);
+//     this.camera.aspect = w / h;
+//     this.camera.updateProjectionMatrix();
+//   }
+
+//   // ✅ Ensure stereo effect resizes in VR
+//   if (this.isVRMode && this.stereoEffect) {
+//     this.stereoEffect.setSize(w, h);
+//   }
+// }
 
 onResize(width?: number, height?: number): void {
   const container = this.containerRef.nativeElement;
@@ -1070,10 +1141,91 @@ onResize(width?: number, height?: number): void {
     this.camera.updateProjectionMatrix();
   }
 
-  // ✅ Ensure stereo effect resizes in VR
   if (this.isVRMode && this.stereoEffect) {
     this.stereoEffect.setSize(w, h);
   }
+}
+
+
+//************* FullScreen ******************* */
+
+// toggleFullscreen() {
+//   const canvas = this.renderer?.domElement;
+
+//   if (!canvas) return;
+
+//   if (!document.fullscreenElement) {
+//     canvas.requestFullscreen()
+//       .then(() => {
+//         this.showEscHint = true; // 🔔 Trigger DOM overlay visibility
+//       })
+//       .catch(err => {
+//         console.error("Failed to enter fullscreen:", err);
+//       });
+//   } else {
+//     document.exitFullscreen()
+//       .then(() => {
+//         this.showEscHint = false;
+//       })
+//       .catch(err => {
+//         console.error("Failed to exit fullscreen:", err);
+//       });
+//   }
+// }
+
+toggleFullscreen() {
+  const canvas = this.renderer?.domElement;
+
+  if (!canvas) return;
+
+  if (!document.fullscreenElement) {
+    canvas.requestFullscreen()
+      .catch(err => console.error("Failed to enter fullscreen:", err));
+  } else {
+    document.exitFullscreen()
+      .catch(err => console.error("Failed to exit fullscreen:", err));
+  }
+}
+
+
+
+
+
+//********* ESC Hint for Fullscreen *********/
+
+private createEscHintSprite(): THREE.Sprite {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024;
+  canvas.height = 128;
+
+  const ctx = canvas.getContext('2d')!;
+  ctx.imageSmoothingEnabled = false;
+
+  // Background
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Text
+  ctx.font = 'bold 48px Arial';
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🔙 Press ESC to exit fullscreen', canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+
+  const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+  const sprite = new THREE.Sprite(material);
+
+  sprite.visible = false; // Hide until fullscreen is entered
+
+  sprite.scale.set(6, 0.8, 1);           // W x H (adjust as needed)
+  sprite.position.set(0, -0.8, -2.5);    // Centered, slightly below camera
+
+  return sprite;
 }
 
 //************* VR Integration ******************* */
@@ -1189,6 +1341,19 @@ enterModelPlacementMode(): void {
   }
 
 //************* User Friendly UI Buttons ******************* */
+
+// Toggles wireframe mode on loaded models
+toggleWireframe(): void {
+  if (!this.uploadedModel) return;
+
+  this.uploadedModel.traverse((child: any) => {
+    if (child.isMesh) {
+      child.material.wireframe = !child.material.wireframe;
+    }
+  });
+
+  this.snackBar.open(this.translate.instant('MESSAGES.WIREFRAME_TOGGLED'), 'OK', { duration: 2000 });
+}
 
 setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
   this.selectedTool = mode;
