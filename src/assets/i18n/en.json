@@ -19,7 +19,7 @@
   },
 
   "BUTTONS": {
-    "TOGGLE_WIREFRAME": "Toggle Wireframe",
+    "TOGGLE_WIREFRAME": "Toggle Mesh",
     "TUTORIAL": "🎓 Tutorial",
     "BUG_REPORT": "🐞 Something not working?",
     "ENTER_VR": "🕶 Enter VR",

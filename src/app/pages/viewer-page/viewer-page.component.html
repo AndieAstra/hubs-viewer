@@ -34,30 +34,38 @@
         }
       </div>
 
+
+
+
       <!-- 🔧 Scene -->
-      <section>
-        <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
-        <button class="kid-button" (click)="toggleWireframe()">
-          <img src="assets/icons/new_rotate.png" alt="Wireframe" />
-          <span>{{ 'BUTTONS.TOGGLE_WIREFRAME' | translate }}</span>
-        </button>
-        <button class="kid-button" (click)="resetView()">
-          <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
-          <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
-        </button>
-        <button class="kid-button turquoise" (click)="save()">
-          <img src="assets/icons/save.jpg" alt="Save" />
-          <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-        </button>
-        <button class="kid-button purple" (click)="load()">
-          <img src="assets/icons/upload.png" alt="Load" />
-          <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
-        </button>
-      </section>
+<section>
+  <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
+  <div class="button-row">
+
+    <button class="kid-button" (click)="resetView()">
+      <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
+      <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
+    </button>
+
+    <button class="kid-button turquoise" (click)="save()">
+      <img src="assets/icons/save.jpg" alt="Save" />
+      <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
+    </button>
+
+    <button class="kid-button purple" (click)="load()">
+      <img src="assets/icons/upload.png" alt="Load" />
+      <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
+    </button>
+
+  </div>
+</section>
+
+
 
       <!-- 💡 Lighting -->
       <section>
         <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
+<div class="button-row">
         <button class="kid-button green" (click)="toggleLightcolor()">
           <img src="assets/icons/reset.png" alt="Light Color" />
           <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
@@ -70,11 +78,22 @@
           <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
           <input type="range" (input)="onSunlightInput($event)" />
         </div>
+</div>
       </section>
+
+
 
       <!-- 📐 Model Settings -->
       <section>
         <h4>{{ 'SECTIONS.MODEL_SETTINGS' | translate }}</h4>
+      <div class="button-row">
+
+    <button class="kid-button" (click)="toggleWireframe()">
+      <img src="assets/icons/new_rotate.png" alt="Wireframe" />
+      <span>{{ 'BUTTONS.TOGGLE_WIREFRAME' | translate }}</span>
+    </button>
+
+
         <div class="kid-slider">
           <label>{{ 'SLIDERS.MODEL_SIZE' | translate }}</label>
           <input type="range" (input)="onModelSizeInput($event)" />
@@ -83,11 +102,15 @@
           <label>{{ 'SLIDERS.MODEL_HEIGHT' | translate }}</label>
           <input type="range" (input)="onModelHeightInput($event)" />
         </div>
+
+
+        </div>
       </section>
 
       <!-- 🎥 Camera Movement -->
       <section>
         <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
+        <div class="button-row">
         <div class="kid-slider">
           <label>{{ 'SLIDERS.SPEED' | translate }}</label>
           <input type="range" (input)="onSpeedInput($event)" />
@@ -96,6 +119,7 @@
           <label>{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
           <input type="range" (input)="onEyeLevelInput($event)" />
         </div>
+        </div>
       </section>
     </aside>
 
@@ -103,14 +127,29 @@
     <section class="canvas-container">
       <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
 
+<!-- *********************************************************************************************** -->
+
       <!-- 👓 Exit VR Button -->
       @if(viewerRef?.isVRMode) {
       <button class="vr-exit-button" (click)="exitVRMode()">
         ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
       </button>
     }
+
+
+<!-- 👓 Exit Fullscreen Button -->
+    @if(viewerRef?.isInFullscreen && !viewerRef?.isVRMode) {
+      <button class="fullscreen-exit-button" (click)="exitFullscreen()">
+        ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
+      </button>
+    }
+
     </section>
   </div>
+
+<!-- *********************************************************************************************** -->
+
+
 
   <!-- 📌 Bottom Console -->
   <footer class="bottom-bar">

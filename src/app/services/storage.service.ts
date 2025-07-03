@@ -8,6 +8,34 @@ const EXPIRATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
   providedIn: 'root',
 })
 export class StorageService {
+  private readonly key = 'lumion_project_data';
+  private readonly expiration = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+  save(data: ProjectData): void {
+    localStorage.setItem(this.key, JSON.stringify(data));
+  }
+
+  load(): ProjectData | null {
+    const raw = localStorage.getItem(this.key);
+    if (!raw) return null;
+
+    try {
+      const data = JSON.parse(raw) as ProjectData;
+      if (Date.now() - data.timestamp > this.expiration) {
+        this.clear();
+        return null;
+      }
+      return data;
+    } catch {
+      this.clear();
+      return null;
+    }
+  }
+
+  clear(): void {
+    localStorage.removeItem(this.key);
+  }
+
   saveProject(data: ProjectData) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }

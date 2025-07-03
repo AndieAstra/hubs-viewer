@@ -1,19 +1,5 @@
-import {
-  Component,
-  ElementRef,
-  Input,
-  OnInit,
-  OnChanges,
-  SimpleChanges,
-  AfterViewInit,
-  ViewChild,
-  OnDestroy,
-  HostListener,
-  NgZone,
-} from '@angular/core';
+import {Component,ElementRef, Input, OnInit,OnChanges, SimpleChanges, AfterViewInit, ViewChild, OnDestroy, HostListener, NgZone,} from '@angular/core';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import GUI from 'lil-gui';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -26,6 +12,9 @@ import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
+import { SceneControlsHelper } from '../helpers/scene-controls.helper';
+import { SceneStorageHelper } from '../helpers/scene-storage.helper';
+
 
 export interface SavedModel {
   name: string;
@@ -89,6 +78,16 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     private ngZone: NgZone
   ) {}
 
+  scene!: THREE.Scene;
+  camera!: THREE.PerspectiveCamera;
+  renderer!: THREE.WebGLRenderer;
+  ambientLight!: THREE.AmbientLight;
+  dirLight!: THREE.DirectionalLight;
+
+  uploadedModel: THREE.Object3D | null = null;
+
+  // Track loaded meshes for collision etc
+  objects: THREE.Object3D[] = [];
 
 // ===========================================================
 // 🎛️ Default Configuration Values
@@ -105,13 +104,13 @@ cameraHeight = 2;            // Camera/player height from ground
 // ===========================================================
 // 📦 Scene and Rendering
 // ===========================================================
-private scene!: THREE.Scene;
-private camera!: THREE.PerspectiveCamera;
-public renderer!: THREE.WebGLRenderer;
+////public scene!: THREE.Scene;
+//private camera!: THREE.PerspectiveCamera;
+//public renderer!: THREE.WebGLRenderer;
 private clock = new THREE.Clock();
-private objects: THREE.Object3D[] = [];               // All interactive objects
-uploadedModel: THREE.Object3D | null = null;          // User-uploaded GLB
-private sceneLoaded = false;                          // Used to track scene initialization
+//private objects: THREE.Object3D[] = [];               // All interactive objects
+//uploadedModel: THREE.Object3D | null = null;          // User-uploaded GLB
+public sceneLoaded = false;                          // Used to track scene initialization
 private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjustments
 
 showEscHint = false;
@@ -134,8 +133,8 @@ public controllerSpeed = 3.0;
 // ===========================================================
 // 💡 Lighting System
 // ===========================================================
-private ambientLight!: THREE.AmbientLight;
-private dirLight!: THREE.DirectionalLight;
+//public ambientLight!: THREE.AmbientLight;
+//private dirLight!: THREE.DirectionalLight;
 
 // ===========================================================
 // 🕹️ Controls & Tools
@@ -174,6 +173,10 @@ public isVRMode = false;
 private originalSize?: { width: number; height: number };    // For restoring size after VR
 private originalCameraAspect?: number;                       // Used to reset camera aspect
 private originalSetAnimationLoop: any;                       // Backup of setAnimationLoop
+
+get isInFullscreen(): boolean {
+    return document.fullscreenElement === this.containerRef?.nativeElement;
+  }
 
 // ===========================================================
 // 📱 Device Context
@@ -291,9 +294,6 @@ ngAfterViewInit() {
   this.escHint.style.display = 'none';
   this.container.appendChild(this.escHint);
 
-
-
-
   // Show ESC hint if either renderer or container is fullscreen (normal or VR mode)
 
   document.addEventListener('fullscreenchange', () => {
@@ -312,9 +312,6 @@ ngAfterViewInit() {
       this.escHintSprite.visible = isFullscreen;
     }
   });
-
-
-
 
   // ✅ Ensure canvas is present and sized correctly
   if (!this.renderer || !this.renderer.domElement) {
@@ -424,7 +421,6 @@ ngAfterViewInit() {
   });
 }
 
-
 //********* UI Controls for the ThreeJS Scene *********/
 
 private initScene() {
@@ -457,7 +453,6 @@ private initScene() {
     return;
   }
 
-
 // ngAfterViewInit or initScene:
 this.container = this.containerRef.nativeElement;
 this.container.style.position = 'relative'; // critical
@@ -468,10 +463,6 @@ this.escHint.innerHTML = '🔙 Press <strong>ESC</strong> to exit fullscreen';
 this.escHint.style.display = 'none';
 
 this.container.appendChild(this.escHint);
-
-
-
-
 
   // 💡 Lighting
   this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -564,478 +555,96 @@ applyModelTransform(): void {
   this.camera.position.y = this.cameraHeight;
 }
 
-//************* Loading Models ******************* */
 
-public triggerSceneUpload() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = (event: Event) => {
-      const target = event.target as HTMLInputElement;
-      const file = target.files?.[0];
-      if (file) this.uploadSceneFromFile(file);
-    };
-    input.click();
-  }
+// **********************************************************************************************************
 
-public loadGLB(file: File): void {
-  const loader = new GLTFLoader();
-  const reader = new FileReader();
+public resetView(): void {
+  const defaultHeight = 1.6;
+  this.camera.position.set(0, defaultHeight, 10);
+  this.camera.lookAt(0, defaultHeight, 0);
 
-  reader.onload = () => {
-    try {
-      loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
-        const model = gltf.scene;
-
-        // Set metadata
-        model.userData['isLoadedModel'] = true;
-        model.userData['fileName'] = file.name;
-        model.userData['file'] = file;
-
-        // Add model to the scene
-        model.scale.setScalar(this.modelScale);
-        model.position.y = this.modelHeight;
-        this.scene.add(model);
-
-        // ✅ Track this as the active model for GUI control
-        this.setUploadedModel(model);
-
-        // Mark scene state and persist it
-        this.sceneLoaded = true;
-
-        // Auto Save - TBA NOT FUNCTIONAL YET
-
-      });
-    } catch {
-      alert(this.translate.instant('ERRORS.MODEL_LOAD_ERROR_ALERT'));
+  if (this.controls) {
+    if ('reset' in this.controls && typeof this.controls.reset === 'function') {
+      this.controls.reset();
+    } else if ('target' in this.controls) {
+      (this.controls as any).target.set(0, defaultHeight, 0);
+      (this.controls as any).update?.(0); // ✅ Pass dummy delta
     }
-  };
-
-  reader.onerror = () => {
-    alert(this.translate.instant('ERRORS.FILE_READ_FAIL_ALERT'));
-  };
-
-  reader.readAsArrayBuffer(file);
+  }
 }
 
-uploadSceneFromFile(file: File): void {
-  const reader = new FileReader();
-  reader.onload = async (event: ProgressEvent<FileReader>) => {
-    this.clearScene(); // ✅ Clear previous scene fully
-
-    const contents = event.target?.result as string;
-    const sceneData: SceneData = JSON.parse(contents);
-
-    // --- Restore lighting ---
-    if (sceneData.lighting) {
-      if (sceneData.lighting.ambient) {
-        this.ambientLight.color.setHex(sceneData.lighting.ambient.color);
-        this.ambientLight.intensity = sceneData.lighting.ambient.intensity;
-      }
-      if (sceneData.lighting.directional) {
-        this.dirLight.color.setHex(sceneData.lighting.directional.color);
-        this.dirLight.intensity = sceneData.lighting.directional.intensity;
-        this.dirLight.position.fromArray(sceneData.lighting.directional.position);
-      }
-    }
-
-    // --- Restore camera ---
-    if (sceneData.camera) {
-      this.camera.position.set(
-        sceneData.camera.position.x,
-        sceneData.camera.position.y,
-        sceneData.camera.position.z
-      );
-      this.camera.rotation.set(
-        sceneData.camera.rotation.x,
-        sceneData.camera.rotation.y,
-        sceneData.camera.rotation.z
-      );
-    }
-
-    // --- Restore models ---
-    for (const model of sceneData.models) {
-      const gltfLoader = new GLTFLoader();
-      const glbBinary = atob(model.glbBase64 ?? '');
-      const binaryArray = new Uint8Array(glbBinary.length);
-      for (let i = 0; i < glbBinary.length; i++) {
-        binaryArray[i] = glbBinary.charCodeAt(i);
-      }
-
-      const blob = new Blob([binaryArray], { type: 'model/gltf-binary' });
-      const url = URL.createObjectURL(blob);
-
-      try {
-        const gltf = await gltfLoader.loadAsync(url);
-        const loadedModel = gltf.scene;
-
-        loadedModel.name = model.name;
-        loadedModel.position.copy(model.position);
-        loadedModel.rotation.set(
-          model.rotation.x,
-          model.rotation.y,
-          model.rotation.z
-        );
-        loadedModel.scale.copy(model.scale);
-        loadedModel.userData['fileName'] = model.fileName;
-        loadedModel.userData['isLoadedModel'] = true;
-
-        this.objects = []; // Clear before restoring
-        loadedModel.traverse((child: THREE.Object3D) => {
+loadGLB(file: File) {
+    SceneControlsHelper.loadGLB(
+      file,
+      this.scene,
+      this.modelScale,
+      this.modelHeight,
+      (model) => {
+        this.uploadedModel = model;
+        this.objects = [];
+        model.traverse((child) => {
           if ((child as THREE.Mesh).isMesh) {
-            // Taking out the colliding physics for now
-            child.userData['collidable'] = false;
-            this.objects.push(child); // Add only once
+            this.objects.push(child);
           }
         });
-
-        this.uploadedModel = loadedModel;
-        this.applyModelTransform();
-        this.scene.add(loadedModel);
-        this.saveSceneToLocalStorage();
-
-        URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error(this.translate.instant('ERRORS.FAILED_LOAD_MODEL', { fileName: model.fileName }), error);
-      }
-    }
-    this.sceneLoaded = true;
-  };
-
-  reader.readAsText(file);
-  }
-
-private loadSceneFromLocalStorage(): void {
-
-  const raw = localStorage.getItem('autosavedScene');
-  if (!raw) {
-     console.warn(this.translate.instant('ERRORS.NO_AUTOSAVED_SCENE'));
-    return;
-  }
-
-  try {
-    const sceneData = JSON.parse(raw);
-
-    this.clearScene();
-
-    // Restore camera
-    if (sceneData.camera) {
-      const { position, rotation } = sceneData.camera;
-      this.camera.position.set(position.x, position.y, position.z);
-      this.camera.rotation.set(rotation.x, rotation.y, rotation.z);
-    }
-
-    // Restore lighting
-    if (sceneData.lighting) {
-      const { ambient, directional } = sceneData.lighting;
-      if (ambient) {
-        this.ambientLight.color.setHex(ambient.color);
-        this.ambientLight.intensity = ambient.intensity;
-      }
-      if (directional) {
-        this.dirLight.color.setHex(directional.color);
-        this.dirLight.intensity = directional.intensity;
-        this.dirLight.position.set(
-          directional.position.x,
-          directional.position.y,
-          directional.position.z
-        );
-      }
-    }
-
-    // Load models from base64 glb
-    if (sceneData.models && Array.isArray(sceneData.models)) {
-      const loader = new GLTFLoader();
-
-      sceneData.models.forEach((modelData: any) => {
-        if (!modelData.glbBase64) {
-          console.warn(this.translate.instant('ERRORS.MODEL_MISSING_BASE64', { modelName: modelData.name }));
-          return;
-        }
-
-        // Decode base64 to ArrayBuffer
-        const binaryString = atob(modelData.glbBase64);
-        const len = binaryString.length;
-        const arrayBuffer = new Uint8Array(len);
-        for (let i = 0; i < len; i++) {
-          arrayBuffer[i] = binaryString.charCodeAt(i);
-        }
-
-        loader.parse(arrayBuffer.buffer, '', (gltf) => {
-          const model = gltf.scene;
-          model.name = modelData.name || 'Loaded Model';
-          model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-          model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-          model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
-
-          model.userData['isLoadedModel'] = true;
-          model.userData['fileName'] = modelData.fileName || 'unknown.glb';
-
-          this.scene.add(model);
-          this.objects.push(model);
-        }, (error) => {
-          console.error(this.translate.instant('ERRORS.MODEL_LOAD_BASE64_ERROR'), error);
-        });
-      });
-    }
-
-    console.log(this.translate.instant('MESSAGES.SCENE_LOADED_LOCALSTORAGE'));
-  } catch (err) {
-     console.error(this.translate.instant('ERRORS.SCENE_LOAD_LOCALSTORAGE_ERROR'), err);
-  }
-}
-
-//************* Save/Clear Scene ******************* */
-
-//Exporting your scene
-saveScene(): void {
-  const sceneData: SceneData = {
-    models: [],
-    camera: {
-      position: this.camera.position.clone(),
-      rotation: {
-        x: this.camera.rotation.x,
-        y: this.camera.rotation.y,
-        z: this.camera.rotation.z
-      }
-    },
-    lighting: {
-      ambient: {
-        color: this.ambientLight.color.getHex(),
-        intensity: this.ambientLight.intensity,
       },
-      directional: {
-        color: this.dirLight.color.getHex(),
-        intensity: this.dirLight.intensity,
-        position: this.dirLight.position.toArray(),
-      },
-    },
-  };
-
-  const gltfExporter = new GLTFExporter();
-  const objectsToExport = this.scene.children.filter(
-    (obj) => obj.userData?.['isLoadedModel']
-  );
-
-  const exportNextModel = (index: number) => {
-    if (index >= objectsToExport.length) {
-      // All models processed, save the final scene JSON
-      const blob = new Blob([JSON.stringify(sceneData)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'scene.json';
-      link.click();
-      URL.revokeObjectURL(url);
-
-      this.snackBar.open(this.translate.instant('MESSAGES.SCENE_EXPORTED'), 'OK', { duration: 3000 });
-      console.log(this.translate.instant('MESSAGES.SCENE_EXPORT_COMPLETE'));
-      return;
-    }
-
-    const obj = objectsToExport[index];
-
-    gltfExporter.parse(
-      obj,
-      (gltf) => {
-        let glbBlob: Blob;
-
-        if (gltf instanceof ArrayBuffer) {
-          glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
-        } else {
-          glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          const binary = new Uint8Array(reader.result as ArrayBuffer);
-          let binaryString = '';
-          for (let i = 0; i < binary.byteLength; i++) {
-            binaryString += String.fromCharCode(binary[i]);
-          }
-          const base64 = btoa(binaryString);
-
-          sceneData.models.push({
-            name: obj.name || 'Unnamed',
-            position: obj.position.clone(),
-            rotation: {
-              x: obj.rotation.x,
-              y: obj.rotation.y,
-              z: obj.rotation.z,
-            },
-            scale: obj.scale.clone(),
-            fileName: obj.userData['fileName'] || 'unknown.glb',
-            glbBase64: base64,
-          });
-
-          exportNextModel(index + 1);
-        };
-
-        reader.readAsArrayBuffer(glbBlob);
-      },
-
-(error) => {
-  console.error(this.translate.instant('ERRORS.MODEL_EXPORT_ERROR'), error);
-  exportNextModel(index + 1); // Skip and continue with next model
-},
-{ binary: true }
-);
-console.log(this.translate.instant('MESSAGES.SCENE_EXPORT_STARTED'));
-exportNextModel(0);
-}}
-
-//autosave
-private saveSceneToLocalStorage(): void {
-  try {
-    const models = this.scene.children
-      .filter(obj => obj.userData?.['isLoadedModel'])
-      .map((obj) => ({
-        name: obj.name || '',
-        position: {
-          x: obj.position.x,
-          y: obj.position.y,
-          z: obj.position.z,
-        },
-        rotation: {
-          x: obj.rotation.x,
-          y: obj.rotation.y,
-          z: obj.rotation.z,
-        },
-        scale: {
-          x: obj.scale.x,
-          y: obj.scale.y,
-          z: obj.scale.z,
-        },
-        fileName: obj.userData['fileName'] || 'unknown.glb',
-      }));
-
-    const sceneData = {
-      models,
-      camera: {
-        position: {
-          x: this.camera.position.x,
-          y: this.camera.position.y,
-          z: this.camera.position.z,
-        },
-        rotation: {
-          x: this.camera.rotation.x,
-          y: this.camera.rotation.y,
-          z: this.camera.rotation.z,
-        }
-      },
-      lighting: {
-        ambient: {
-          color: this.ambientLight.color.getHex(),
-          intensity: this.ambientLight.intensity,
-        },
-        directional: {
-          color: this.dirLight.color.getHex(),
-          intensity: this.dirLight.intensity,
-          position: {
-            x: this.dirLight.position.x,
-            y: this.dirLight.position.y,
-            z: this.dirLight.position.z,
-          }
-        }
-      }
-    };
-
-// ******************************************************************************************
-
-// 9 of 20
-
-    localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
-  } catch (err) {
-    console.error(this.translate.instant('ERRORS.SCENE_SAVE_LOCALSTORAGE_ERROR'), err);
-  }
-}
-
-private isColliding(position: THREE.Vector3): boolean {
-  // Player height and half-height for collision box center calculation
-  const playerHeight = 1.6;
-  const playerHalfHeight = playerHeight / 2;
-
-  // Create collision box centered at player's current position adjusted vertically
-  const playerBox = new THREE.Box3().setFromCenterAndSize(
-    new THREE.Vector3(position.x, position.y - playerHalfHeight, position.z),
-    new THREE.Vector3(0.5, playerHeight, 0.5)
-  );
-
-  // Check collisions with all scene objects
-  for (const obj of this.objects) {
-    const box = new THREE.Box3().setFromObject(obj);
-    if (box.intersectsBox(playerBox)) return true;
+      () => alert('Failed to load model')
+    );
   }
 
-  return false;
-}
-
-clearScene(): void {
-  // Dispose of existing background if it's a texture
-  if (this.scene.background instanceof THREE.Texture) {
-    this.scene.background.dispose?.();
-    this.scene.background = null;
-  }
-
-  // Remove all previously loaded models
-  const toRemove = this.scene.children.filter((obj: THREE.Object3D) => obj.userData?.['isLoadedModel']);
-  toRemove.forEach(obj => {
-    this.scene.remove(obj);
-    obj.traverse((child: THREE.Object3D) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-
-        // Dispose geometry
-        mesh.geometry?.dispose?.();
-
-        // Dispose materials and textures
-        const disposeMaterial = (material: THREE.Material | undefined) => {
-          if (!material) return;
-
-          const mat = material as any;
-          ['map', 'lightMap', 'aoMap', 'emissiveMap', 'bumpMap', 'normalMap', 'displacementMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'envMap']
-            .forEach((prop) => {
-              if (mat[prop]?.dispose) mat[prop].dispose();
-            });
-
-          material.dispose?.();
-        };
-
-        if (Array.isArray(mesh.material)) {
-          mesh.material.forEach(disposeMaterial);
-        } else {
-          disposeMaterial(mesh.material);
-        }
-      }
-    });
-  });
-
-  // Clear interaction objects
-  this.objects = [];
-
-  // Reset camera position/rotation
-  this.camera.position.set(0, 0, 5);
-  this.camera.rotation.set(0, 0, 0);
-}
-
-resetView(): void {
-    // Implement your reset logic here (e.g., reset camera position)
-    this.camera.position.set(0, this.cameraHeight, 10);
-    this.camera.lookAt(0, this.cameraHeight, 0);
-    this.controls.unlock();  // Or however you want to reset controls
-    this.snackBar.open(this.translate.instant('MESSAGES.VIEW_RESET'), 'OK', { duration: 2000 });
-  }
-
-// Clears the loaded model(s)
-clearModel(): void {
-  if (this.uploadedModel) {
-    this.scene.remove(this.uploadedModel);
+  clearScene() {
+    SceneControlsHelper.clearScene(this.scene);
     this.uploadedModel = null;
-    this.snackBar.open(this.translate.instant('MESSAGES.MODEL_CLEARED'), 'OK', { duration: 2000 });
+    this.objects = [];
   }
-}
+
+  saveScene() {
+    SceneControlsHelper.saveScene(
+      this.scene,
+      this.camera,
+      this.ambientLight,
+      this.dirLight,
+      (sceneJson) => {
+        // For example: trigger download
+        const blob = new Blob([sceneJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'scene.json';
+        link.click();
+        URL.revokeObjectURL(url);
+        console.log('Scene exported');
+      },
+      (err) => console.error('Failed to export scene', err)
+    );
+  }
+
+  loadSceneFromLocalStorage() {
+    SceneControlsHelper.loadSceneFromLocalStorage(
+      this.scene,
+      this.camera,
+      this.ambientLight,
+      this.dirLight,
+      (models) => {
+        this.objects = [];
+        models.forEach(model => {
+          model.traverse(child => {
+            if ((child as THREE.Mesh).isMesh) this.objects.push(child);
+          });
+        });
+        console.log('Scene loaded from localStorage');
+      },
+      (err) => console.error('Failed to load scene from localStorage', err)
+    );
+  }
+
+  saveSceneToLocalStorage() {
+    SceneControlsHelper.saveSceneToLocalStorage(this.scene, this.camera, this.ambientLight, this.dirLight);
+  }
+
+
+// ******************************************************************************************************
+
 
 //************* Animation/ Controller Pad and Keys ******************* */
 
@@ -1092,6 +701,23 @@ private animate = () => {
   console.log('Joystick Movement:', this.vrHelper.movementVector);
 };
 
+public isColliding(position: THREE.Vector3): boolean {
+  const playerHeight = 1.6;
+  const playerHalfHeight = playerHeight / 2;
+
+  const playerBox = new THREE.Box3().setFromCenterAndSize(
+    new THREE.Vector3(position.x, position.y - playerHalfHeight, position.z),
+    new THREE.Vector3(0.5, playerHeight, 0.5)
+  );
+
+  for (const obj of this.objects ?? []) {
+    const box = new THREE.Box3().setFromObject(obj);
+    if (box.intersectsBox(playerBox)) return true;
+  }
+
+  return false;
+}
+
 private onKeyDown = (event: KeyboardEvent) => {
   this.movementHelper.onKeyDown(event.code);
 };
@@ -1102,33 +728,9 @@ private onKeyUp = (event: KeyboardEvent) => {
 
 //************* Screen Sizing ******************* */
 
-// private resizeListener = () => {
-//   const container = this.containerRef.nativeElement;
-//   this.camera.aspect = container.clientWidth / container.clientHeight;
-//   this.camera.updateProjectionMatrix();
-//   this.renderer.setSize(container.clientWidth, container.clientHeight);
-// };
-
 private resizeListener = () => {
   this.onResize();
 };
-
-// onResize(width?: number, height?: number): void {
-//   const container = this.containerRef.nativeElement;
-//   const w = width ?? container.clientWidth;
-//   const h = height ?? container.clientHeight;
-
-//   if (this.renderer && this.camera) {
-//     this.renderer.setSize(w, h);
-//     this.camera.aspect = w / h;
-//     this.camera.updateProjectionMatrix();
-//   }
-
-//   // ✅ Ensure stereo effect resizes in VR
-//   if (this.isVRMode && this.stereoEffect) {
-//     this.stereoEffect.setSize(w, h);
-//   }
-// }
 
 onResize(width?: number, height?: number): void {
   const container = this.containerRef.nativeElement;
@@ -1146,32 +748,7 @@ onResize(width?: number, height?: number): void {
   }
 }
 
-
 //************* FullScreen ******************* */
-
-// toggleFullscreen() {
-//   const canvas = this.renderer?.domElement;
-
-//   if (!canvas) return;
-
-//   if (!document.fullscreenElement) {
-//     canvas.requestFullscreen()
-//       .then(() => {
-//         this.showEscHint = true; // 🔔 Trigger DOM overlay visibility
-//       })
-//       .catch(err => {
-//         console.error("Failed to enter fullscreen:", err);
-//       });
-//   } else {
-//     document.exitFullscreen()
-//       .then(() => {
-//         this.showEscHint = false;
-//       })
-//       .catch(err => {
-//         console.error("Failed to exit fullscreen:", err);
-//       });
-//   }
-// }
 
 toggleFullscreen() {
   const canvas = this.renderer?.domElement;
@@ -1186,10 +763,6 @@ toggleFullscreen() {
       .catch(err => console.error("Failed to exit fullscreen:", err));
   }
 }
-
-
-
-
 
 //********* ESC Hint for Fullscreen *********/
 
@@ -1340,105 +913,65 @@ enterModelPlacementMode(): void {
     this.snackBar.open(this.translate.instant('MESSAGES.MODEL_PLACEMENT_MODE_ACTIVE'), 'OK', { duration: 3000 });
   }
 
-//************* User Friendly UI Buttons ******************* */
+//************* ThreeJS Buttons ******************* */
 
-// Toggles wireframe mode on loaded models
-toggleWireframe(): void {
-  if (!this.uploadedModel) return;
-
-  this.uploadedModel.traverse((child: any) => {
-    if (child.isMesh) {
-      child.material.wireframe = !child.material.wireframe;
+public triggerSceneUpload(): void {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+      SceneStorageHelper.uploadSceneFromFile(
+        file,
+        this, // pass this viewer component instance
+        (msg: string) => console.log(msg) // optionally replace with a logger or UI handler
+      );
     }
-  });
-
-  this.snackBar.open(this.translate.instant('MESSAGES.WIREFRAME_TOGGLED'), 'OK', { duration: 2000 });
+  };
+  input.click();
 }
 
-setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
-  this.selectedTool = mode;
-  if (this.transformControls) {
-    this.transformControls.setMode(mode);
-    const modeName = mode.charAt(0).toUpperCase() + mode.slice(1);
-    this.snackBar.open(this.translate.instant(`MESSAGES.${modeName.toUpperCase()}_MODE_ACTIVATED`), 'OK', { duration: 2000 });
-  }
-}
+ updateSunlight(value: number): void {
+   this.dirLight.intensity = value;
+ }
 
-onAddModel(): void {
-  this.snackBar.open(this.translate.instant('MESSAGES.CLICK_PLACE_MODEL'), 'OK', { duration: 3000 });
-  this.enterModelPlacementMode();
-}
+ updateSpeed(value: number): void {
+   this.speed = value;
+   this.movementHelper.moveSpeed = value;
+   this.vrHelper.moveSpeed = value;
+ }
 
-onToggleGrid(): void {
-  this.showGrid = !this.showGrid;
-  this.gridHelper.visible = this.showGrid;
-  const msgKey = this.showGrid ? 'MESSAGES.GRID_SHOWN' : 'MESSAGES.GRID_HIDDEN';
-  this.snackBar.open(this.translate.instant(msgKey), 'OK', { duration: 2000 });
-}
+ updateEyeLevel(value: number): void {
+   const minHeight = 2;
+   const maxHeight = 30;
 
-onClearScene(): void {
-  const confirmClear = confirm(this.translate.instant('MESSAGES.SCENE_CLEARED_CONFIRM'));
-  if (!confirmClear) return;
+   // Clamp the value between minHeight and maxHeight
+   this.cameraHeight = Math.max(minHeight, Math.min(value, maxHeight));
 
-  this.scene.children
-    .filter(obj => obj.userData?.['isLoadedModel'])
-    .forEach(obj => {
-      this.scene.remove(obj);
-    });
+   // Apply new height to camera position
+   this.camera.position.y = this.cameraHeight;
+ }
 
-  this.snackBar.open(this.translate.instant('MESSAGES.SCENE_CLEARED'), 'OK', { duration: 2000 });
-}
+ updateModelSize(value: number): void {
+   const minScale = 30;
+   const maxScale = 100;
+   this.modelScale = Math.min(Math.max(value, minScale), maxScale);
+   this.updateModelTransform?.();
+ }
 
-toggleRoomLight() {
-  this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
-}
+ updateModelHeight(value: number): void {
+   this.modelHeight = value;
+   this.updateModelTransform?.();
+ }
 
-toggleLightcolor() {
-  const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
-  const current = this.ambientLight.color.getHex();
-  const next = colors[(colors.indexOf(current) + 1) % colors.length];
-  this.ambientLight.color.setHex(next);
-}
+ save(): void {
+   this.saveScene?.();
+ }
 
-updateSunlight(value: number): void {
-  this.dirLight.intensity = value;
-}
-
-updateSpeed(value: number): void {
-  this.speed = value;
-  this.movementHelper.moveSpeed = value;
-  this.vrHelper.moveSpeed = value;
-}
-
-updateEyeLevel(value: number): void {
-  const minHeight = 2;
-  const maxHeight = 30;
-
-  // Clamp the value between minHeight and maxHeight
-  this.cameraHeight = Math.max(minHeight, Math.min(value, maxHeight));
-
-  // Apply new height to camera position
-  this.camera.position.y = this.cameraHeight;
-}
-
-updateModelSize(value: number): void {
-  const minScale = 30;
-  const maxScale = 100;
-  this.modelScale = Math.min(Math.max(value, minScale), maxScale);
-  this.updateModelTransform?.();
-}
-
-updateModelHeight(value: number): void {
-  this.modelHeight = value;
-  this.updateModelTransform?.();
-}
-
-save(): void {
-  this.saveScene?.();
-}
-
-load(): void {
-  this.triggerSceneUpload?.();
-}
+ load(): void {
+   this.triggerSceneUpload?.();
+ }
 
 }
