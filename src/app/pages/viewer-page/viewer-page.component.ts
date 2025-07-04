@@ -156,14 +156,20 @@ export class ViewerPageComponent implements AfterViewInit {
   this.logToConsole('VIEWER.LOAD_SCENE');
 }
 
-save(): void {
-  this.viewerRef?.saveScene?.();
-  this.logToConsole('VIEWER.SAVE_SCENE');
-}
+  // save(): void {
+  //   this.viewerRef?.saveScene?.();
+  //   this.logToConsole('');
+  // }
+
+  saveSceneAsJson(): void {
+    this.viewerRef?.saveSceneAsJson?.();
+    this.logToConsole('VIEWER.SAVE_SCENE');
+  }
 
 
   loadLocal(): void {
     this.viewerRef?.loadSceneFromLocalStorage();
+    this.logToConsole('loaded scene from local storage');
   }
 
   resetView(): void {

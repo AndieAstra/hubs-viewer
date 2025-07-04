@@ -47,15 +47,21 @@
       <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
     </button>
 
-    <button class="kid-button turquoise" (click)="save()">
+    <!-- <button class="kid-button turquoise" (click)="save()">
       <img src="assets/icons/save.jpg" alt="Save" />
       <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-    </button>
+    </button> -->
 
     <button class="kid-button purple" (click)="load()">
       <img src="assets/icons/upload.png" alt="Load" />
       <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
     </button>
+
+    <button class="kid-button green" (click)="saveSceneAsJson()">
+  <img src="assets/icons/save.jpg" alt="Save" />
+  <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
+</button>
+
 
   </div>
 </section>

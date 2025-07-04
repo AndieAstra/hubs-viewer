@@ -15,7 +15,6 @@ import { PlayerMovementHelper } from '../helpers/player-movement.helper';
 import { SceneControlsHelper } from '../helpers/scene-controls.helper';
 import { SceneStorageHelper } from '../helpers/scene-storage.helper';
 
-
 export interface SavedModel {
   name: string;
   position: { x: number; y: number; z: number };
@@ -47,14 +46,7 @@ export interface SceneData {
 @Component({
   selector: 'app-viewer',
   standalone: true,
-  imports: [
-    MatButtonModule,
-    MatIconModule,
-    MatTooltipModule,
-    MatSnackBarModule,
-    TranslateModule
-  ],
-
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule, MatSnackBarModule, TranslateModule],
   templateUrl: './viewer.component.html',
   styleUrls: ['./viewer.component.scss']
 })
@@ -104,17 +96,10 @@ cameraHeight = 2;            // Camera/player height from ground
 // ===========================================================
 // 📦 Scene and Rendering
 // ===========================================================
-////public scene!: THREE.Scene;
-//private camera!: THREE.PerspectiveCamera;
-//public renderer!: THREE.WebGLRenderer;
 private clock = new THREE.Clock();
-//private objects: THREE.Object3D[] = [];               // All interactive objects
-//uploadedModel: THREE.Object3D | null = null;          // User-uploaded GLB
 public sceneLoaded = false;                          // Used to track scene initialization
 private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjustments
-
 showEscHint = false;
-
 private container!: HTMLElement;
 private escHint!: HTMLDivElement;
 private escHintSprite!: THREE.Sprite;
@@ -122,26 +107,16 @@ private escHintSprite!: THREE.Sprite;
 // ===========================================================
 // VR Integration
 // ===========================================================
-
 vrActive = false;
 private animationId: number | null = null;
 vrControllerActive = false;
 private vrHelper = new VrControllerHelper(3.0); // Move speed
 public controllerSpeed = 3.0;
 
-
-// ===========================================================
-// 💡 Lighting System
-// ===========================================================
-//public ambientLight!: THREE.AmbientLight;
-//private dirLight!: THREE.DirectionalLight;
-
 // ===========================================================
 // 🕹️ Controls & Tools
 // ===========================================================
-
 private movementHelper!: PlayerMovementHelper;
-
 private controls!: PointerLockControls;               // FPS-style movement
 transformControls!: TransformControls;                // 3D object transform tools
 selectedTool = '';                                    // Currently selected tool (e.g., translate/rotate)
@@ -197,17 +172,13 @@ isPlacingModel = false;           // Whether user is placing a model in the scen
 ngOnInit() {
   document.addEventListener('keydown', this.onKeyDown);
   document.addEventListener('keyup', this.onKeyUp);
-
   document.addEventListener('fullscreenchange', () => {
     this.escHint.style.display = document.fullscreenElement === this.container ? 'block' : 'none';
   });
 
-
   this.loadSceneFromLocalStorage();
   this.canJump = true;
-
   this.vrHelper.enabled = true;
-
   this.movementHelper = new PlayerMovementHelper(
     3.0,
     this.gravity,
@@ -555,9 +526,6 @@ applyModelTransform(): void {
   this.camera.position.y = this.cameraHeight;
 }
 
-
-// **********************************************************************************************************
-
 public resetView(): void {
   const defaultHeight = 1.6;
   this.camera.position.set(0, defaultHeight, 10);
@@ -572,6 +540,83 @@ public resetView(): void {
     }
   }
 }
+
+  clearScene() {
+    SceneControlsHelper.clearScene(this.scene);
+    this.uploadedModel = null;
+    this.objects = [];
+  }
+
+
+//************* Save and Load ******************* */
+
+// **********************************************************************************************************
+
+  load(): void {
+    this.triggerSceneUpload?.();
+  }
+
+public triggerSceneUpload(): void {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    const file = target.files?.[0];
+    if (file) {
+      SceneStorageHelper.uploadSceneFromFile(
+        file,
+        this, // pass this viewer component instance
+        (msg: string) => console.log(msg) // optionally replace with a logger or UI handler
+      );
+    }
+  };
+  input.click();
+}
+
+  loadSceneFromLocalStorage() {
+     const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.onchange = async () => {
+    if (!input.files?.length) return;
+    const file = input.files[0];
+
+    const reader = new FileReader();
+    reader.onload = (event: ProgressEvent<FileReader>) => {
+      try {
+        const content = event.target?.result as string;
+        const json = JSON.parse(content);
+
+        const loader = new THREE.ObjectLoader();
+        const loadedScene = loader.parse(json);
+
+        // Clear current scene
+        while (this.scene.children.length > 0) {
+          this.scene.remove(this.scene.children[0]);
+        }
+
+        // Add loaded objects to scene
+        loadedScene.children.forEach(obj => this.scene.add(obj));
+
+        // Optional: collect meshes
+        this.objects = [];
+        this.scene.traverse(child => {
+          if ((child as THREE.Mesh).isMesh) this.objects.push(child);
+        });
+
+        console.log('Scene loaded from file:', file.name);
+      } catch (err) {
+        console.error('Error parsing JSON file', err);
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
+  input.click(); // open file picker
+  }
 
 loadGLB(file: File) {
     SceneControlsHelper.loadGLB(
@@ -592,55 +637,42 @@ loadGLB(file: File) {
     );
   }
 
-  clearScene() {
-    SceneControlsHelper.clearScene(this.scene);
-    this.uploadedModel = null;
-    this.objects = [];
-  }
-
-  saveScene() {
-    SceneControlsHelper.saveScene(
-      this.scene,
-      this.camera,
-      this.ambientLight,
-      this.dirLight,
-      (sceneJson) => {
-        // For example: trigger download
-        const blob = new Blob([sceneJson], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'scene.json';
-        link.click();
-        URL.revokeObjectURL(url);
-        console.log('Scene exported');
-      },
-      (err) => console.error('Failed to export scene', err)
-    );
-  }
-
-  loadSceneFromLocalStorage() {
-    SceneControlsHelper.loadSceneFromLocalStorage(
-      this.scene,
-      this.camera,
-      this.ambientLight,
-      this.dirLight,
-      (models) => {
-        this.objects = [];
-        models.forEach(model => {
-          model.traverse(child => {
-            if ((child as THREE.Mesh).isMesh) this.objects.push(child);
-          });
-        });
-        console.log('Scene loaded from localStorage');
-      },
-      (err) => console.error('Failed to load scene from localStorage', err)
-    );
-  }
-
   saveSceneToLocalStorage() {
     SceneControlsHelper.saveSceneToLocalStorage(this.scene, this.camera, this.ambientLight, this.dirLight);
   }
+
+saveSceneAsJson(): void {
+  const filename = prompt('Enter filename to save the scene:', 'my-threejs-scene');
+  if (!filename) return;
+
+  // Ensure lights are part of the scene
+  if (!this.scene.children.includes(this.ambientLight)) {
+    this.scene.add(this.ambientLight);
+  }
+  if (!this.scene.children.includes(this.dirLight)) {
+    this.scene.add(this.dirLight);
+  }
+
+  // Serialize scene
+  const sceneJson = this.scene.toJSON();
+  const jsonString = JSON.stringify(sceneJson);
+
+  // Download
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename.endsWith('.json') ? filename : `${filename}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  console.log('Scene exported');
+}
+
+
 
 
 // ******************************************************************************************************
@@ -915,24 +947,6 @@ enterModelPlacementMode(): void {
 
 //************* ThreeJS Buttons ******************* */
 
-public triggerSceneUpload(): void {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (file) {
-      SceneStorageHelper.uploadSceneFromFile(
-        file,
-        this, // pass this viewer component instance
-        (msg: string) => console.log(msg) // optionally replace with a logger or UI handler
-      );
-    }
-  };
-  input.click();
-}
-
  updateSunlight(value: number): void {
    this.dirLight.intensity = value;
  }
@@ -964,14 +978,6 @@ public triggerSceneUpload(): void {
  updateModelHeight(value: number): void {
    this.modelHeight = value;
    this.updateModelTransform?.();
- }
-
- save(): void {
-   this.saveScene?.();
- }
-
- load(): void {
-   this.triggerSceneUpload?.();
  }
 
 }
