@@ -16,10 +16,10 @@ export interface SceneData {
       color: number;
       intensity: number;
     };
-    directional?: {
+    directional: {
       color: number;
       intensity: number;
-      position: number[] | { x: number; y: number; z: number };
+      position: [number, number, number]; // This fixes the spread issue
     };
   };
 }

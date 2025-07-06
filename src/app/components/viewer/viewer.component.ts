@@ -12,8 +12,6 @@ import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
-import { SceneControlsHelper } from '../helpers/scene-controls.helper';
-import { SceneStorageHelper } from '../helpers/scene-storage.helper';
 
 export interface SavedModel {
   name: string;
@@ -22,25 +20,6 @@ export interface SavedModel {
   scale: { x: number; y: number; z: number };
   fileName: string;
   glbBase64: string;
-}
-
-export interface SceneData {
-  models: SavedModel[];
-  camera: {
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-  };
-  lighting: {
-    ambient: {
-      color: number;
-      intensity: number;
-    };
-    directional: {
-      color: number;
-      intensity: number;
-      position: [number, number, number];
-    };
-  };
 }
 
 @Component({
@@ -52,6 +31,7 @@ export interface SceneData {
 })
 
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+  [x: string]: any;
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
@@ -117,7 +97,7 @@ public controllerSpeed = 3.0;
 // 🕹️ Controls & Tools
 // ===========================================================
 private movementHelper!: PlayerMovementHelper;
-private controls!: PointerLockControls;               // FPS-style movement
+public controls!: PointerLockControls;               // FPS-style movement
 transformControls!: TransformControls;                // 3D object transform tools
 selectedTool = '';                                    // Currently selected tool (e.g., translate/rotate)
 
@@ -176,7 +156,7 @@ ngOnInit() {
     this.escHint.style.display = document.fullscreenElement === this.container ? 'block' : 'none';
   });
 
-  this.loadSceneFromLocalStorage();
+  //this.loadSceneFromLocalStorage();
   this.canJump = true;
   this.vrHelper.enabled = true;
   this.movementHelper = new PlayerMovementHelper(
@@ -227,26 +207,44 @@ ngOnDestroy() {
 
 ngOnChanges(changes: SimpleChanges) {
   if (changes['glbFile'] && changes['glbFile'].currentValue) {
-    // Skip loading if this is the very first change (initial binding)
-    if (changes['glbFile'].isFirstChange()) {
-      // Optionally, do nothing on first load or set a flag here
-      return;
-    }
+    // Skip initial binding load
+    if (changes['glbFile'].isFirstChange()) return;
 
     if (this.sceneLoaded) {
-      const confirmReplace = confirm('A scene is already loaded. Do you want to replace it with a new model?');
+      const confirmReplace = confirm(
+        'A scene is already loaded. Do you want to replace it with a new model?'
+      );
       if (!confirmReplace) return;
       this.clearScene();
     }
-    this.loadGLB(changes['glbFile'].currentValue);
-  }
 
-  // Optionally handle no model loaded only after initial load
-  else if (!this.glbFile && !this.sceneLoaded && !changes['glbFile']?.isFirstChange()) {
+    const file = changes['glbFile'].currentValue as File;
+
+    this['sceneControls'].loadGLB(
+      file,
+      this.scene,
+      1,  // scale or other param
+      0,  // another param (rotation, offset, etc.)
+      (model: THREE.Object3D) => {
+        this.uploadedModel = model;
+        this.sceneLoaded = true;
+        this.objects.push(model);
+        this.applyModelTransform();
+        this['logToConsole']('MODEL_LOADED', { name: model.name });
+      },
+      () => {
+        this['logToConsole']('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
+      }
+    );
+  } else if (
+    !this.glbFile &&
+    !this.sceneLoaded &&
+    !changes['glbFile']?.isFirstChange()
+  ) {
     alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
   }
-
 }
+
 
 ngAfterViewInit() {
   this.initScene();
@@ -254,37 +252,24 @@ ngAfterViewInit() {
 
   this.container = this.containerRef.nativeElement;
 
-  // ✅ Listen for window resize
   this.resizeListener = () => this.onResize();
   window.addEventListener('resize', this.resizeListener);
 
-  // ✅ Setup ESC hint overlay <div>
   this.escHint = document.createElement('div');
   this.escHint.classList.add('esc-hint');
   this.escHint.innerHTML = '🔙 Press <strong>ESC</strong> to exit fullscreen';
   this.escHint.style.display = 'none';
   this.container.appendChild(this.escHint);
 
-  // Show ESC hint if either renderer or container is fullscreen (normal or VR mode)
-
   document.addEventListener('fullscreenchange', () => {
     const fsEl = document.fullscreenElement;
-
-    const isFullscreen =
-      fsEl === this.renderer?.domElement || fsEl === this.container;
-
+    const isFullscreen = fsEl === this.renderer?.domElement || fsEl === this.container;
     this.showEscHint = isFullscreen;
 
-    if (this.escHint) {
-      this.escHint.style.display = isFullscreen ? 'block' : 'none';
-    }
-
-    if (this.escHintSprite) {
-      this.escHintSprite.visible = isFullscreen;
-    }
+    if (this.escHint) this.escHint.style.display = isFullscreen ? 'block' : 'none';
+    if (this.escHintSprite) this.escHintSprite.visible = isFullscreen;
   });
 
-  // ✅ Ensure canvas is present and sized correctly
   if (!this.renderer || !this.renderer.domElement) {
     console.warn(this.translate.instant('ERRORS.RENDERER_NOT_AVAILABLE'));
     return;
@@ -315,15 +300,12 @@ ngAfterViewInit() {
   });
 
   this.canvasRef = new ElementRef(canvas);
-
   this.renderer.setSize(container.clientWidth, container.clientHeight);
 
-  // ✅ ESC Hint Sprite (optional 3D overlay)
   this.escHintSprite = this.createEscHintSprite();
   this.escHintSprite.visible = false;
   this.scene.add(this.escHintSprite);
 
-  // ✅ Drag-and-drop
   canvas.addEventListener('dragover', (event) => event.preventDefault());
   canvas.addEventListener('drop', (event) => {
     event.preventDefault();
@@ -331,11 +313,27 @@ ngAfterViewInit() {
     if (file && file.name.endsWith('.glb')) {
       if (this.sceneLoaded && !confirm(this.translate.instant('ERRORS.DROP_REPLACE_CONFIRM'))) return;
       this.clearScene();
-      this.loadGLB(file);
+      this['sceneControls'].loadGLB(
+        file,
+        this.scene,
+        1,
+        0,
+        (model: THREE.Object3D) => {
+          this.uploadedModel = model;
+          this.sceneLoaded = true;
+          this.objects.push(model);
+          this.applyModelTransform();
+          this['logToConsole']('MODEL_LOADED', { name: model.name });
+        },
+        () => {
+          this['logToConsole']('ERRORS.FAILED_LOAD_MODEL', {
+            fileName: file.name
+          });
+        }
+      );
     }
   });
 
-  // ✅ Object selection with raycasting
   canvas.addEventListener('click', (event) => {
     const rect = canvas.getBoundingClientRect();
     const mouse = new THREE.Vector2(
@@ -351,7 +349,6 @@ ngAfterViewInit() {
     }
   });
 
-  // ✅ Pointer Lock Controls
   canvas.addEventListener('click', () => {
     this.controls.lock();
     setTimeout(() => {
@@ -365,16 +362,13 @@ ngAfterViewInit() {
     }
   });
 
-  // ✅ Grid helper
   this.gridHelper = new THREE.GridHelper(10, 10);
   this.gridHelper.visible = this.showGrid;
   this.scene.add(this.gridHelper);
 
-  // ✅ VR Stereo Effect
   this.stereoEffect = new StereoEffect(this.renderer);
   this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
 
-  // ✅ Mobile VR mode on orientation change
   window.addEventListener('orientationchange', () => {
     const isLandscape = window.innerWidth > window.innerHeight;
     if (isLandscape && !this.isVRMode) {
@@ -384,13 +378,13 @@ ngAfterViewInit() {
     }
   });
 
-  // ✅ Exit VR if navigating back
   window.addEventListener('popstate', () => {
     if (this.isVRMode) {
       this.exitVR();
     }
   });
 }
+
 
 //********* UI Controls for the ThreeJS Scene *********/
 
@@ -503,11 +497,11 @@ updateModelTransform(): void {
   }
 }
 
-private setUploadedModel(model: THREE.Object3D): void {
-  this.uploadedModel = model;
-  this.modelScale = model.scale.x; // Sync GUI with actual values
-  this.modelHeight = model.position.y;
-}
+// private setUploadedModel(model: THREE.Object3D): void {
+//   this.uploadedModel = model;
+//   this.modelScale = model.scale.x; // Sync GUI with actual values
+//   this.modelHeight = model.position.y;
+// }
 
 applyModelTransform(): void {
     if (this.uploadedModel) {
@@ -526,157 +520,15 @@ applyModelTransform(): void {
   this.camera.position.y = this.cameraHeight;
 }
 
-public resetView(): void {
-  const defaultHeight = 1.6;
-  this.camera.position.set(0, defaultHeight, 10);
-  this.camera.lookAt(0, defaultHeight, 0);
-
-  if (this.controls) {
-    if ('reset' in this.controls && typeof this.controls.reset === 'function') {
-      this.controls.reset();
-    } else if ('target' in this.controls) {
-      (this.controls as any).target.set(0, defaultHeight, 0);
-      (this.controls as any).update?.(0); // ✅ Pass dummy delta
-    }
-  }
-}
-
-  clearScene() {
-    SceneControlsHelper.clearScene(this.scene);
+clearScene() {
+    this['sceneControls'].clearScene(
+      this.scene,
+      () => confirm('Are you sure you want to clear the scene?'),
+      (msgKey: string) => console.log(msgKey)
+    );
     this.uploadedModel = null;
     this.objects = [];
   }
-
-
-//************* Save and Load ******************* */
-
-// **********************************************************************************************************
-
-  load(): void {
-    this.triggerSceneUpload?.();
-  }
-
-public triggerSceneUpload(): void {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    const file = target.files?.[0];
-    if (file) {
-      SceneStorageHelper.uploadSceneFromFile(
-        file,
-        this, // pass this viewer component instance
-        (msg: string) => console.log(msg) // optionally replace with a logger or UI handler
-      );
-    }
-  };
-  input.click();
-}
-
-  loadSceneFromLocalStorage() {
-     const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-
-  input.onchange = async () => {
-    if (!input.files?.length) return;
-    const file = input.files[0];
-
-    const reader = new FileReader();
-    reader.onload = (event: ProgressEvent<FileReader>) => {
-      try {
-        const content = event.target?.result as string;
-        const json = JSON.parse(content);
-
-        const loader = new THREE.ObjectLoader();
-        const loadedScene = loader.parse(json);
-
-        // Clear current scene
-        while (this.scene.children.length > 0) {
-          this.scene.remove(this.scene.children[0]);
-        }
-
-        // Add loaded objects to scene
-        loadedScene.children.forEach(obj => this.scene.add(obj));
-
-        // Optional: collect meshes
-        this.objects = [];
-        this.scene.traverse(child => {
-          if ((child as THREE.Mesh).isMesh) this.objects.push(child);
-        });
-
-        console.log('Scene loaded from file:', file.name);
-      } catch (err) {
-        console.error('Error parsing JSON file', err);
-      }
-    };
-
-    reader.readAsText(file);
-  };
-
-  input.click(); // open file picker
-  }
-
-loadGLB(file: File) {
-    SceneControlsHelper.loadGLB(
-      file,
-      this.scene,
-      this.modelScale,
-      this.modelHeight,
-      (model) => {
-        this.uploadedModel = model;
-        this.objects = [];
-        model.traverse((child) => {
-          if ((child as THREE.Mesh).isMesh) {
-            this.objects.push(child);
-          }
-        });
-      },
-      () => alert('Failed to load model')
-    );
-  }
-
-  saveSceneToLocalStorage() {
-    SceneControlsHelper.saveSceneToLocalStorage(this.scene, this.camera, this.ambientLight, this.dirLight);
-  }
-
-saveSceneAsJson(): void {
-  const filename = prompt('Enter filename to save the scene:', 'my-threejs-scene');
-  if (!filename) return;
-
-  // Ensure lights are part of the scene
-  if (!this.scene.children.includes(this.ambientLight)) {
-    this.scene.add(this.ambientLight);
-  }
-  if (!this.scene.children.includes(this.dirLight)) {
-    this.scene.add(this.dirLight);
-  }
-
-  // Serialize scene
-  const sceneJson = this.scene.toJSON();
-  const jsonString = JSON.stringify(sceneJson);
-
-  // Download
-  const blob = new Blob([jsonString], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename.endsWith('.json') ? filename : `${filename}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-
-  console.log('Scene exported');
-}
-
-
-
-
-// ******************************************************************************************************
-
 
 //************* Animation/ Controller Pad and Keys ******************* */
 
@@ -851,7 +703,6 @@ public enterVR(): void {
   const canvas = this.renderer.domElement;
   const container = this.containerRef.nativeElement;
 
-  // Try fullscreen on container (priority)
   const requestFullscreen = container.requestFullscreen
     || (container as any).webkitRequestFullscreen
     || (container as any).msRequestFullscreen;
@@ -862,7 +713,6 @@ public enterVR(): void {
     });
   }
 
-  // Orientation lock (Android Chrome only)
   try {
     (screen.orientation as any)?.lock?.('landscape').catch((err: any) => {
       console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err);
@@ -871,26 +721,21 @@ public enterVR(): void {
     console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
   }
 
-  // Save original size/aspect
   this.originalSize = {
     width: container.clientWidth,
     height: container.clientHeight,
   };
   this.originalCameraAspect = this.camera.aspect;
 
-  // Set up stereo effect for split-view
   if (!this.stereoEffect) {
     this.stereoEffect = new StereoEffect(this.renderer);
   }
   this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
 
-  // Start VR render loop
   this.renderer.setAnimationLoop(() => this.renderVR());
 
-  // Push to history stack so back button exits
   history.pushState({ vr: true }, '');
 
-  // Handle popstate/back-button
   window.onpopstate = () => {
     if (this.isVRMode) this.exitVR();
   };
@@ -924,12 +769,10 @@ public exitVR(): void {
   this.controls.enabled = true;
   this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
 
-  // Restore browser history
   if (history.state?.vr) {
     history.back();
   }
 
-  // Reset onpopstate handler
   window.onpopstate = null;
 }
 
@@ -960,11 +803,7 @@ enterModelPlacementMode(): void {
  updateEyeLevel(value: number): void {
    const minHeight = 2;
    const maxHeight = 30;
-
-   // Clamp the value between minHeight and maxHeight
    this.cameraHeight = Math.max(minHeight, Math.min(value, maxHeight));
-
-   // Apply new height to camera position
    this.camera.position.y = this.cameraHeight;
  }
 

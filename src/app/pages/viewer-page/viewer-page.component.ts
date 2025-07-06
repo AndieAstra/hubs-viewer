@@ -1,20 +1,12 @@
-import {
-  Component,
-  ViewChild,
-  ElementRef,
-  HostListener,
-  AfterViewInit,
-} from '@angular/core';
+import {Component, ViewChild, ElementRef, HostListener, AfterViewInit} from '@angular/core';
 import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { FormsModule } from '@angular/forms';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { SceneControlsHelper } from '../../components/helpers/scene-controls.helper';
+import { SceneControlsService } from '../../services/scene-controls.service'
 import { StorageService } from '../../services/storage.service';
-import { SceneStorageHelper } from '../../components/helpers/scene-storage.helper';
-
 
 @Component({
   selector: 'app-viewer-page',
@@ -42,7 +34,8 @@ export class ViewerPageComponent implements AfterViewInit {
   constructor(
     private router: Router,
     private translate: TranslateService,
-    private storageService: StorageService
+    private storageService: StorageService,
+    private sceneControls: SceneControlsService
   ) {
     const savedLang = (localStorage.getItem('preferredLang') as 'en' | 'es') || 'en';
     this.currentLang = savedLang;
@@ -118,16 +111,16 @@ export class ViewerPageComponent implements AfterViewInit {
     const model = this.viewerRef?.uploadedModel;
     if (!model) return;
 
-    SceneControlsHelper.toggleWireframe(model, (msgKey) => {
+    this.sceneControls.toggleWireframe(model, (msgKey) => {
       this.logToConsole(msgKey);
     });
-  }
+    }
 
   toggleRoomLight(): void {
     const light = this.viewerRef?.ambientLight;
     if (!light) return;
 
-    SceneControlsHelper.toggleRoomLight(light);
+    this.sceneControls.toggleRoomLight(light);
     this.logToConsole('VIEWER.TOGGLE_ROOM_LIGHT');
   }
 
@@ -135,7 +128,7 @@ export class ViewerPageComponent implements AfterViewInit {
     const light = this.viewerRef?.ambientLight;
     if (!light) return;
 
-    SceneControlsHelper.toggleLightColor(light);
+    this.sceneControls.toggleLightColor(light);
     this.logToConsole('VIEWER.TOGGLE_SUNLIGHT_COLOR');
   }
 
@@ -143,7 +136,7 @@ export class ViewerPageComponent implements AfterViewInit {
     const scene = this.viewerRef?.scene;
     if (!scene) return;
 
-    SceneControlsHelper.clearScene(scene);
+    this.sceneControls.clearScene(scene);
     this.logToConsole('MESSAGES.SCENE_CLEARED');
   }
 
@@ -152,29 +145,64 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   load(): void {
-  this.viewerRef?.loadSceneFromLocalStorage?.();
-  this.logToConsole('VIEWER.LOAD_SCENE');
-}
+    if (!this.viewerRef) {
+      console.warn('Viewer reference not found');
+      return;
+    }
 
-  // save(): void {
-  //   this.viewerRef?.saveScene?.();
-  //   this.logToConsole('');
-  // }
+    const { scene, camera, ambientLight, directionalLight } = this.viewerRef;
 
-  saveSceneAsJson(): void {
-    this.viewerRef?.saveSceneAsJson?.();
-    this.logToConsole('VIEWER.SAVE_SCENE');
-  }
-
-
-  loadLocal(): void {
-    this.viewerRef?.loadSceneFromLocalStorage();
-    this.logToConsole('loaded scene from local storage');
+    this.sceneControls.loadSceneFromLocalStorage(
+      scene,
+      camera,
+      ambientLight,
+      directionalLight,
+      (loadedModels) => {
+        this.viewerRef!.uploadedModel = loadedModels[0] || null;
+        this.logToConsole('VIEWER.LOAD_SCENE');
+      },
+      (err) => {
+        console.error('Error loading scene:', err);
+        this.logToConsole('VIEWER.LOAD_SCENE_ERROR');
+      }
+    );
   }
 
   resetView(): void {
-    this.viewerRef?.resetView?.();
-    this.logToConsole('VIEWER.RESET_VIEW');
+  if (!this.viewerRef) {
+    console.warn('Viewer reference not found');
+    return;
+  }
+
+  const { camera, controls } = this.viewerRef;
+
+  this.sceneControls.resetCameraView(camera, controls);
+  this.logToConsole('VIEWER.RESET_VIEW');
+}
+
+
+  saveSceneAsJson(): void {
+    if (!this.viewerRef) {
+      console.warn('Viewer reference not found');
+      return;
+    }
+
+    const { scene, camera, ambientLight, directionalLight } = this.viewerRef;
+
+    this.sceneControls.saveScene(
+      scene,
+      camera,
+      ambientLight,
+      directionalLight,
+      (sceneJson) => {
+        // You can trigger a download or show the JSON somewhere
+        console.log('Scene JSON:', sceneJson);
+        this.logToConsole('VIEWER.SAVE_SCENE');
+      },
+      (err) => {
+        console.error('Error saving scene:', err);
+      }
+    );
   }
 
   // ----- File Input Handlers -----
@@ -199,34 +227,28 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-  onFileLoaded(file: File): void {
-    this.selectedFile = file;
-    this.viewerRef.loadGLB(file);
-    this.logToConsole(`File loaded: ${file.name}`);
-  }
+onFileLoaded(file: File): void {
+  this.selectedFile = file;
+  this.viewerRef['loadGLB'](file);
+  this.logToConsole(`File loaded: ${file.name}`);
+}
 
-  saveScene() {
-    const sceneData = SceneStorageHelper.exportScene(
-      this.viewerRef.scene,
-      this.viewerRef.camera,
-      this.viewerRef.ambientLight,
-      this.viewerRef.dirLight,
-      this.viewerRef.objects
-    );
-    const projectData = SceneStorageHelper.createProjectData(sceneData);
-    this.storageService.saveProject(projectData);
-    this.logToConsole('VIEWER.SAVE_SCENE');
-  }
 
-  loadScene() {
-    const projectData = this.storageService.loadProject();
-    if (projectData) {
-      SceneStorageHelper.uploadSceneFromData(projectData.scene, this.viewerRef, this.logToConsole.bind(this));
-      this.logToConsole('VIEWER.LOAD_SCENE');
-    } else {
-      this.logToConsole('VIEWER.NO_SAVED_SCENE');
-    }
-  }
+saveScene(): void {
+  if (!this.viewerRef) return;
+
+  const sceneData = this.sceneControls.exportScene(
+    this.viewerRef.scene,
+    this.viewerRef.camera,
+    this.viewerRef.ambientLight,
+    this.viewerRef.dirLight,
+    this.viewerRef.objects
+  );
+
+  const projectData = this.sceneControls.createProjectData(sceneData);
+  this.storageService.saveProject(projectData);
+  this.logToConsole('VIEWER.SAVE_SCENE');
+}
 
   // ----- Slider/Range Inputs -----
 
