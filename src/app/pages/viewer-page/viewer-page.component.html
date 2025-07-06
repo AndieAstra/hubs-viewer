@@ -3,12 +3,13 @@
   <!-- 🔝 Top Toolbar -->
   <header class="top-toolbar">
     <div class="toolbar-center">
-      <div class="upload-instructions">
-        <p><strong>{{ 'UPLOAD.INSTRUCTIONS' | translate }}</strong></p>
-        <button (click)="onUploadClick()">{{ 'UPLOAD.BUTTON_LABEL' | translate }}</button>
-        <input type="file" hidden #fileInput (change)="onFileChange($event)" accept=".glb" />
-      </div>
-    </div>
+
+<div class="upload-instructions">
+  <p><strong>{{ 'UPLOAD.INSTRUCTIONS' | translate }}</strong></p>
+  <button (click)="onUploadClick()">{{ 'UPLOAD.BUTTON_LABEL' | translate }}</button>
+  <input type="file" hidden #fileInput (change)="onFileChange($event)" accept=".glb,.gltf,.json" />
+</div>
+</div>
 
     <!-- 📱 Sidebar Toggle Button -->
     <button class="sidebar-toggle" (click)="toggleSidebar()">☰</button>
@@ -38,22 +39,30 @@
       <section>
         <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
         <div class="button-row">
+
           <button class="kid-button" (click)="resetView()">
             <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
             <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
           </button>
 
-          <button class="kid-button purple" (click)="load()">
+          <input
+          type="file"
+          accept=".json"
+          hidden #fileInput
+          (change)="onFileChange($event)" />
+
+          <button class="kid-button purple" (click)="fileInput.click()">
             <img src="assets/icons/upload.png" alt="Load" />
             <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
           </button>
 
-          <button class="kid-button green" (click)="saveSceneAsJson()">
-            <img src="assets/icons/save.jpg" alt="Save" />
-            <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-          </button>
+        <button class="kid-button green" (click)="saveSceneAsJson()">
+          <img src="assets/icons/save.jpg" alt="Save" />
+          <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
+        </button>
         </div>
-      </section>
+        </section>
+
 
       <!-- 💡 Lighting -->
       <section>
@@ -113,6 +122,7 @@
         </div>
       </section>
     </aside>
+
 
     <!-- 🖼️ Canvas -->
     <section class="canvas-container">

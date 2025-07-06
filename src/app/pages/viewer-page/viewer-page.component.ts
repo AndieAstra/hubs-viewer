@@ -8,6 +8,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SceneControlsService } from '../../services/scene-controls.service'
 import { StorageService } from '../../services/storage.service';
 
+
 @Component({
   selector: 'app-viewer-page',
   standalone: true,
@@ -22,6 +23,7 @@ import { StorageService } from '../../services/storage.service';
 export class ViewerPageComponent implements AfterViewInit {
   @ViewChild(ViewerComponent) viewerRef!: ViewerComponent;
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
 
   selectedFile?: File;
@@ -53,8 +55,11 @@ export class ViewerPageComponent implements AfterViewInit {
     this.resizeCanvas();
   }
 
+
   ngAfterViewInit(): void {
     this.resizeCanvas();
+
+    this.sceneControls.viewerRef = this.viewerRef;
 
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
@@ -107,6 +112,61 @@ export class ViewerPageComponent implements AfterViewInit {
 
   // ----- Scene & Model Controls -----
 
+  clearModel(): void {
+    const scene = this.viewerRef?.scene;
+    if (!scene) return;
+
+    this.sceneControls.clearScene(scene);
+    this.logToConsole('MESSAGES.SCENE_CLEARED');
+  }
+
+  clear(): void {
+    this.viewerRef?.clearScene();
+  }
+
+  resetView(): void {
+  if (!this.viewerRef) {
+    console.warn('Viewer reference not found');
+    return;
+  }
+
+  const { camera, controls } = this.viewerRef;
+
+  this.sceneControls.resetCameraView(camera, controls);
+  this.logToConsole('VIEWER.RESET_VIEW');
+}
+
+// ********************************************************************
+
+  onUploadClick(): void {
+    this.fileInput?.nativeElement.click();
+  }
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+
+    if (this.viewerRef && typeof this.viewerRef.loadGLB === 'function') {
+      this.viewerRef.loadGLB(file);
+      this.logToConsole('VIEWER.LOAD_GLB_SUCCESS');
+    } else {
+      console.error('loadGLB method not found on viewerRef');
+      this.logToConsole('VIEWER.LOAD_GLB_FAIL');
+    }
+  }
+
+  saveSceneAsJson(): void {
+    this.sceneControls.saveSceneAsJson();
+  }
+
+// ********************************************************************
+
+
+
+// ----- Button Inputs -----
+
   toggleWireframe(): void {
     const model = this.viewerRef?.uploadedModel;
     if (!model) return;
@@ -131,124 +191,6 @@ export class ViewerPageComponent implements AfterViewInit {
     this.sceneControls.toggleLightColor(light);
     this.logToConsole('VIEWER.TOGGLE_SUNLIGHT_COLOR');
   }
-
-  clearModel(): void {
-    const scene = this.viewerRef?.scene;
-    if (!scene) return;
-
-    this.sceneControls.clearScene(scene);
-    this.logToConsole('MESSAGES.SCENE_CLEARED');
-  }
-
-  clear(): void {
-    this.viewerRef?.clearScene();
-  }
-
-  load(): void {
-    if (!this.viewerRef) {
-      console.warn('Viewer reference not found');
-      return;
-    }
-
-    const { scene, camera, ambientLight, directionalLight } = this.viewerRef;
-
-    this.sceneControls.loadSceneFromLocalStorage(
-      scene,
-      camera,
-      ambientLight,
-      directionalLight,
-      (loadedModels) => {
-        this.viewerRef!.uploadedModel = loadedModels[0] || null;
-        this.logToConsole('VIEWER.LOAD_SCENE');
-      },
-      (err) => {
-        console.error('Error loading scene:', err);
-        this.logToConsole('VIEWER.LOAD_SCENE_ERROR');
-      }
-    );
-  }
-
-  resetView(): void {
-  if (!this.viewerRef) {
-    console.warn('Viewer reference not found');
-    return;
-  }
-
-  const { camera, controls } = this.viewerRef;
-
-  this.sceneControls.resetCameraView(camera, controls);
-  this.logToConsole('VIEWER.RESET_VIEW');
-}
-
-
-  saveSceneAsJson(): void {
-    if (!this.viewerRef) {
-      console.warn('Viewer reference not found');
-      return;
-    }
-
-    const { scene, camera, ambientLight, directionalLight } = this.viewerRef;
-
-    this.sceneControls.saveScene(
-      scene,
-      camera,
-      ambientLight,
-      directionalLight,
-      (sceneJson) => {
-        // You can trigger a download or show the JSON somewhere
-        console.log('Scene JSON:', sceneJson);
-        this.logToConsole('VIEWER.SAVE_SCENE');
-      },
-      (err) => {
-        console.error('Error saving scene:', err);
-      }
-    );
-  }
-
-  // ----- File Input Handlers -----
-
-  handleFileInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      this.onFileLoaded(file);
-    }
-  }
-
-  onUploadClick(): void {
-    this.fileInput?.nativeElement.click();
-  }
-
-  onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      this.onFileLoaded(file);
-    }
-  }
-
-onFileLoaded(file: File): void {
-  this.selectedFile = file;
-  this.viewerRef['loadGLB'](file);
-  this.logToConsole(`File loaded: ${file.name}`);
-}
-
-
-saveScene(): void {
-  if (!this.viewerRef) return;
-
-  const sceneData = this.sceneControls.exportScene(
-    this.viewerRef.scene,
-    this.viewerRef.camera,
-    this.viewerRef.ambientLight,
-    this.viewerRef.dirLight,
-    this.viewerRef.objects
-  );
-
-  const projectData = this.sceneControls.createProjectData(sceneData);
-  this.storageService.saveProject(projectData);
-  this.logToConsole('VIEWER.SAVE_SCENE');
-}
 
   // ----- Slider/Range Inputs -----
 

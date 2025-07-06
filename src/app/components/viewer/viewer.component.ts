@@ -12,6 +12,7 @@ import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 export interface SavedModel {
   name: string;
@@ -245,7 +246,6 @@ ngOnChanges(changes: SimpleChanges) {
   }
 }
 
-
 ngAfterViewInit() {
   this.initScene();
   this.animate();
@@ -385,7 +385,6 @@ ngAfterViewInit() {
   });
 }
 
-
 //********* UI Controls for the ThreeJS Scene *********/
 
 private initScene() {
@@ -520,14 +519,45 @@ applyModelTransform(): void {
   this.camera.position.y = this.cameraHeight;
 }
 
-clearScene() {
-    this['sceneControls'].clearScene(
-      this.scene,
-      () => confirm('Are you sure you want to clear the scene?'),
-      (msgKey: string) => console.log(msgKey)
-    );
-    this.uploadedModel = null;
-    this.objects = [];
+  clearScene() {
+      this['sceneControls'].clearScene(
+        this.scene,
+        () => confirm('Are you sure you want to clear the scene?'),
+        (msgKey: string) => console.log(msgKey)
+      );
+      this.uploadedModel = null;
+      this.objects = [];
+    }
+
+//************* Load GLB helper for buttons ******************* */
+
+ loadGLB(file: File): void {
+    const loader = new GLTFLoader();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      if (!e.target?.result) return;
+      loader.parse(
+        e.target.result as ArrayBuffer,
+        '',
+        (gltf) => {
+          // Check if GLB is a valid model
+          if (!gltf.scene) {
+            console.error('Invalid GLB format.');
+            return;
+          }
+
+          this.scene.add(gltf.scene);
+          this.uploadedModel = gltf.scene;
+          console.log('GLB loaded successfully');
+        },
+        (error) => {
+          console.error('Error loading GLB:', error);
+        }
+      );
+    };
+
+    reader.readAsArrayBuffer(file);
   }
 
 //************* Animation/ Controller Pad and Keys ******************* */

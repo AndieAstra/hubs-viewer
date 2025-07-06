@@ -1,141 +1,170 @@
-import { Injectable } from '@angular/core';
+import { Injectable, ElementRef } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
 import { ViewerComponent } from '../components/viewer/viewer.component';
-import { ProjectData } from '../models/project-data.model';
 import { SceneData } from '../components/types/scene.types';
 
 @Injectable({ providedIn: 'root' })
+
 export class SceneControlsService {
-  private objects: THREE.Object3D[] = [];
+
+  fileInput?: ElementRef<HTMLInputElement>;
+
+  viewerRef!: ViewerComponent;
+
+  logToConsole?: (msgKey: string, params?: any) => void;
 
 
-  loadGLB(
-    file: File,
-    scene: THREE.Scene,
-    modelScale: number,
-    modelHeight: number,
-    onModelLoaded: (model: THREE.Object3D) => void,
-    onError?: () => void
-  ): void {
-    const loader = new GLTFLoader();
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      try {
-        loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
-          const model = gltf.scene;
-
-          model.userData['isLoadedModel'] = true;
-          model.userData['fileName'] = file.name;
-          model.userData['file'] = file;
-
-          model.scale.setScalar(modelScale);
-          model.position.y = modelHeight;
-
-          scene.add(model);
-          onModelLoaded(model);
-        });
-      } catch {
-        onError?.();
-      }
-    };
-
-    reader.onerror = () => onError?.();
-    reader.readAsArrayBuffer(file);
+  // Trigger the hidden file input
+  onUploadClick(): void {
+    this.fileInput?.nativeElement.click();
   }
 
-  saveScene(
-    scene: THREE.Scene,
-    camera: THREE.Camera,
-    ambientLight: THREE.Light,
-    dirLight: THREE.Light,
-    onExportComplete: (sceneJson: string) => void,
-    onError?: (err: any) => void
-  ): void {
-    const sceneData: SceneData = {
-      models: [],
-      camera: {
-        position: camera.position.clone(),
-        rotation: {
-          x: camera.rotation.x,
-          y: camera.rotation.y,
-          z: camera.rotation.z,
-        },
-      },
-      lighting: {
-        ambient: {
-          color: (ambientLight.color as any).getHex(),
-          intensity: ambientLight.intensity,
-        },
-        directional: {
-          color: (dirLight.color as any).getHex(),
-          intensity: dirLight.intensity,
-          position: dirLight.position.toArray(),
-        },
-      },
-    };
+  // Handle file selection
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (file) this.onFileLoaded(file);
+  }
 
-    const gltfExporter = new GLTFExporter();
-    const objectsToExport = scene.children.filter(obj => obj.userData?.['isLoadedModel']);
+  // Load JSON or GLB/GLTF
+  onFileLoaded(file: File): void {
+    const fileName = file.name.toLowerCase();
 
-    const exportNextModel = (index: number) => {
-      if (index >= objectsToExport.length) {
-        onExportComplete(JSON.stringify(sceneData));
+    if (fileName.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const sceneData = JSON.parse(reader.result as string);
+          this.loadSceneFromJson(
+            sceneData,
+            this.viewerRef.scene,
+            this.viewerRef.camera,
+            this.viewerRef.ambientLight,
+            this.viewerRef.dirLight,
+            (models: THREE.Object3D[]) => {
+              this.viewerRef.uploadedModel = models[0] || null;
+              this.logToConsole?.('VIEWER.LOAD_SCENE');
+            },
+            (err: any) => {
+              console.error(err);
+              this.logToConsole?.('VIEWER.LOAD_SCENE_ERROR');
+            }
+          );
+        } catch (err) {
+          console.error('Invalid JSON file:', err);
+          this.logToConsole?.('VIEWER.LOAD_SCENE_ERROR');
+        }
+      };
+      reader.readAsText(file);
+
+    } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+
+      if (typeof this.viewerRef['loadGLB'] === 'function') {
+        this.viewerRef['loadGLB'](file);
+
+        this.logToConsole?.(`File loaded: ${file.name}`);
+      } else {
+        console.error('loadGLB method not found on viewerRef');
+        this.logToConsole?.('VIEWER.LOAD_MODEL_ERROR');
+      }
+    } else {
+      this.logToConsole?.('VIEWER.UNSUPPORTED_FILE_TYPE');
+      console.warn('Unsupported file type:', file.name);
+    }
+  }
+
+
+// *******************************************************************************
+
+  // Export scene and download JSON including embedded models
+saveSceneAsJson(): void {
+  try {
+    if (!this.viewerRef) {
+      console.error('Viewer not initialized!');
+      return;
+    }
+
+    const exported = this.exportScene(
+      this.viewerRef.scene,
+      this.viewerRef.camera,
+      this.viewerRef.ambientLight,
+      this.viewerRef.dirLight,
+      this.viewerRef.objects
+    );
+
+    const exporter = new GLTFExporter();
+    const modelsToExport = this.viewerRef.scene.children.filter(
+      obj => obj.userData?.['isLoadedModel']
+    );
+
+    const collectedModels: SceneData['models'] = [];
+    const processModel = (index: number) => {
+      if (index >= modelsToExport.length) {
+        const fullData: SceneData = {
+          ...exported,
+          models: collectedModels,
+        };
+        this.downloadJson(JSON.stringify(fullData), 'scene.json');
+        this.logToConsole?.('VIEWER.SAVE_SCENE');
         return;
       }
 
-      const obj = objectsToExport[index];
-
-      gltfExporter.parse(
-        obj,
+      const model = modelsToExport[index];
+      exporter.parse(
+        model,
         (gltf) => {
-          let glbBlob: Blob = gltf instanceof ArrayBuffer
-            ? new Blob([gltf], { type: 'model/gltf-binary' })
-            : new Blob([JSON.stringify(gltf)], { type: 'application/json' });
-
+          const blob = new Blob([gltf as ArrayBuffer], { type: 'model/gltf-binary' });
           const reader = new FileReader();
           reader.onload = () => {
-            const binary = new Uint8Array(reader.result as ArrayBuffer);
-            let binaryString = '';
-            for (let i = 0; i < binary.byteLength; i++) {
-              binaryString += String.fromCharCode(binary[i]);
+            const bin = new Uint8Array(reader.result as ArrayBuffer);
+            let str = '';
+            for (let i = 0; i < bin.byteLength; i++) {
+              str += String.fromCharCode(bin[i]);
             }
-            const base64 = btoa(binaryString);
+            const base64 = btoa(str);
 
-            sceneData.models.push({
-              name: obj.name || 'Unnamed',
-              position: obj.position.clone(),
+            collectedModels.push({
+              name: model.name,
+              position: model.position.clone(),
               rotation: {
-                x: obj.rotation.x,
-                y: obj.rotation.y,
-                z: obj.rotation.z,
+                x: model.rotation.x,
+                y: model.rotation.y,
+                z: model.rotation.z,
               },
-              scale: obj.scale.clone(),
-              fileName: obj.userData['fileName'] || 'unknown.glb',
+              scale: model.scale.clone(),
+              fileName: model.userData['fileName'] || 'unknown.glb',
               glbBase64: base64,
             });
 
-            exportNextModel(index + 1);
+            processModel(index + 1);
           };
-          reader.readAsArrayBuffer(glbBlob);
+          reader.readAsArrayBuffer(blob);
         },
-        () => exportNextModel(index + 1),
+        () => {},  // empty onError handler
         { binary: true }
       );
     };
 
-    exportNextModel(0);
+    processModel(0);
+  } catch (err) {
+    console.error('Error saving scene:', err);
   }
+}
 
-  createProjectData(sceneData: SceneData): ProjectData {
-    return {
-      timestamp: Date.now(),
-      scene: sceneData,
-    };
-  }
+  // Generic JSON download helper
+private downloadJson(json: string, filename: string): void {
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
+  // Assemble scene structure
   exportScene(
     scene: THREE.Scene,
     camera: THREE.PerspectiveCamera,
@@ -159,267 +188,100 @@ export class SceneControlsService {
         position: camera.position.clone(),
         rotation: new THREE.Euler().copy(camera.rotation),
       },
-      models: models.map((model) => ({
-        name: model.name,
-        position: model.position.clone(),
-        rotation: model.rotation.clone(),
-        scale: model.scale.clone(),
-        glbBase64: model.userData?.['glbBase64'] || '',
-        fileName: model.userData?.['fileName'] || 'unknown.glb',
-      })),
+      models: [], // fills later when saving
     };
   }
 
-  async uploadSceneFromData(
-    sceneData: SceneData,
-    viewer: ViewerComponent,
-    log: (key: string, params?: any) => void
-  ): Promise<void> {
-    if (!sceneData) return;
+// *******************************************************************************
 
-    const { ambient, directional } = sceneData.lighting;
-
-    if (ambient && viewer.ambientLight) {
-      viewer.ambientLight.color.setHex(ambient.color);
-      viewer.ambientLight.intensity = ambient.intensity;
-    }
-
-    if (directional && viewer.dirLight) {
-      viewer.dirLight.color.setHex(directional.color);
-      viewer.dirLight.intensity = directional.intensity;
-      const pos = directional.position;
-      viewer.dirLight.position.set(pos[0], pos[1], pos[2]);
-    }
-
-    if (sceneData.camera && viewer.camera) {
-      viewer.camera.position.copy(sceneData.camera.position);
-      viewer.camera.rotation.set(
-        sceneData.camera.rotation.x,
-        sceneData.camera.rotation.y,
-        sceneData.camera.rotation.z
-      );
-    }
-
-    viewer.clearScene();
-
-    const loader = new GLTFLoader();
-
-    for (const model of sceneData.models) {
-      if (!model.glbBase64) continue;
-
-      try {
-        const binary = atob(model.glbBase64);
-        const binaryArray = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          binaryArray[i] = binary.charCodeAt(i);
-        }
-
-        const blob = new Blob([binaryArray], { type: 'model/gltf-binary' });
-        const url = URL.createObjectURL(blob);
-
-        const gltf = await loader.loadAsync(url);
-        const loadedModel = gltf.scene;
-
-        loadedModel.name = model.name;
-        loadedModel.position.copy(model.position);
-        loadedModel.rotation.set(
-          model.rotation.x,
-          model.rotation.y,
-          model.rotation.z
-        );
-        loadedModel.scale.copy(model.scale);
-
-        loadedModel.userData['fileName'] = model.fileName;
-        loadedModel.userData['isLoadedModel'] = true;
-
-        loadedModel.traverse((child: THREE.Object3D) => {
-          if ((child as THREE.Mesh).isMesh) {
-            child.userData['collidable'] = false;
-            viewer.objects.push(child);
-          }
-        });
-
-        viewer.scene?.add(loadedModel);
-        viewer.uploadedModel = loadedModel;
-        viewer.applyModelTransform();
-        URL.revokeObjectURL(url);
-
-        log('MODEL_LOADED', { name: model.name });
-      } catch (error) {
-        log('ERRORS.FAILED_LOAD_MODEL', { fileName: model.fileName });
-        console.error(error);
-      }
-    }
-
-    viewer.sceneLoaded = true;
-  }
-
-  uploadSceneFromFile(
-    file: File,
-    viewer: ViewerComponent,
-    log: (key: string, params?: any) => void
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-
-      reader.onload = async (event: ProgressEvent<FileReader>) => {
-        const contents = event.target?.result as string;
-        try {
-          const sceneData: SceneData = JSON.parse(contents);
-          await this.uploadSceneFromData(sceneData, viewer, log);
-          resolve();
-        } catch (err) {
-          log('ERRORS.FILE_READ_FAIL_ALERT');
-          reject(err);
-        }
-      };
-
-      reader.onerror = () => {
-        log('ERRORS.FILE_READ_FAIL_ALERT');
-        reject(reader.error);
-      };
-
-      reader.readAsText(file);
-    });
-  }
-
-  loadFromLocal(
-    data: ProjectData,
-    viewer: ViewerComponent,
-    log: (key: string, params?: any) => void
-  ): Promise<void> {
-    if (!data || !data.scene) return Promise.resolve();
-    return this.uploadSceneFromData(data.scene, viewer, log);
-  }
-
-  loadSceneFromLocalStorage(
+  // Restore scene from JSON
+  loadSceneFromJson(
+    sceneData: any,
     scene: THREE.Scene,
     camera: THREE.Camera,
     ambientLight: THREE.Light,
     dirLight: THREE.Light,
     onModelsLoaded: (models: THREE.Object3D[]) => void,
     onError?: (err: any) => void
-  ) {
-    const raw = localStorage.getItem('autosavedScene');
-    if (!raw) return;
-
+  ): void {
     try {
-      const sceneData = JSON.parse(raw);
-      this.clearScene(scene);
 
+
+    if (!sceneData.camera) {
+      throw new Error("Scene data is missing 'camera' property.");
+    }
+
+
+
+      this.clearScene(scene);
       const { position, rotation } = sceneData.camera;
+
+    if (!position || !rotation) {
+          throw new Error("Camera position or rotation is missing in scene data.");
+        }
+
+
       camera.position.set(position.x, position.y, position.z);
       camera.rotation.set(rotation.x, rotation.y, rotation.z);
 
       const { ambient, directional } = sceneData.lighting;
       ambientLight.color.setHex(ambient.color);
       ambientLight.intensity = ambient.intensity;
-
       dirLight.color.setHex(directional.color);
       dirLight.intensity = directional.intensity;
       dirLight.position.set(...(directional.position as [number, number, number]));
 
-
       const loader = new GLTFLoader();
-      const loadedModels: THREE.Object3D[] = [];
+      const loaded: THREE.Object3D[] = [];
+      const modelsArr = sceneData.models || [];
+      let done = 0;
 
-      for (const modelData of sceneData.models) {
-        if (!modelData.glbBase64) continue;
-
-        const binaryString = atob(modelData.glbBase64);
-        const arrayBuffer = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          arrayBuffer[i] = binaryString.charCodeAt(i);
-        }
-
-        loader.parse(arrayBuffer.buffer, '', (gltf) => {
-          const model = gltf.scene;
-          model.name = modelData.name || 'Loaded Model';
-          model.position.copy(modelData.position);
-          model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-          model.scale.copy(modelData.scale);
-
-          model.userData['isLoadedModel'] = true;
-          model.userData['fileName'] = modelData.fileName || 'unknown.glb';
-
-          scene.add(model);
-          loadedModels.push(model);
-        });
+      if (!modelsArr.length) {
+        onModelsLoaded([]);
+        return;
       }
 
-      onModelsLoaded(loadedModels);
-    } catch (err) {
-      onError?.(err);
-    }
-  }
-
-  saveSceneToLocalStorage(
-    scene: THREE.Scene,
-    camera: THREE.Camera,
-    ambientLight: THREE.Light,
-    dirLight: THREE.Light
-  ) {
-    try {
-      const models = scene.children
-        .filter(obj => obj.userData?.['isLoadedModel'])
-        .map(obj => ({
-          name: obj.name || '',
-          position: obj.position,
-          rotation: obj.rotation,
-          scale: obj.scale,
-          fileName: obj.userData['fileName'] || 'unknown.glb',
-        }));
-
-      const sceneData = {
-        models,
-        camera: {
-          position: camera.position,
-          rotation: camera.rotation,
-        },
-        lighting: {
-          ambient: {
-            color: (ambientLight.color as any).getHex(),
-            intensity: ambientLight.intensity,
-          },
-          directional: {
-            color: (dirLight.color as any).getHex(),
-            intensity: dirLight.intensity,
-            position: dirLight.position,
-          },
-        },
-      };
-
-      localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
-    } catch (err) {
-      console.error('Error saving scene to localStorage', err);
-    }
-  }
-
-  isColliding(position: THREE.Vector3, objects: THREE.Object3D[]): boolean {
-    const height = 1.6, halfHeight = height / 2;
-    const playerBox = new THREE.Box3().setFromCenterAndSize(
-      new THREE.Vector3(position.x, position.y - halfHeight, position.z),
-      new THREE.Vector3(0.5, height, 0.5)
-    );
-
-    return objects.some(obj => new THREE.Box3().setFromObject(obj).intersectsBox(playerBox));
-  }
-
-  toggleWireframe(model: THREE.Object3D, logFn: (msgKey: string) => void): void {
-    model.traverse((child) => {
-      if ((child as THREE.Mesh).isMesh) {
-        const mesh = child as THREE.Mesh;
-        const material = mesh.material;
-
-        const toggle = (mat: THREE.Material) => {
-          (mat as any).wireframe = !(mat as any).wireframe;
-        };
-
-        if (Array.isArray(material)) {
-          material.forEach(toggle);
-        } else if (material) {
-          toggle(material);
+      modelsArr.forEach((md: any) => {
+        if (!md.glbBase64) {
+          done++;
+          if (done === modelsArr.length) onModelsLoaded(loaded);
+          return;
         }
+        const binStr = atob(md.glbBase64);
+        const buffer = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) buffer[i] = binStr.charCodeAt(i);
+
+        loader.parse(buffer.buffer, '', (gltf) => {
+          const model = gltf.scene;
+          model.name = md.name || 'Model';
+          model.position.copy(md.position);
+          model.rotation.set(md.rotation.x, md.rotation.y, md.rotation.z);
+          model.scale.copy(md.scale);
+          model.userData['isLoadedModel'] = true;
+          model.userData['fileName'] = md.fileName || 'unknown.glb';
+
+          scene.add(model);
+          loaded.push(model);
+          done++;
+          if (done === modelsArr.length) onModelsLoaded(loaded);
+        }, (e) => {
+          console.error('Parse error', e);
+          done++;
+          if (done === modelsArr.length) onModelsLoaded(loaded);
+          onError?.(e);
+        });
+      });
+    } catch (e) {
+      onError?.(e);
+    }
+  }
+
+  toggleWireframe(model: THREE.Object3D, logFn: (msg: string) => void): void {
+    model.traverse((c) => {
+      if ((c as THREE.Mesh).isMesh) {
+        const mat = (c as THREE.Mesh).material;
+        const toggle = (m: THREE.Material) => (m as any).wireframe = !(m as any).wireframe;
+        Array.isArray(mat) ? mat.forEach(toggle) : toggle(mat);
       }
     });
     logFn('VIEWER.TOGGLE_WIREFRAME');
@@ -430,67 +292,54 @@ export class SceneControlsService {
   }
 
   toggleLightColor(light: THREE.Light): void {
-    light.color.set(light.color.equals(new THREE.Color('white')) ? 'yellow' : 'white');
+    const isWhite = light.color.equals(new THREE.Color('white'));
+    light.color.set(isWhite ? 'yellow' : 'white');
   }
 
   clearScene(
     scene: THREE.Scene,
     confirmFn: () => boolean = () => true,
-    logFn: (msgKey: string) => void = () => {}
+    logFn: (msg: string) => void = () => {}
   ): void {
     if (!confirmFn()) return;
+
+    const toRemove = scene.children.filter(o => o.userData?.['isLoadedModel']);
+    toRemove.forEach(o => {
+      scene.remove(o);
+      o.traverse(child => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.geometry?.dispose();
+          const disposeMat = (mat?: THREE.Material) => {
+            if (!mat) return;
+            ['map','aoMap','emissiveMap','normalMap','roughnessMap','metalnessMap','envMap']
+              .forEach(prop => (mat as any)[prop]?.dispose());
+            mat.dispose?.();
+          };
+          Array.isArray(mesh.material) ? mesh.material.forEach(disposeMat) : disposeMat(mesh.material);
+        }
+      });
+    });
 
     if (scene.background instanceof THREE.Texture) {
       scene.background.dispose?.();
       scene.background = null;
     }
 
-    const toRemove = scene.children.filter(obj => obj.userData?.['isLoadedModel']);
-    toRemove.forEach(obj => {
-      scene.remove(obj);
-      obj.traverse(child => {
-        if ((child as THREE.Mesh).isMesh) {
-          const mesh = child as THREE.Mesh;
-          mesh.geometry?.dispose?.();
-
-          const disposeMaterial = (material: THREE.Material | undefined) => {
-            if (!material) return;
-
-            const mat = material as any;
-            [
-              'map','lightMap','aoMap','emissiveMap','bumpMap','normalMap','displacementMap',
-              'roughnessMap','metalnessMap','alphaMap','envMap'
-            ].forEach(prop => mat[prop]?.dispose?.());
-
-            material.dispose?.();
-          };
-
-          if (Array.isArray(mesh.material)) {
-            mesh.material.forEach(disposeMaterial);
-          } else {
-            disposeMaterial(mesh.material);
-          }
-        }
-      });
-    });
-
     logFn('MESSAGES.SCENE_CLEARED');
   }
 
-
-resetCameraView(
+  resetCameraView(
     camera: THREE.Camera,
-    controls: any, // Replace with actual type if available
-    defaultPosition: THREE.Vector3 = new THREE.Vector3(0, 1.6, 3),
-    defaultRotation: THREE.Euler = new THREE.Euler(0, 0, 0)
+    controls: any,
+    defaultPos = new THREE.Vector3(0, 1.6, 3),
+    defaultRot = new THREE.Euler(0, 0, 0)
   ): void {
-    camera.position.copy(defaultPosition);
-    camera.rotation.copy(defaultRotation);
-
-    if (controls && typeof controls.getObject === 'function') {
-      controls.getObject().position.copy(defaultPosition);
-      controls.getObject().rotation.copy(defaultRotation);
+    camera.position.copy(defaultPos);
+    camera.rotation.copy(defaultRot);
+    if (controls?.getObject) {
+      controls.getObject().position.copy(defaultPos);
+      controls.getObject().rotation.copy(defaultRot);
     }
   }
-
 }
