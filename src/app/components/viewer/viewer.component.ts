@@ -1,18 +1,36 @@
-import {Component,ElementRef, Input, OnInit,OnChanges, SimpleChanges, AfterViewInit, ViewChild, OnDestroy, HostListener, NgZone,} from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  Input,
+  OnInit,
+  OnChanges,
+  SimpleChanges,
+  AfterViewInit,
+  ViewChild,
+  OnDestroy,
+  HostListener,
+  NgZone
+} from '@angular/core';
+
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'; // Import the GLTF type
+
 import GUI from 'lil-gui';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { StorageService } from '../../services/storage.service';
+
 
 export interface SavedModel {
   name: string;
@@ -26,7 +44,13 @@ export interface SavedModel {
 @Component({
   selector: 'app-viewer',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule, MatTooltipModule, MatSnackBarModule, TranslateModule],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatSnackBarModule,
+    TranslateModule
+  ],
   templateUrl: './viewer.component.html',
   styleUrls: ['./viewer.component.scss']
 })
@@ -37,19 +61,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild(ViewerComponent) viewerComponent!: ViewerComponent;
-
-  @HostListener('document:webkitfullscreenchange')
-  onWebkitFullscreenChange() {
-    this.onResize();
-  }
-
-  @Input() glbFile?: File;
-
-  constructor(
-    private snackBar: MatSnackBar,
-    private translate: TranslateService,
-    private ngZone: NgZone
-  ) {}
+  @ViewChild('viewerCanvas', { static: false }) viewerCanvasRef!: ElementRef;
 
   scene!: THREE.Scene;
   camera!: THREE.PerspectiveCamera;
@@ -62,95 +74,81 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   // Track loaded meshes for collision etc
   objects: THREE.Object3D[] = [];
 
-  isLoading = false;  // Declare here!
+  isLoading = false;
+  sunlight = 1;                // Scene sunlight intensity
+  movementSpeed = 50;          // Player movement speed
+  modelSize = 30;              // Default model scale factor
+  modelScale = 1;              // Actual model scale applied
+  modelHeight = 0;             // Vertical position offset for model
+  ambientIntensity = 0.5;      // Ambient light intensity
+  speed = 50;                  // Movement speed used by sliders
+  cameraHeight = 2;            // Camera/player height from ground
 
-// ===========================================================
-// 🎛️ Default Configuration Values
-// ===========================================================
-sunlight = 1;                // Scene sunlight intensity
-movementSpeed = 50;          // Player movement speed
-modelSize = 30;              // Default model scale factor
-modelScale = 1;              // Actual model scale applied
-modelHeight = 0;             // Vertical position offset for model
-ambientIntensity = 0.5;      // Ambient light intensity
-speed = 50;                  // Movement speed used by sliders
-cameraHeight = 2;            // Camera/player height from ground
+  private clock = new THREE.Clock();
+  public sceneLoaded = false;                          // Used to track scene initialization
+  private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjustments
+  showEscHint = false;
+  private container!: HTMLElement;
+  private escHint!: HTMLDivElement;
+  private escHintSprite!: THREE.Sprite;
 
-// ===========================================================
-// 📦 Scene and Rendering
-// ===========================================================
-private clock = new THREE.Clock();
-public sceneLoaded = false;                          // Used to track scene initialization
-private gui!: GUI; // dat.GUI or lil-gui instance for debugging or runtime adjustments
-showEscHint = false;
-private container!: HTMLElement;
-private escHint!: HTMLDivElement;
-private escHintSprite!: THREE.Sprite;
+  vrActive = false;
+  private animationId: number | null = null;
+  vrControllerActive = false;
+  private vrHelper = new VrControllerHelper(3.0); // Move speed
+  public controllerSpeed = 3.0;
 
-// ===========================================================
-// VR Integration
-// ===========================================================
-vrActive = false;
-private animationId: number | null = null;
-vrControllerActive = false;
-private vrHelper = new VrControllerHelper(3.0); // Move speed
-public controllerSpeed = 3.0;
+  private movementHelper!: PlayerMovementHelper;
+  public controls!: PointerLockControls;               // FPS-style movement
+  transformControls!: TransformControls;                // 3D object transform tools
+  selectedTool = '';                                    // Currently selected tool (e.g., translate/rotate)
 
-// ===========================================================
-// 🕹️ Controls & Tools
-// ===========================================================
-private movementHelper!: PlayerMovementHelper;
-public controls!: PointerLockControls;               // FPS-style movement
-transformControls!: TransformControls;                // 3D object transform tools
-selectedTool = '';                                    // Currently selected tool (e.g., translate/rotate)
+  private keysPressed = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+  };
 
-// ===========================================================
-// 🧭 Input & Keyboard Navigation
-// ===========================================================
-private keysPressed = {
-  forward: false,
-  backward: false,
-  left: false,
-  right: false,
-};
+  private velocity = new THREE.Vector3();
+  private direction = new THREE.Vector3();
+  private canJump = false;
+  private gravity = 9.8;         // Gravitational force
+  private jumpStrength = 5;      // Jump height multiplier
 
-// ===========================================================
-// 🎮 Player Physics / Motion
-// ===========================================================
-private velocity = new THREE.Vector3();
-private direction = new THREE.Vector3();
-private canJump = false;
-private gravity = 9.8;         // Gravitational force
-private jumpStrength = 5;      // Jump height multiplier
 
-// ===========================================================
-// 🧰 VR and Stereo Settings
-// ===========================================================
-private stereoEffect!: StereoEffect;
-public isVRMode = false;
-private originalSize?: { width: number; height: number };    // For restoring size after VR
-private originalCameraAspect?: number;                       // Used to reset camera aspect
-private originalSetAnimationLoop: any;                       // Backup of setAnimationLoop
+  private stereoEffect!: StereoEffect;
+  public isVRMode = false;
+  private originalSize?: { width: number; height: number };    // For restoring size after VR
+  private originalCameraAspect?: number;                       // Used to reset camera aspect
+  private originalSetAnimationLoop: any;                       // Backup of setAnimationLoop
 
-get isInFullscreen(): boolean {
-    return document.fullscreenElement === this.containerRef?.nativeElement;
+  get isInFullscreen(): boolean {
+      return document.fullscreenElement === this.containerRef?.nativeElement;
+    }
+
+  private isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  gridHelper!: THREE.GridHelper;
+  showGrid = true;                  // Toggle grid visibility
+
+  isPlacingModel = false;           // Whether user is placing a model in the scene
+  viewerRef: any; // This will hold your viewer reference
+
+  @HostListener('document:webkitfullscreenchange')
+  onWebkitFullscreenChange() {
+    this.onResize();
   }
 
-// ===========================================================
-// 📱 Device Context
-// ===========================================================
-private isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  @Input() glbFile?: File;
 
-// ===========================================================
-// 🧱 Helpers
-// ===========================================================
-gridHelper!: THREE.GridHelper;
-showGrid = true;                  // Toggle grid visibility
+  constructor(
+    private snackBar: MatSnackBar,
+    private translate: TranslateService,
+    private ngZone: NgZone,
+    private storageService: StorageService
+  ) {}
 
-// ===========================================================
-// ⚙️ UI State
-// ===========================================================
-isPlacingModel = false;           // Whether user is placing a model in the scene
 
 ngOnInit() {
   document.addEventListener('keydown', this.onKeyDown);
@@ -159,7 +157,6 @@ ngOnInit() {
     this.escHint.style.display = document.fullscreenElement === this.container ? 'block' : 'none';
   });
 
-  //this.loadSceneFromLocalStorage();
   this.canJump = true;
   this.vrHelper.enabled = true;
   this.movementHelper = new PlayerMovementHelper(
@@ -168,6 +165,8 @@ ngOnInit() {
     this.jumpStrength,
     this.cameraHeight
   );
+  this.viewerRef = new THREE.WebGLRenderer({ canvas: this.viewerCanvasRef.nativeElement });
+  this.loadScene();
 }
 
 ngOnDestroy() {
@@ -175,18 +174,15 @@ ngOnDestroy() {
   document.removeEventListener('keyup', this.onKeyUp);
   window.removeEventListener('resize', this.resizeListener);
 
-  // Clean up VR helper
   if (this.vrHelper) {
     this.vrHelper.stop();
   }
 
-  // Cancel animation frame if running
   if (this.animationId) {
     cancelAnimationFrame(this.animationId);
     this.animationId = null;
   }
 
-  // Clean up Three.js
   if (this.renderer) {
     this.renderer.dispose();
   }
@@ -208,45 +204,53 @@ ngOnDestroy() {
   }
 }
 
-ngOnChanges(changes: SimpleChanges) {
-  if (changes['glbFile'] && changes['glbFile'].currentValue) {
-    // Skip initial binding load
-    if (changes['glbFile'].isFirstChange()) return;
+ngOnChanges(changes: SimpleChanges): void {
+  if (changes['glbFile']) {
+    const glbFileChange = changes['glbFile'];
 
-    if (this.sceneLoaded) {
-      const confirmReplace = confirm(
-        'A scene is already loaded. Do you want to replace it with a new model?'
-      );
-      if (!confirmReplace) return;
-      this.clearScene();
-    }
+    // Handle the scenario where the file is being updated or initially set
+    if (glbFileChange.currentValue) {
 
-    const file = changes['glbFile'].currentValue as File;
+      // Skip if it's the first change (when component is initialized)
+      if (glbFileChange.isFirstChange()) return;
 
-    this['sceneControls'].loadGLB(
-      file,
-      this.scene,
-      1,  // scale or other param
-      0,  // another param (rotation, offset, etc.)
-      (model: THREE.Object3D) => {
-        this.uploadedModel = model;
-        this.sceneLoaded = true;
-        this.objects.push(model);
-        this.applyModelTransform();
-        this['logToConsole']('MODEL_LOADED', { name: model.name });
-      },
-      () => {
-        this['logToConsole']('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
+      // If a scene is already loaded, ask the user if they want to replace it
+      if (this.sceneLoaded) {
+        const confirmReplace = confirm(
+          'A scene is already loaded. Do you want to replace it with a new model?'
+        );
+        if (!confirmReplace) return; // Don't replace if user cancels
+        this.clearScene(); // Clear the current scene if user agrees
       }
-    );
-  } else if (
-    !this.glbFile &&
-    !this.sceneLoaded &&
-    !changes['glbFile']?.isFirstChange()
-  ) {
-    alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
+
+      // Retrieve the new file to be loaded
+      const file = glbFileChange.currentValue as File;
+
+      // Load the new GLB file
+      this['sceneControls'].loadGLB(
+        file,
+        this.scene,
+        1, // scale (example: adjust this based on your needs)
+        0, // rotation (example: adjust this as needed)
+        (model: THREE.Object3D) => {
+          console.log('Model loaded:', model);
+          this.uploadedModel = model; // Store the loaded model
+          this.sceneLoaded = true; // Set flag to true indicating a model is loaded
+          this.objects.push(model); // Add the model to the list of objects
+          this.applyModelTransform(); // Apply any transformations needed on the model
+          this['logToConsole']('MODEL_LOADED', { name: model.name }); // Log the model load
+        },
+        () => {
+          this['logToConsole']('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name }); // Handle load failure
+        }
+      );
+    } else if (!this.sceneLoaded && !glbFileChange.isFirstChange()) {
+      // Alert the user if no model is loaded and no valid file is provided
+      alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
+    }
   }
 }
+
 
 ngAfterViewInit() {
   this.initScene();
@@ -368,6 +372,11 @@ ngAfterViewInit() {
   this.gridHelper.visible = this.showGrid;
   this.scene.add(this.gridHelper);
 
+  //add a toggle for the grid
+  this.gui.add(this, 'showGrid').name('Toggle Grid').onChange((visible: boolean) => {
+  this.gridHelper.visible = visible;
+});
+
   this.stereoEffect = new StereoEffect(this.renderer);
   this.stereoEffect.setSize(window.innerWidth, window.innerHeight);
 
@@ -385,6 +394,16 @@ ngAfterViewInit() {
       this.exitVR();
     }
   });
+
+  if (this.viewerCanvasRef) {
+    this.viewerRef = new THREE.WebGLRenderer({ canvas: this.viewerCanvasRef.nativeElement });
+    this.loadScene(); // Load scene after viewer is initialized
+  }
+  if (this.viewerCanvasRef && this.viewerCanvasRef.nativeElement) {
+    console.log("Viewer Canvas element:", this.viewerCanvasRef.nativeElement);
+  } else {
+    console.error("Viewer Canvas reference is missing.");
+  }
 }
 
 //********* UI Controls for the ThreeJS Scene *********/
@@ -419,7 +438,6 @@ private initScene() {
     return;
   }
 
-// ngAfterViewInit or initScene:
 this.container = this.containerRef.nativeElement;
 this.container.style.position = 'relative'; // critical
 
@@ -430,7 +448,6 @@ this.escHint.style.display = 'none';
 
 this.container.appendChild(this.escHint);
 
-  // 💡 Lighting
   this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
   this.scene.add(this.ambientLight);
 
@@ -438,7 +455,6 @@ this.container.appendChild(this.escHint);
   this.dirLight.position.set(5, 10, 7.5);
   this.scene.add(this.dirLight);
 
-  // 🚶 Controls + user instructions
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
   this.scene.add(this.controls.getObject());
 
@@ -467,11 +483,8 @@ this.container.appendChild(this.escHint);
     }
   }, { passive: true });
 
-  // 🧰 GUI (hidden, optional for dev tools)
   this.gui = new GUI({ width: 280 });
   this.gui.domElement.style.display = 'none';
-
-  // 🧱 Floor
   const floorGeo = new THREE.PlaneGeometry(200, 200);
   const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
   const floor = new THREE.Mesh(floorGeo, floorMat);
@@ -498,18 +511,33 @@ updateModelTransform(): void {
   }
 }
 
-// private setUploadedModel(model: THREE.Object3D): void {
-//   this.uploadedModel = model;
-//   this.modelScale = model.scale.x; // Sync GUI with actual values
-//   this.modelHeight = model.position.y;
-// }
-
 applyModelTransform(): void {
-    if (this.uploadedModel) {
-      this.uploadedModel.scale.setScalar(this.modelScale);
-      this.uploadedModel.position.y = this.modelHeight;
-    }
+  if (this.uploadedModel) {
+    this.uploadedModel.scale.setScalar(this.modelScale);
+    this.uploadedModel.position.y = this.modelHeight;
+    console.log('Model position:', this.uploadedModel.position);
+    console.log('Model scale:', this.uploadedModel.scale);
   }
+}
+
+clearScene() {
+  // Confirm the user's action to clear the scene
+  if (confirm('Are you sure you want to clear the scene?')) {
+    // First save the current state of the scene before clearing it
+    this.storageService.saveSceneAsJson(this['viewerRef'], (msgKey: string) => console.log(msgKey));
+
+    // Now clear the scene using the sceneControls
+    this['sceneControls'].clearScene(
+      this.scene,
+      () => confirm('Are you sure you want to clear the scene?'),
+      (msgKey: string) => console.log(msgKey)
+    );
+
+    // Reset the component state
+    this.uploadedModel = null;
+    this.objects = [];
+  }
+}
 
 //************* Update Ambient Light ******************* */
 
@@ -521,16 +549,6 @@ applyModelTransform(): void {
   this.camera.position.y = this.cameraHeight;
 }
 
-  clearScene() {
-      this['sceneControls'].clearScene(
-        this.scene,
-        () => confirm('Are you sure you want to clear the scene?'),
-        (msgKey: string) => console.log(msgKey)
-      );
-      this.uploadedModel = null;
-      this.objects = [];
-    }
-
 //************* Load GLB helper for buttons ******************* */
 
  loadGLB(file: File): void {
@@ -539,34 +557,69 @@ applyModelTransform(): void {
   const loader = new GLTFLoader();
   const url = URL.createObjectURL(file);
 
-  loader.load(
-    url,
-    (gltf) => {
-      if (!gltf.scene) {
-        console.error('Invalid GLB format.');
-        this.isLoading = false;
-        return;
-      }
-      this.clearScene();  // no argument
-
-      gltf.scene.position.set(0, 0, 0);
-      this.scene.add(gltf.scene);
-      this.uploadedModel = gltf.scene;
-
-      this.camera.position.set(0, 1.6, 3);
-
-      URL.revokeObjectURL(url);
-
+loader.load(
+  url,
+  (gltf) => {
+    if (!gltf.scene) {
+      console.error('Invalid GLB format.');
       this.isLoading = false;
-    },
-    undefined,
-    (error) => {
-      console.error('Error loading GLB:', error);
-      URL.revokeObjectURL(url);
-      this.isLoading = false;
+      return;
     }
-  );
+    this.clearScene();  // no argument
+
+    gltf.scene.position.set(0, 0, 0);
+    this.scene.add(gltf.scene);
+    this.uploadedModel = gltf.scene;
+
+    this.camera.position.set(0, 1.6, 3);
+
+    URL.revokeObjectURL(url);
+
+    this.isLoading = false;
+  },
+  undefined,
+  (error) => {
+    console.error('Error loading GLB:', error);
+    URL.revokeObjectURL(url);
+    this.isLoading = false;
+  }
+);
 }
+
+ // Load the scene data from the StorageService
+  loadScene() {
+    const savedScene = this.storageService.load(); // Retrieve project data from localStorage if available
+    if (savedScene) {
+      // If there's saved data, load the scene
+      this.loadModelsFromScene(savedScene);
+    } else {
+      // If no scene data exists, initialize a new empty scene
+      console.log("No saved scene found.");
+    }
+  }
+
+  // Load models from the scene data
+loadModelsFromScene(sceneData: any) {
+  const models = sceneData.models || [];
+  const loader = new GLTFLoader();
+
+  models.forEach((modelData: any) => {
+    const buffer = new Uint8Array(atob(modelData.glbBase64).split("").map(char => char.charCodeAt(0)));
+    loader.parse(buffer.buffer, '', (gltf: GLTF) => {  // Explicitly typing 'gltf'
+      const model = gltf.scene;
+      model.position.copy(modelData.position);
+      model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+      model.scale.copy(modelData.scale);
+      this.scene.add(model);
+    });
+  });
+}
+
+
+
+
+
+
 
 //************* Animation/ Controller Pad and Keys ******************* */
 
@@ -605,18 +658,14 @@ private animate = () => {
 
   this.movementHelper.enforceGround(this.controls.object);
 
-  // Update ESC hint sprite position & orientation if visible
   if (this.escHintSprite && this.escHintSprite.visible) {
-    // Get camera forward direction
     const cameraDirection = new THREE.Vector3();
     this.camera.getWorldDirection(cameraDirection);
 
-    // Position sprite 2 units in front of camera and a bit below
     const cameraPosition = this.camera.position.clone();
     this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
     this.escHintSprite.position.y -= 1.2;
 
-    // Make it face camera
     this.escHintSprite.quaternion.copy(this.camera.quaternion);
   }
 
@@ -625,8 +674,6 @@ private animate = () => {
   console.log('Facing quaternion:', this.controls.getObject().quaternion);
   console.log('Joystick Movement:', this.vrHelper.movementVector);
 };
-
-
 
 public isColliding(position: THREE.Vector3): boolean {
   const playerHeight = 1.6;

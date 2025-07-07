@@ -20,7 +20,7 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 
 * **3D Model Support**: Load `.glb` and `.gltf` files
 * **Custom Lighting**: Adjust sunlight and room lighting
-* **Interactive Annotations**: Drop info notes within the 3D scene
+* **Interactive Tutorial**: Tour the simulator using Shephard.js integration
 * **Scene Save/Load**: Save 3D scenes as JSON files; preserve lighting, size, and axis positions when re-uploaded
 * **Intuitive UI**: User-friendly interface with large buttons and sliders
 * **First-Person Navigation**: WASD controls and pointer lock support for immersive movement
@@ -55,6 +55,7 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 - VR split screen added
 - Language selection added
 - Docker container added
+- Tutorial added
 
 ---
 

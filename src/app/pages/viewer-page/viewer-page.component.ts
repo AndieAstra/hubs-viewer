@@ -7,7 +7,8 @@ import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SceneControlsService } from '../../services/scene-controls.service'
 import { StorageService } from '../../services/storage.service';
-
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 @Component({
   selector: 'app-viewer-page',
@@ -37,7 +38,7 @@ export class ViewerPageComponent implements AfterViewInit {
     private router: Router,
     private translate: TranslateService,
     private storageService: StorageService,
-    private sceneControls: SceneControlsService
+    private sceneControls: SceneControlsService,
   ) {
     const savedLang = (localStorage.getItem('preferredLang') as 'en' | 'es') || 'en';
     this.currentLang = savedLang;
@@ -65,6 +66,10 @@ export class ViewerPageComponent implements AfterViewInit {
       window.dispatchEvent(new Event('resize'));
     }, 100);
 
+    if (!this.viewerRef) {
+    console.error("Viewer reference not found!");
+  }
+
     if (!localStorage.getItem('hasSeenTutorial')) {
       this.startTutorial();
     }
@@ -89,22 +94,31 @@ export class ViewerPageComponent implements AfterViewInit {
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
-  resizeCanvas(): void {
-    if (!this.canvasRef || !this.viewerRef) return;
-
-    const canvas = this.canvasRef.nativeElement;
-    const container = canvas.parentElement;
-    if (!container) return;
-
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    this.viewerRef.onResize?.(width, height);
-    this.viewerRef.renderer?.setSize?.(width, height);
+resizeCanvas(): void {
+  if (!this.canvasRef || !this.viewerRef) {
+    console.error('Canvas reference or Viewer reference is missing.');
+    return;
   }
+
+  const canvas = this.canvasRef.nativeElement;
+  const container = canvas.parentElement;
+  if (!container) {
+    console.error('Canvas container not found.');
+    return;
+  }
+
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+
+  console.log(`Resizing canvas to: ${width}x${height}`);
+
+  canvas.width = width;
+  canvas.height = height;
+
+  this.viewerRef.onResize?.(width, height);
+  this.viewerRef.renderer?.setSize?.(width, height);
+}
+
 
   openBugReport(): void {
     this.router.navigate(['/bug-report']);
@@ -116,7 +130,7 @@ export class ViewerPageComponent implements AfterViewInit {
     const scene = this.viewerRef?.scene;
     if (!scene) return;
 
-    this.sceneControls.clearScene(scene);
+    this.storageService.clearScene(scene);
     this.logToConsole('MESSAGES.SCENE_CLEARED');
   }
 
@@ -142,28 +156,57 @@ export class ViewerPageComponent implements AfterViewInit {
     this.fileInput?.nativeElement.click();
   }
 
-  onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
+onFileChange(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  if (!input.files?.length) return;
 
-    const file = input.files[0];
+  const file = input.files[0];
 
-    if (this.viewerRef && typeof this.viewerRef.loadGLB === 'function') {
-      this.viewerRef.loadGLB(file);
-      this.logToConsole('VIEWER.LOAD_GLB_SUCCESS');
-    } else {
-      console.error('loadGLB method not found on viewerRef');
-      this.logToConsole('VIEWER.LOAD_GLB_FAIL');
-    }
+  if (this.viewerRef) {
+    // Clear the scene and load the file
+    this.clearSceneAndLoadFile(file);
+    this.logToConsole('VIEWER.LOAD_GLB_SUCCESS');
+  } else {
+    console.error('Viewer reference not found!');
+    this.logToConsole('VIEWER.LOAD_GLB_FAIL');
   }
+}
+
+clearSceneAndLoadFile(file: File): void {
+  this.storageService.clearScene(this.viewerRef.scene, () => true, (msg) => {
+    this.logToConsole(msg);
+  });
+
+  // Immediately load the file after clearing
+  this.loadGLB(file);
+}
+
+
+
+loadGLB(file: File): void {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const arrayBuffer = reader.result as ArrayBuffer;
+    const loader = new GLTFLoader();
+
+loader.parse(arrayBuffer, '', (gltf: GLTF) => {
+  const scene = this.viewerRef?.scene;
+  if (scene) {
+    console.log("GLTF Loaded:", gltf);
+    scene.add(gltf.scene);
+  } else {
+    console.error('Scene not found.');
+  }
+}, (error: ErrorEvent) => {
+  console.error('Error loading GLB file:', error.message);
+});
+  };
+  reader.readAsArrayBuffer(file);
+}
 
   saveSceneAsJson(): void {
-    this.sceneControls.saveSceneAsJson();
+    this.storageService.saveSceneAsJson(this.viewerRef);
   }
-
-// ********************************************************************
-
-
 
 // ----- Button Inputs -----
 

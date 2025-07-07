@@ -10,7 +10,7 @@
   },
 
   "UPLOAD": {
-    "INSTRUCTIONS": "Choose your 3D model (glb), then use the WASD keys to move around, SPACE to jump.",
+    "INSTRUCTIONS": "Choose your 3D model (glb/gltf/JSON), then use the WASD keys to move around, SPACE to jump.",
     "BUTTON_LABEL": "Upload Model"
   },
 

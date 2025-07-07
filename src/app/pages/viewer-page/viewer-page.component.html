@@ -45,24 +45,26 @@
             <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
           </button>
 
-          <input
-          type="file"
-          accept=".json"
-          hidden #fileInput
-          (change)="onFileChange($event)" />
+<!--  NEW Save and Load Buttons -->
 
-          <button class="kid-button purple" (click)="fileInput.click()">
-            <img src="assets/icons/upload.png" alt="Load" />
-            <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
-          </button>
+<!-- Load File Button -->
+<button class="kid-button purple" (click)="onUploadClick()">
+  <img src="assets/icons/upload.png" alt="Load" />
+  <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
+</button>
 
-        <button class="kid-button green" (click)="saveSceneAsJson()">
-          <img src="assets/icons/save.jpg" alt="Save" />
-          <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-        </button>
+<!-- Save File Button -->
+<button class="kid-button green" (click)="saveSceneAsJson()">
+  <img src="assets/icons/save.jpg" alt="Save" />
+  <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
+</button>
+
+<!-- Hidden File Input for Loading Files -->
+<input type="file" #fileInput style="display: none" (change)="onFileChange($event)" accept=".glb,.gltf,.json" />
+
+<!------------------------------------------------>
         </div>
         </section>
-
 
       <!-- 💡 Lighting -->
       <section>

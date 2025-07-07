@@ -10,7 +10,7 @@
   },
 
   "UPLOAD": {
-    "INSTRUCTIONS": "Elige tu modelo 3D (glb), luego usa las teclas WASD para moverte y ESPACIO para saltar.",
+    "INSTRUCTIONS": "Elige tu modelo 3D (glb/gltf/JSON), luego usa las teclas WASD para moverte y ESPACIO para saltar.",
     "BUTTON_LABEL": "Subir Modelo"
   },
 

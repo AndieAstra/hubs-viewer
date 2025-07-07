@@ -19,7 +19,7 @@ export interface SceneData {
     directional: {
       color: number;
       intensity: number;
-      position: [number, number, number]; // This fixes the spread issue
+      position: [number, number, number];
     };
   };
 }
