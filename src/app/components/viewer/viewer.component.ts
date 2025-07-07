@@ -62,6 +62,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   // Track loaded meshes for collision etc
   objects: THREE.Object3D[] = [];
 
+  isLoading = false;  // Declare here!
+
 // ===========================================================
 // 🎛️ Default Configuration Values
 // ===========================================================
@@ -532,38 +534,47 @@ applyModelTransform(): void {
 //************* Load GLB helper for buttons ******************* */
 
  loadGLB(file: File): void {
-    const loader = new GLTFLoader();
-    const reader = new FileReader();
+  this.isLoading = true;
 
-    reader.onload = (e) => {
-      if (!e.target?.result) return;
-      loader.parse(
-        e.target.result as ArrayBuffer,
-        '',
-        (gltf) => {
-          // Check if GLB is a valid model
-          if (!gltf.scene) {
-            console.error('Invalid GLB format.');
-            return;
-          }
+  const loader = new GLTFLoader();
+  const url = URL.createObjectURL(file);
 
-          this.scene.add(gltf.scene);
-          this.uploadedModel = gltf.scene;
-          console.log('GLB loaded successfully');
-        },
-        (error) => {
-          console.error('Error loading GLB:', error);
-        }
-      );
-    };
+  loader.load(
+    url,
+    (gltf) => {
+      if (!gltf.scene) {
+        console.error('Invalid GLB format.');
+        this.isLoading = false;
+        return;
+      }
+      this.clearScene();  // no argument
 
-    reader.readAsArrayBuffer(file);
-  }
+      gltf.scene.position.set(0, 0, 0);
+      this.scene.add(gltf.scene);
+      this.uploadedModel = gltf.scene;
+
+      this.camera.position.set(0, 1.6, 3);
+
+      URL.revokeObjectURL(url);
+
+      this.isLoading = false;
+    },
+    undefined,
+    (error) => {
+      console.error('Error loading GLB:', error);
+      URL.revokeObjectURL(url);
+      this.isLoading = false;
+    }
+  );
+}
 
 //************* Animation/ Controller Pad and Keys ******************* */
 
 private animate = () => {
   this.animationId = requestAnimationFrame(this.animate);
+
+  if (this.isLoading) return; // skip animation updates while loading
+
   const delta = this.clock.getDelta();
 
   this.vrHelper.update(); // Update joystick
@@ -614,6 +625,8 @@ private animate = () => {
   console.log('Facing quaternion:', this.controls.getObject().quaternion);
   console.log('Joystick Movement:', this.vrHelper.movementVector);
 };
+
+
 
 public isColliding(position: THREE.Vector3): boolean {
   const playerHeight = 1.6;

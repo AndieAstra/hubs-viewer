@@ -16,6 +16,9 @@ export class SceneControlsService {
   logToConsole?: (msgKey: string, params?: any) => void;
 
 
+// *******************************************************************************
+
+
   // Trigger the hidden file input
   onUploadClick(): void {
     this.fileInput?.nativeElement.click();
@@ -29,51 +32,56 @@ export class SceneControlsService {
   }
 
   // Load JSON or GLB/GLTF
-  onFileLoaded(file: File): void {
-    const fileName = file.name.toLowerCase();
+onFileLoaded(file: File): void {
+  const fileName = file.name.toLowerCase();
+  console.log("Selected file:", fileName);
 
-    if (fileName.endsWith('.json')) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const sceneData = JSON.parse(reader.result as string);
-          this.loadSceneFromJson(
-            sceneData,
-            this.viewerRef.scene,
-            this.viewerRef.camera,
-            this.viewerRef.ambientLight,
-            this.viewerRef.dirLight,
-            (models: THREE.Object3D[]) => {
-              this.viewerRef.uploadedModel = models[0] || null;
-              this.logToConsole?.('VIEWER.LOAD_SCENE');
-            },
-            (err: any) => {
-              console.error(err);
-              this.logToConsole?.('VIEWER.LOAD_SCENE_ERROR');
-            }
-          );
-        } catch (err) {
-          console.error('Invalid JSON file:', err);
-          this.logToConsole?.('VIEWER.LOAD_SCENE_ERROR');
-        }
-      };
-      reader.readAsText(file);
-
-    } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
-
-      if (typeof this.viewerRef['loadGLB'] === 'function') {
-        this.viewerRef['loadGLB'](file);
-
-        this.logToConsole?.(`File loaded: ${file.name}`);
-      } else {
-        console.error('loadGLB method not found on viewerRef');
-        this.logToConsole?.('VIEWER.LOAD_MODEL_ERROR');
+  if (fileName.endsWith('.json')) {
+    // Handle JSON scene files
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const sceneData = JSON.parse(reader.result as string);
+        this.loadSceneFromJson(
+          sceneData,
+          this.viewerRef.scene,
+          this.viewerRef.camera,
+          this.viewerRef.ambientLight,
+          this.viewerRef.dirLight,
+          (models: THREE.Object3D[]) => {
+            this.viewerRef.uploadedModel = models[0] || null;
+            this.logToConsole?.('VIEWER.LOAD_SCENE');
+          },
+          (err: any) => {
+            console.error('Error loading scene JSON:', err);
+            this.logToConsole?.('VIEWER.LOAD_SCENE_ERROR');
+          }
+        );
+      } catch (err) {
+        console.error('Invalid JSON file:', err);
+        this.logToConsole?.('VIEWER.LOAD_SCENE_ERROR');
       }
+    };
+    reader.readAsText(file);
+
+  } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+    console.log("GLB or GLTF file detected");
+
+    // Handle GLB/GLTF files
+    if (typeof this.viewerRef['loadGLB'] === 'function') {
+      this.viewerRef['loadGLB'](file);
+      this.logToConsole?.(`File loaded: ${file.name}`);
     } else {
-      this.logToConsole?.('VIEWER.UNSUPPORTED_FILE_TYPE');
-      console.warn('Unsupported file type:', file.name);
+      console.error('loadGLB method not found on viewerRef');
+      this.logToConsole?.('VIEWER.LOAD_MODEL_ERROR');
     }
+
+  } else {
+    console.warn('Unsupported file type:', file.name);
+    this.logToConsole?.('VIEWER.UNSUPPORTED_FILE_TYPE');
   }
+}
+
 
 
 // *******************************************************************************
@@ -85,6 +93,14 @@ saveSceneAsJson(): void {
       console.error('Viewer not initialized!');
       return;
     }
+
+    const filename = prompt('Enter filename to save your scene:', 'scene.json');
+    if (!filename) {
+      // User cancelled prompt
+      return;
+    }
+    // Make sure filename ends with .json
+    const safeFilename = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`;
 
     const exported = this.exportScene(
       this.viewerRef.scene,
@@ -106,7 +122,7 @@ saveSceneAsJson(): void {
           ...exported,
           models: collectedModels,
         };
-        this.downloadJson(JSON.stringify(fullData), 'scene.json');
+        this.downloadJson(JSON.stringify(fullData), safeFilename);
         this.logToConsole?.('VIEWER.SAVE_SCENE');
         return;
       }
@@ -153,6 +169,7 @@ saveSceneAsJson(): void {
   }
 }
 
+
   // Generic JSON download helper
 private downloadJson(json: string, filename: string): void {
   const blob = new Blob([json], { type: 'application/json' });
@@ -192,89 +209,103 @@ private downloadJson(json: string, filename: string): void {
     };
   }
 
-// *******************************************************************************
-
   // Restore scene from JSON
-  loadSceneFromJson(
-    sceneData: any,
-    scene: THREE.Scene,
-    camera: THREE.Camera,
-    ambientLight: THREE.Light,
-    dirLight: THREE.Light,
-    onModelsLoaded: (models: THREE.Object3D[]) => void,
-    onError?: (err: any) => void
-  ): void {
-    try {
-
-
+loadSceneFromJson(
+  sceneData: any,
+  scene: THREE.Scene,
+  camera: THREE.Camera,
+  ambientLight: THREE.Light,
+  dirLight: THREE.Light,
+  onModelsLoaded: (models: THREE.Object3D[]) => void,
+  onError?: (err: any) => void
+): void {
+  try {
     if (!sceneData.camera) {
       throw new Error("Scene data is missing 'camera' property.");
     }
 
-
-
-      this.clearScene(scene);
-      const { position, rotation } = sceneData.camera;
+    this.clearScene(scene);
+    const { position, rotation } = sceneData.camera;
 
     if (!position || !rotation) {
-          throw new Error("Camera position or rotation is missing in scene data.");
-        }
+      throw new Error("Camera position or rotation is missing in scene data.");
+    }
 
+    // Set camera position and rotation
+    camera.position.set(position.x, position.y, position.z);
+    camera.rotation.set(rotation.x, rotation.y, rotation.z);
 
-      camera.position.set(position.x, position.y, position.z);
-      camera.rotation.set(rotation.x, rotation.y, rotation.z);
+    // Log camera position for debugging
+    console.log('Camera Position:', camera.position);
+    console.log('Camera Rotation:', camera.rotation);
 
-      const { ambient, directional } = sceneData.lighting;
-      ambientLight.color.setHex(ambient.color);
-      ambientLight.intensity = ambient.intensity;
-      dirLight.color.setHex(directional.color);
-      dirLight.intensity = directional.intensity;
-      dirLight.position.set(...(directional.position as [number, number, number]));
+    const { ambient, directional } = sceneData.lighting;
+    ambientLight.color.setHex(ambient.color);
+    ambientLight.intensity = ambient.intensity;
+    dirLight.color.setHex(directional.color);
+    dirLight.intensity = directional.intensity;
+    dirLight.position.set(...(directional.position as [number, number, number]));
 
-      const loader = new GLTFLoader();
-      const loaded: THREE.Object3D[] = [];
-      const modelsArr = sceneData.models || [];
-      let done = 0;
+    // Log lighting for debugging
+    console.log('Ambient Light:', ambientLight);
+    console.log('Directional Light:', dirLight);
 
-      if (!modelsArr.length) {
-        onModelsLoaded([]);
+    const loader = new GLTFLoader();
+    const loaded: THREE.Object3D[] = [];
+    const modelsArr = sceneData.models || [];
+    let done = 0;
+
+    if (!modelsArr.length) {
+      onModelsLoaded([]);
+      return;
+    }
+
+    modelsArr.forEach((md: any) => {
+      if (!md.glbBase64) {
+        done++;
+        if (done === modelsArr.length) onModelsLoaded(loaded);
         return;
       }
 
-      modelsArr.forEach((md: any) => {
-        if (!md.glbBase64) {
-          done++;
-          if (done === modelsArr.length) onModelsLoaded(loaded);
-          return;
-        }
-        const binStr = atob(md.glbBase64);
-        const buffer = new Uint8Array(binStr.length);
-        for (let i = 0; i < binStr.length; i++) buffer[i] = binStr.charCodeAt(i);
+      const binStr = atob(md.glbBase64);
+      const buffer = new Uint8Array(binStr.length);
+      for (let i = 0; i < binStr.length; i++) buffer[i] = binStr.charCodeAt(i);
 
-        loader.parse(buffer.buffer, '', (gltf) => {
-          const model = gltf.scene;
-          model.name = md.name || 'Model';
-          model.position.copy(md.position);
-          model.rotation.set(md.rotation.x, md.rotation.y, md.rotation.z);
-          model.scale.copy(md.scale);
-          model.userData['isLoadedModel'] = true;
-          model.userData['fileName'] = md.fileName || 'unknown.glb';
+      loader.parse(buffer.buffer, '', (gltf) => {
+        const model = gltf.scene;
+        model.name = md.name || 'Model';
+        model.position.copy(md.position);
+        model.rotation.set(md.rotation.x, md.rotation.y, md.rotation.z);
+        model.scale.copy(md.scale);
+        model.userData['isLoadedModel'] = true;
+        model.userData['fileName'] = md.fileName || 'unknown.glb';
 
-          scene.add(model);
-          loaded.push(model);
-          done++;
-          if (done === modelsArr.length) onModelsLoaded(loaded);
-        }, (e) => {
-          console.error('Parse error', e);
-          done++;
-          if (done === modelsArr.length) onModelsLoaded(loaded);
-          onError?.(e);
-        });
+        scene.add(model);
+        loaded.push(model);
+        done++;
+        if (done === modelsArr.length) onModelsLoaded(loaded);
+      }, (e) => {
+        console.error('Parse error', e);
+        done++;
+        if (done === modelsArr.length) onModelsLoaded(loaded);
+        onError?.(e);
       });
-    } catch (e) {
-      onError?.(e);
-    }
+    });
+  } catch (e) {
+    onError?.(e);
   }
+}
+
+
+
+
+
+
+
+
+// *******************************************************************************
+
+
 
   toggleWireframe(model: THREE.Object3D, logFn: (msg: string) => void): void {
     model.traverse((c) => {
