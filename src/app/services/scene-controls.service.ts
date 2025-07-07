@@ -1,7 +1,7 @@
 import { Injectable, ElementRef } from '@angular/core';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { ViewerComponent } from '../components/viewer/viewer.component';
 import { SceneData } from '../components/types/scene.types';
 

@@ -8,11 +8,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
+import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export interface SavedModel {
   name: string;
