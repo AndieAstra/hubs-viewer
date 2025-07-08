@@ -77,10 +77,16 @@
         <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
         <div class="button-row">
 
-           <button class="kid-button green" (click)="toggleLightcolor()">
-            <img src="assets/icons/reset.png" alt="Light Color" />
-            <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
-          </button>
+        <label class="kid-button green color-picker-label">
+          <input
+            type="color"
+            (change)="onLightColorChange($event)"
+            class="color-input"
+          />
+          <img src="assets/icons/reset.png" alt="Light Color" />
+          <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
+        </label>
+
 
            <button class="kid-button orange" (click)="toggleRoomLight()">
             <img src="assets/icons/wire.jpg" alt="Room Light" />

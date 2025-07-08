@@ -124,6 +124,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public isPlacingModel = false; // Define this property to avoid errors.
 
   @Input() glbFile?: File;
+  //ambientLight: any;
+  public ambientLight = new THREE.AmbientLight(0xffffff, 1);
 
   constructor(
     private snackBar: MatSnackBar,

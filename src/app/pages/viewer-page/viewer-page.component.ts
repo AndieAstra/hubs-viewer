@@ -147,35 +147,49 @@ export class ViewerPageComponent implements AfterViewInit {
     this.viewerComponent.onEyeLevelChange(event);
   }
 
-//
-// ---- Still need to get working -------
-//
 
-  resetView() {
-    // TODO: Reset camera/view
-    console.log('View reset');
+  resetView(): void {
+    if (!this.viewerRef) {
+      console.warn('Viewer reference not found');
+      return;
+    }
+
+    const { camera, controls } = this.viewerRef;
+
+    this.sceneControls.resetCameraView(camera, controls);
+    this.logToConsole('VIEWER.RESET_VIEW');
   }
 
-  toggleLightcolor() {
-    // TODO: Toggle light color
-    console.log('Toggled light color');
+  onLightColorChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const color = input.value;
+
+    this.sceneControls.changeLightColorByValue(color);
+    this.logToConsole(`Changed light color to ${color}`);
   }
 
-  toggleRoomLight() {
-    // TODO: Toggle room light
-    console.log('Toggled room light');
+
+  toggleRoomLight(): void {
+    const light = this.viewerRef?.ambientLight;
+    if (!light) return;
+
+    this.sceneControls.toggleRoomLight(light);
+    this.logToConsole('VIEWER.TOGGLE_ROOM_LIGHT');
   }
 
-  toggleWireframe() {
-    // TODO: Toggle wireframe rendering
-    console.log('Toggled wireframe');
-  }
+  toggleWireframe(): void {
+    const model = this.viewerRef?.uploadedModel;
+    if (!model) return;
+
+    this.sceneControls.toggleWireframe(model, (msgKey) => {
+      this.logToConsole(msgKey);
+    });
+    }
 
 // ---- Bug Report Button -------
 
-  openBugReport() {
-    // TODO: Open bug report form
-    console.log('Bug report opened');
+  openBugReport(): void {
+    this.router.navigate(['/bug-report']);
   }
 
 // ---- Tutorial -------

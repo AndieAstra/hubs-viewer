@@ -9,6 +9,8 @@ export class SceneControlsService {
   viewerRef!: ViewerComponent;
   logToConsole?: (msgKey: string, params?: any) => void;
 
+  private ambientLight?: THREE.AmbientLight;
+
   // Toggle wireframe mode on a model
   toggleWireframe(model: THREE.Object3D, logFn: (msg: string) => void): void {
     model.traverse((c) => {
@@ -26,11 +28,15 @@ export class SceneControlsService {
     light.visible = !light.visible;
   }
 
-  // Toggle light color between white and yellow
-  toggleLightColor(light: THREE.Light): void {
-    const isWhite = light.color.equals(new THREE.Color('white'));
-    light.color.set(isWhite ? 'yellow' : 'white');
-  }
+// Toggle light color
+setAmbientLight(light: THREE.AmbientLight): void {
+  this.ambientLight = light;
+}
+
+changeLightColorByValue(color: string): void {
+  if (!this.ambientLight) return;
+  this.ambientLight.color.set(color);
+}
 
   // Reset camera to its default position and rotation
   resetCameraView(
