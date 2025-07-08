@@ -114,30 +114,6 @@ resizeCanvas(): void {
   this.viewerRef.renderer?.setSize?.(width, height);
 }
 
-  //   this.router.navigate(['/bug-report']);
-  // }
-
-
-// ----- Scene & Model Controls -----
-
-
-// ********************************************************************
-
-
-// ----- Button Inputs -----
-
-
-// ----- Slider/Range Inputs -----
-
-
-// ----- Tutorial -----
-
-
-// ----- Language Switch -----
-
-
-// ----- VR Mode -----
-
   exitFullscreen(): void {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch((err) => {

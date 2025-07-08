@@ -10,7 +10,6 @@ export class SceneControlsService {
   viewerRef!: ViewerComponent;
   logToConsole?: (msgKey: string, params?: any) => void;
 
-
   // Toggle wireframe mode on a model
   toggleWireframe(model: THREE.Object3D, logFn: (msg: string) => void): void {
     model.traverse((c) => {
