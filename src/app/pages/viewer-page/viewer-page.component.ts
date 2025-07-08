@@ -71,7 +71,6 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
     if (!localStorage.getItem('hasSeenTutorial')) {
-      this.startTutorial();
     }
   }
 
@@ -88,10 +87,6 @@ export class ViewerPageComponent implements AfterViewInit {
 
   toggleConsole(): void {
     this.showConsole = !this.showConsole;
-  }
-
-  toggleSidebar(): void {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
 resizeCanvas(): void {
@@ -119,293 +114,29 @@ resizeCanvas(): void {
   this.viewerRef.renderer?.setSize?.(width, height);
 }
 
+  //   this.router.navigate(['/bug-report']);
+  // }
 
-  openBugReport(): void {
-    this.router.navigate(['/bug-report']);
-  }
 
-  // ----- Scene & Model Controls -----
+// ----- Scene & Model Controls -----
 
-  clearModel(): void {
-    const scene = this.viewerRef?.scene;
-    if (!scene) return;
-
-    this.storageService.clearScene(scene);
-    this.logToConsole('MESSAGES.SCENE_CLEARED');
-  }
-
-  clear(): void {
-    this.viewerRef?.clearScene();
-  }
-
-  resetView(): void {
-  if (!this.viewerRef) {
-    console.warn('Viewer reference not found');
-    return;
-  }
-
-  const { camera, controls } = this.viewerRef;
-
-  this.sceneControls.resetCameraView(camera, controls);
-  this.logToConsole('VIEWER.RESET_VIEW');
-}
 
 // ********************************************************************
 
-  onUploadClick(): void {
-    this.fileInput?.nativeElement.click();
-  }
-
-onFileChange(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  if (!input.files?.length) return;
-
-  const file = input.files[0];
-
-  if (this.viewerRef) {
-    // Clear the scene and load the file
-    this.clearSceneAndLoadFile(file);
-    this.logToConsole('VIEWER.LOAD_GLB_SUCCESS');
-  } else {
-    console.error('Viewer reference not found!');
-    this.logToConsole('VIEWER.LOAD_GLB_FAIL');
-  }
-}
-
-clearSceneAndLoadFile(file: File): void {
-  this.storageService.clearScene(this.viewerRef.scene, () => true, (msg) => {
-    this.logToConsole(msg);
-  });
-
-  // Immediately load the file after clearing
-  this.loadGLB(file);
-}
-
-
-
-loadGLB(file: File): void {
-  const reader = new FileReader();
-  reader.onload = () => {
-    const arrayBuffer = reader.result as ArrayBuffer;
-    const loader = new GLTFLoader();
-
-loader.parse(arrayBuffer, '', (gltf: GLTF) => {
-  const scene = this.viewerRef?.scene;
-  if (scene) {
-    console.log("GLTF Loaded:", gltf);
-    scene.add(gltf.scene);
-  } else {
-    console.error('Scene not found.');
-  }
-}, (error: ErrorEvent) => {
-  console.error('Error loading GLB file:', error.message);
-});
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-  saveSceneAsJson(): void {
-    this.storageService.saveSceneAsJson(this.viewerRef);
-  }
 
 // ----- Button Inputs -----
 
-  toggleWireframe(): void {
-    const model = this.viewerRef?.uploadedModel;
-    if (!model) return;
 
-    this.sceneControls.toggleWireframe(model, (msgKey) => {
-      this.logToConsole(msgKey);
-    });
-    }
+// ----- Slider/Range Inputs -----
 
-  toggleRoomLight(): void {
-    const light = this.viewerRef?.ambientLight;
-    if (!light) return;
 
-    this.sceneControls.toggleRoomLight(light);
-    this.logToConsole('VIEWER.TOGGLE_ROOM_LIGHT');
-  }
+// ----- Tutorial -----
 
-  toggleLightcolor(): void {
-    const light = this.viewerRef?.ambientLight;
-    if (!light) return;
 
-    this.sceneControls.toggleLightColor(light);
-    this.logToConsole('VIEWER.TOGGLE_SUNLIGHT_COLOR');
-  }
+// ----- Language Switch -----
 
-  // ----- Slider/Range Inputs -----
 
-  onSunlightInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateSunlight(input.valueAsNumber);
-  }
-
-  updateSunlight(value: number): void {
-    this.viewerRef?.updateSunlight?.(value);
-    this.logToConsole('VIEWER.UPDATED_SUNLIGHT_VALUE', { value });
-  }
-
-  onSpeedInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateSpeed(input.valueAsNumber);
-  }
-
-  updateSpeed(value: number): void {
-    this.viewerRef?.updateSpeed?.(value);
-    this.logToConsole('VIEWER.UPDATED_CAMERA_SPEED', { value });
-  }
-
-  onEyeLevelInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateEyeLevel(input.valueAsNumber);
-  }
-
-  updateEyeLevel(value: number): void {
-    this.viewerRef?.updateEyeLevel?.(value);
-  }
-
-  onModelSizeInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateModelSize(input.valueAsNumber);
-  }
-
-  updateModelSize(value: number): void {
-    this.viewerRef?.updateModelSize?.(value);
-    this.logToConsole('VIEWER.UPDATED_MODEL_SIZE', { value });
-  }
-
-  onModelHeightInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.updateModelHeight(input.valueAsNumber);
-  }
-
-  updateModelHeight(value: number): void {
-    this.viewerRef?.updateModelHeight?.(value);
-    this.logToConsole('VIEWER.UPDATED_MODEL_HEIGHT', { value });
-  }
-
-  // ----- Tutorial -----
-
-  startTutorial(): void {
-    const t = (key: string) => this.translate.instant(key);
-
-    const tour = new Shepherd.Tour({
-      useModalOverlay: true,
-      defaultStepOptions: {
-        cancelIcon: { enabled: true },
-        scrollTo: { behavior: 'smooth', block: 'center' },
-        classes: 'shepherd-theme-default',
-        modalOverlayOpeningPadding: 8,
-        modalOverlayOpeningRadius: 8,
-        canClickTarget: false,
-      },
-    });
-
-    tour.addStep({
-      id: 'welcome',
-      text: t('START_TUTORIAL'),
-      buttons: [{ text: 'Next', action: tour.next }],
-    });
-    tour.addStep({
-      id: 'upload',
-      attachTo: { element: '.upload-instructions', on: 'bottom' },
-      text: t('UPLOAD_INSTRUCTION'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'scene-controls',
-      attachTo: { element: '.sidebar-left', on: 'right' },
-      text: t('SCENE_SETTINGS'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'canvas',
-      attachTo: { element: '.canvas-container', on: 'top' },
-      text: t('MODEL_SETTINGS'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'console',
-      attachTo: { element: '.bottom-bar', on: 'top' },
-      text: t('CONSOLE_SHEPHARD'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'finish',
-      attachTo: { element: '.sidebar-right', on: 'left' },
-      text: t('FINISH_TUTORIAL'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Done', action: tour.complete },
-      ],
-    });
-
-    const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
-    tour.on('complete', markTutorialSeen);
-    tour.on('cancel', markTutorialSeen);
-
-    tour.on('show', () => {
-      const currentStep = tour.getCurrentStep();
-      const el = currentStep?.options.attachTo?.element;
-      if (typeof el === 'string') {
-        document.querySelector(el)?.classList.add('shepherd-highlight');
-      }
-    });
-
-    tour.on('hide', () => {
-      document
-        .querySelectorAll('.shepherd-highlight')
-        .forEach((el) => el.classList.remove('shepherd-highlight'));
-    });
-
-    tour.start();
-  }
-
-  // ----- Language Switch -----
-
-  switchLanguage(lang: 'en' | 'es'): void {
-    this.currentLang = lang;
-    this.translate.use(lang);
-    localStorage.setItem('preferredLang', lang);
-  }
-
-  // ----- VR Mode -----
-
-  enterVRMode(): void {
-    this.viewerRef?.enterVR();
-
-    const canvas = this.canvasRef?.nativeElement;
-    if (canvas) {
-      Object.assign(canvas.style, {
-        width: '100vw',
-        height: '100vh',
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        display: 'block',
-      });
-    }
-
-    setTimeout(() => this.resizeCanvas(), 200);
-  }
-
-  exitVRMode(): void {
-    this.viewerRef?.exitVR();
-  }
+// ----- VR Mode -----
 
   exitFullscreen(): void {
     if (document.fullscreenElement) {
