@@ -26,19 +26,19 @@
 
       <!-- 🎛 Top Buttons -->
       <div class="sidebar-button-row">
-<!--
+
         <button class="kid-button purple" (click)="startTutorial()">{{ 'BUTTONS.TUTORIAL' | translate }}</button>
-        <button class="kid-button danger small" (click)="openBugReport()">{{ 'BUTTONS.BUG_REPORT' | translate }}</button> -->
+        <button class="kid-button danger small" (click)="openBugReport()">{{ 'BUTTONS.BUG_REPORT' | translate }}</button>
 
       </div>
 
       <!-- 📱 Mobile VR -->
       <div class="mobile-only-buttons">
-<!--
+
         <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
         @if (viewerRef?.isVRMode) {
           <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
-        } -->
+        }
       </div>
 
       <!-- 🔧 Scene -->
@@ -46,10 +46,10 @@
         <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
         <div class="button-row">
 
-          <!-- <button class="kid-button" (click)="resetView()">
+           <button class="kid-button" (click)="resetView()">
             <img src="assets/icons/new_rotate.png" alt="Reset Camera" />
             <span>{{ 'BUTTONS.RESET_CAMERA' | translate }}</span>
-          </button> -->
+          </button>
 
 <!--  NEW Save and Load Buttons -->
 
@@ -77,12 +77,12 @@
         <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
         <div class="button-row">
 
-          <!-- <button class="kid-button green" (click)="toggleLightcolor()">
+           <button class="kid-button green" (click)="toggleLightcolor()">
             <img src="assets/icons/reset.png" alt="Light Color" />
             <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
           </button>
 
-          <button class="kid-button orange" (click)="toggleRoomLight()">
+           <button class="kid-button orange" (click)="toggleRoomLight()">
             <img src="assets/icons/wire.jpg" alt="Room Light" />
             <span>{{ 'BUTTONS.ROOM_LIGHT' | translate }}</span>
           </button>
@@ -90,7 +90,7 @@
           <div class="kid-slider">
             <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
             <input type="range" (input)="onSunlightInput($event)" />
-          </div> -->
+          </div>
 
 
         </div>
@@ -102,7 +102,7 @@
         <div class="button-row">
 
 
-          <!-- <button class="kid-button" (click)="toggleWireframe()">
+           <button class="kid-button" (click)="toggleWireframe()">
             <img src="assets/icons/new_rotate.png" alt="Wireframe" />
             <span>{{ 'BUTTONS.TOGGLE_WIREFRAME' | translate }}</span>
           </button>
@@ -115,7 +115,7 @@
           <div class="kid-slider">
             <label>{{ 'SLIDERS.MODEL_HEIGHT' | translate }}</label>
             <input type="range" (input)="onModelHeightInput($event)" />
-          </div> -->
+          </div>
 
 
         </div>
@@ -126,7 +126,7 @@
         <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
         <div class="button-row">
 
-<!--
+
           <div class="kid-slider">
             <label>{{ 'SLIDERS.SPEED' | translate }}</label>
             <input type="range" (input)="onSpeedInput($event)" />
@@ -135,7 +135,7 @@
           <div class="kid-slider">
             <label>{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
             <input type="range" (input)="onEyeLevelInput($event)" />
-          </div> -->
+          </div>
 
 
         </div>
@@ -148,14 +148,14 @@
       <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
 
       <!-- 👓 Exit VR Button -->
-      <!-- @if(viewerRef?.isVRMode) {
+     <!-- @if(viewerRef?.isVRMode) {
         <button class="vr-exit-button" (click)="exitVRMode()">
           ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
         </button>
       } -->
 
       <!-- ⛔ Exit Fullscreen Button -->
-      <!-- @if(viewerRef?.isInFullscreen && !viewerRef?.isVRMode) {
+       <!-- @if(viewerRef?.isInFullscreen && !viewerRef?.isVRMode) {
         <button class="fullscreen-exit-button" (click)="exitFullscreen()">
           ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
         </button>

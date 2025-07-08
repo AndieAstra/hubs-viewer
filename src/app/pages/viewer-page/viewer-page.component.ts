@@ -22,10 +22,12 @@ import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
   styleUrls: ['./viewer-page.component.scss'],
 })
 export class ViewerPageComponent implements AfterViewInit {
-  @ViewChild(ViewerComponent) viewerRef!: ViewerComponent;
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
-
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
+
+  @ViewChild(ViewerComponent) viewerRef!: ViewerComponent;
+  @ViewChild('viewerRef') viewerComponent!: ViewerComponent;
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -56,7 +58,6 @@ export class ViewerPageComponent implements AfterViewInit {
     this.resizeCanvas();
   }
 
-
   ngAfterViewInit(): void {
     this.resizeCanvas();
 
@@ -74,7 +75,7 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-  // ----- UI Console Methods -----
+// ----- UI Console Methods -----
 
   logToConsole(key: string, params?: any): void {
     const timeStamp = new Date().toLocaleTimeString();
@@ -89,30 +90,32 @@ export class ViewerPageComponent implements AfterViewInit {
     this.showConsole = !this.showConsole;
   }
 
-resizeCanvas(): void {
-  if (!this.canvasRef || !this.viewerRef) {
-    console.error('Canvas reference or Viewer reference is missing.');
-    return;
+// ----- Canvas Sizing -----
+
+  resizeCanvas(): void {
+    if (!this.canvasRef || !this.viewerRef) {
+      console.error('Canvas reference or Viewer reference is missing.');
+      return;
+    }
+
+    const canvas = this.canvasRef.nativeElement;
+    const container = canvas.parentElement;
+    if (!container) {
+      console.error('Canvas container not found.');
+      return;
+    }
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    console.log(`Resizing canvas to: ${width}x${height}`);
+
+    canvas.width = width;
+    canvas.height = height;
+
+    this.viewerRef.onResize?.(width, height);
+    this.viewerRef.renderer?.setSize?.(width, height);
   }
-
-  const canvas = this.canvasRef.nativeElement;
-  const container = canvas.parentElement;
-  if (!container) {
-    console.error('Canvas container not found.');
-    return;
-  }
-
-  const width = container.clientWidth;
-  const height = container.clientHeight;
-
-  console.log(`Resizing canvas to: ${width}x${height}`);
-
-  canvas.width = width;
-  canvas.height = height;
-
-  this.viewerRef.onResize?.(width, height);
-  this.viewerRef.renderer?.setSize?.(width, height);
-}
 
   exitFullscreen(): void {
     if (document.fullscreenElement) {
@@ -121,4 +124,182 @@ resizeCanvas(): void {
       });
     }
   }
+
+// ----- Buttons -----
+
+ onModelSizeInput(event: Event): void {
+    this.viewerComponent.onModelSizeChange(event);
+  }
+
+  onModelHeightInput(event: Event): void {
+    this.viewerComponent.onModelHeightChange(event);
+  }
+
+  onSpeedInput(event: Event): void {
+    this.viewerComponent.onCameraSpeedChange(event);
+  }
+
+  onSunlightInput(event: Event): void {
+    this.viewerComponent.onSunlightIntensityChange(event);
+  }
+
+  onEyeLevelInput(event: Event): void {
+    this.viewerComponent.onEyeLevelChange(event);
+  }
+
+//
+// ---- Still need to get working -------
+//
+
+  resetView() {
+    // TODO: Reset camera/view
+    console.log('View reset');
+  }
+
+  toggleLightcolor() {
+    // TODO: Toggle light color
+    console.log('Toggled light color');
+  }
+
+  toggleRoomLight() {
+    // TODO: Toggle room light
+    console.log('Toggled room light');
+  }
+
+  toggleWireframe() {
+    // TODO: Toggle wireframe rendering
+    console.log('Toggled wireframe');
+  }
+
+// ---- Bug Report Button -------
+
+  openBugReport() {
+    // TODO: Open bug report form
+    console.log('Bug report opened');
+  }
+
+// ---- Tutorial -------
+
+  startTutorial(): void {
+
+    console.log('Tutorial started');
+
+    const t = (key: string) => this.translate.instant(key);
+
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        scrollTo: { behavior: 'smooth', block: 'center' },
+        classes: 'shepherd-theme-default',
+        modalOverlayOpeningPadding: 8,
+        modalOverlayOpeningRadius: 8,
+        canClickTarget: false,
+      },
+    });
+
+    tour.addStep({
+      id: 'welcome',
+      text: t('START_TUTORIAL'),
+      buttons: [{ text: 'Next', action: tour.next }],
+    });
+    tour.addStep({
+      id: 'upload',
+      attachTo: { element: '.upload-instructions', on: 'bottom' },
+      text: t('UPLOAD_INSTRUCTION'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next },
+      ],
+    });
+    tour.addStep({
+      id: 'scene-controls',
+      attachTo: { element: '.sidebar-left', on: 'right' },
+      text: t('SCENE_SETTINGS'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next },
+      ],
+    });
+    tour.addStep({
+      id: 'canvas',
+      attachTo: { element: '.canvas-container', on: 'top' },
+      text: t('MODEL_SETTINGS'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next },
+      ],
+    });
+    tour.addStep({
+      id: 'console',
+      attachTo: { element: '.bottom-bar', on: 'top' },
+      text: t('CONSOLE_SHEPHARD'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Next', action: tour.next },
+      ],
+    });
+    tour.addStep({
+      id: 'finish',
+      attachTo: { element: '.sidebar-right', on: 'left' },
+      text: t('FINISH_TUTORIAL'),
+      buttons: [
+        { text: 'Back', action: tour.back },
+        { text: 'Done', action: tour.complete },
+      ],
+    });
+
+    const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
+    tour.on('complete', markTutorialSeen);
+    tour.on('cancel', markTutorialSeen);
+
+    tour.on('show', () => {
+      const currentStep = tour.getCurrentStep();
+      const el = currentStep?.options.attachTo?.element;
+      if (typeof el === 'string') {
+        document.querySelector(el)?.classList.add('shepherd-highlight');
+      }
+    });
+
+    tour.on('hide', () => {
+      document
+        .querySelectorAll('.shepherd-highlight')
+        .forEach((el) => el.classList.remove('shepherd-highlight'));
+    });
+
+    tour.start();
+  }
+
+// ----- Language -----
+
+switchLanguage(lang: 'en' | 'es'): void {
+    this.currentLang = lang;
+    this.translate.use(lang);
+    localStorage.setItem('preferredLang', lang);
+  }
+
+// ----- VR Mode -----
+
+  enterVRMode(): void {
+    this.viewerRef?.enterVR();
+
+    const canvas = this.canvasRef?.nativeElement;
+    if (canvas) {
+      Object.assign(canvas.style, {
+        width: '100vw',
+        height: '100vh',
+        position: 'absolute',
+        top: '0',
+        left: '0',
+        display: 'block',
+      });
+    }
+
+    setTimeout(() => this.resizeCanvas(), 200);
+  }
+
+  exitVRMode(): void {
+    this.viewerRef?.exitVR();
+  }
+
 }

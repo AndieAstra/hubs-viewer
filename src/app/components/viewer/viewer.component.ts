@@ -22,37 +22,37 @@ import { TranslateService } from '@ngx-translate/core';
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
 import { StorageService } from '../../services/storage.service';
+import { SceneControlsService } from '../../services/scene-controls.service';
 
-export interface SavedModel {
-  models: Array<{
-    name: string;
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-    scale: { x: number; y: number; z: number };
-    fileName: string;
-    glbBase64?: string; // Optional: Base64 encoded GLB model data
-    gltfBase64?: string; // Optional: Base64 encoded GLTF model data
-    jsonBase64?: string; // Optional: Base64 encoded JSON model data
-  }>;
+// export interface SavedModel {
+//   models: Array<{
+//     name: string;
+//     position: { x: number; y: number; z: number };
+//     rotation: { x: number; y: number; z: number };
+//     scale: { x: number; y: number; z: number };
+//     fileName: string;
+//     glbBase64?: string; // Optional: Base64 encoded GLB model data
+//     gltfBase64?: string; // Optional: Base64 encoded GLTF model data
+//     jsonBase64?: string; // Optional: Base64 encoded JSON model data
+//   }>;
 
-  camera: {
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-  };
+//   camera: {
+//     position: { x: number; y: number; z: number };
+//     rotation: { x: number; y: number; z: number };
+//   };
 
-  lighting: {
-    ambient: {
-      color: number;
-      intensity: number;
-    };
-    directional: {
-      color: number;
-      intensity: number;
-      position: [number, number, number]; // Position of the directional light in 3D space
-    };
-  };
-}
-
+//   lighting: {
+//     ambient: {
+//       color: number;
+//       intensity: number;
+//     };
+//     directional: {
+//       color: number;
+//       intensity: number;
+//       position: [number, number, number]; // Position of the directional light in 3D space
+//     };
+//   };
+// }
 
 @Component({
   selector: 'app-viewer',
@@ -66,8 +66,16 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @ViewChild('viewerCanvas', { static: false }) viewerCanvasRef!: ElementRef;
 
+  model: THREE.Object3D = new THREE.Object3D(); // Assume this is the model loaded
+  //camera: THREE.Camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  controls: any; // Assuming some controls for camera movement
+
+  private sceneLight!: THREE.DirectionalLight;
+
+  //
+
   scene!: THREE.Scene;
-  camera!: THREE.PerspectiveCamera;
   renderer!: THREE.WebGLRenderer;
   uploadedModel: THREE.Object3D | null = null;
   objects: THREE.Object3D[] = [];
@@ -96,7 +104,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public controllerSpeed = 3.0;
 
   private movementHelper!: PlayerMovementHelper;
-  public controls!: PointerLockControls;
   transformControls!: TransformControls;
   selectedTool = '';
 
@@ -122,6 +129,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     private snackBar: MatSnackBar,
     private translate: TranslateService,
     private storageService: StorageService,
+    private sceneControlsService: SceneControlsService
   ) {}
 
   ngOnInit() {
@@ -294,6 +302,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     });
   }
 
+// ****************************** Resize the window ******************************
+
   private resizeListener = () => {
     this.onResize();
   };
@@ -362,6 +372,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     return sprite;
   }
 
+// ****************************** Model Settings ******************************
+
   applyModelTransform() {
     if (this.uploadedModel) {
       this.uploadedModel.scale.set(this.modelScale, this.modelScale, this.modelScale);
@@ -381,4 +393,50 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.isPlacingModel = true;
     this.snackBar.open(this.translate.instant('MESSAGES.MODEL_PLACEMENT_MODE_ACTIVE'), 'OK', { duration: 3000 });
   }
+
+
+// ****************************** THREE helper tools ******************************
+
+// Method called on slider change for model size
+ public onModelSizeChange(event: any): void {
+    const size = event.target.value;
+    this.sceneControlsService.updateModelSize(this.model, size);
+  }
+
+  // Method called on slider change for model height
+public onModelHeightChange(event: any): void {
+    const height = event.target.value;
+    this.sceneControlsService.updateModelHeight(this.model, height);
+  }
+
+  // Method called on slider change for camera speed
+public onCameraSpeedChange(event: any): void {
+    const speed = event.target.value;
+    this.sceneControlsService.updateCameraSpeed(this.controls, speed);
+  }
+
+  // Method called on slider change for sunlight intensity
+ public onSunlightIntensityChange(event: any): void {
+    const intensity = event.target.value;
+    this.sceneControlsService.updateSunlightIntensity(this.sceneLight, intensity); // Assuming you have a scene light
+  }
+
+  // Method called on slider change for eye level
+ public onEyeLevelChange(event: any): void {
+    const eyeLevel = event.target.value;
+    this.sceneControlsService.updateEyeLevel(this.camera, eyeLevel);
+  }
+
+// ********** VR Tools *************
+
+enterVR(){
+  // TODO: Open bug report form
+  console.log('Entered VR');
+}
+
+exitVR(){
+  // TODO: Open bug report form
+    console.log('Exited VR');
+}
+
 }
