@@ -24,13 +24,35 @@ import { PlayerMovementHelper } from '../helpers/player-movement.helper';
 import { StorageService } from '../../services/storage.service';
 
 export interface SavedModel {
-  name: string;
-  position: { x: number; y: number; z: number };
-  rotation: { x: number; y: number; z: number };
-  scale: { x: number; y: number; z: number };
-  fileName: string;
-  glbBase64: string;
+  models: Array<{
+    name: string;
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+    scale: { x: number; y: number; z: number };
+    fileName: string;
+    glbBase64?: string; // Optional: Base64 encoded GLB model data
+    gltfBase64?: string; // Optional: Base64 encoded GLTF model data
+    jsonBase64?: string; // Optional: Base64 encoded JSON model data
+  }>;
+
+  camera: {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+  };
+
+  lighting: {
+    ambient: {
+      color: number;
+      intensity: number;
+    };
+    directional: {
+      color: number;
+      intensity: number;
+      position: [number, number, number]; // Position of the directional light in 3D space
+    };
+  };
 }
+
 
 @Component({
   selector: 'app-viewer',

@@ -166,8 +166,10 @@ private checkIfGrounded(playerObj: THREE.Object3D, scene: THREE.Scene): boolean 
         this.keysPressed.right = true;
         break;
       case 'Space':
-        if (this.canJump) {
-          this.isJumping = true;  // Set isJumping flag when jumping
+      if (this.canJump) {
+          this.velocity.y = this.jumpStrength;
+          this.canJump = false;
+          //this.isJumping = true;
         }
         break;
     }
