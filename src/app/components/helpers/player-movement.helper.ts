@@ -4,7 +4,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 export class PlayerMovementHelper {
   private velocity = new THREE.Vector3();
   private direction = new THREE.Vector3();
-  private keysPressed = {
+  public keysPressed = {
     forward: false,
     backward: false,
     left: false,

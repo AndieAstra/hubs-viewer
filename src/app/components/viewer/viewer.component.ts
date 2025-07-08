@@ -26,35 +26,35 @@ import { StorageService } from '../../services/storage.service';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { SceneManager } from './scene-manager';
 
-// export interface SavedModel {
-//   models: Array<{
-//     name: string;
-//     position: { x: number; y: number; z: number };
-//     rotation: { x: number; y: number; z: number };
-//     scale: { x: number; y: number; z: number };
-//     fileName: string;
-//     glbBase64?: string; // Optional: Base64 encoded GLB model data
-//     gltfBase64?: string; // Optional: Base64 encoded GLTF model data
-//     jsonBase64?: string; // Optional: Base64 encoded JSON model data
-//   }>;
+export interface SavedModel {
+  models: Array<{
+    name: string;
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+    scale: { x: number; y: number; z: number };
+    fileName: string;
+    glbBase64?: string; // Optional: Base64 encoded GLB model data
+    gltfBase64?: string; // Optional: Base64 encoded GLTF model data
+    jsonBase64?: string; // Optional: Base64 encoded JSON model data
+  }>;
 
-//   camera: {
-//     position: { x: number; y: number; z: number };
-//     rotation: { x: number; y: number; z: number };
-//   };
+  camera: {
+    position: { x: number; y: number; z: number };
+    rotation: { x: number; y: number; z: number };
+  };
 
-//   lighting: {
-//     ambient: {
-//       color: number;
-//       intensity: number;
-//     };
-//     directional: {
-//       color: number;
-//       intensity: number;
-//       position: [number, number, number]; // Position of the directional light in 3D space
-//     };
-//   };
-// }
+  lighting: {
+    ambient: {
+      color: number;
+      intensity: number;
+    };
+    directional: {
+      color: number;
+      intensity: number;
+      position: [number, number, number]; // Position of the directional light in 3D space
+    };
+  };
+}
 
 @Component({
   selector: 'app-viewer',
@@ -75,7 +75,13 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   private sceneLight!: THREE.DirectionalLight;
   private sceneManager!: SceneManager;
-  //
+
+  private playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
+  private prevTime = 0;
+//
+  private boundOnKeyDown!: (event: KeyboardEvent) => void;
+  private boundOnKeyUp!: (event: KeyboardEvent) => void;
+//
 
   scene!: THREE.Scene;
   renderer!: THREE.WebGLRenderer;
@@ -150,26 +156,53 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     private snackBar: MatSnackBar,
     private translate: TranslateService,
     private storageService: StorageService,
-    private sceneControlsService: SceneControlsService
+    private sceneControlsService: SceneControlsService,
   ) {}
 
   ngOnInit() {
+    // Initialize player movement helper with consistent parameters
+    this.playerMovementHelper = new PlayerMovementHelper(
+      10,    // moveSpeed
+      9.8,   // gravity
+      10,    // jumpStrength
+      1.6    // cameraHeight
+    );
+
+    // Bind event handlers to maintain correct 'this'
+    this.boundOnKeyDown = (event: KeyboardEvent) => {
+      this.playerMovementHelper.onKeyDown(event.code);
+    };
+
+    this.boundOnKeyUp = (event: KeyboardEvent) => {
+      this.playerMovementHelper.onKeyUp(event.code);
+    };
+
+    // Add keyboard event listeners
+    window.addEventListener('keydown', this.boundOnKeyDown);
+    window.addEventListener('keyup', this.boundOnKeyUp);
+
+    // Initialize VR helper and canJump flag
+    this.vrHelper.enabled = true;
+    this.canJump = true;
+
+    // Initialize Three.js renderer targeting the canvas element
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.viewerCanvasRef.nativeElement });
+
+    // Start animation loop with correct binding
+    requestAnimationFrame(this.animate.bind(this));
+
+    // Fullscreen change listener to toggle escHint display
     document.addEventListener('fullscreenchange', () => {
+      if (!this.escHint || !this.container) return;
       this.escHint.style.display = document.fullscreenElement === this.container ? 'block' : 'none';
     });
-
-    this.canJump = true;
-    this.vrHelper.enabled = true;
-    this.movementHelper = new PlayerMovementHelper(
-      3.0,
-      this.gravity,
-      this.jumpStrength,
-      this.cameraHeight
-    );
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.viewerCanvasRef.nativeElement });
   }
 
   ngOnDestroy() {
+
+    window.removeEventListener('keydown', this.onKeyDown);
+    window.removeEventListener('keyup', this.onKeyUp);
+
     window.removeEventListener('resize', this.resizeListener);
 
     if (this.vrHelper) {
@@ -241,45 +274,29 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   }
 
   ngAfterViewInit() {
-    const container = this.containerRef.nativeElement;
-    //this.container = this.containerRef.nativeElement;
-    this.sceneManager = new SceneManager(container);
-    this.animate();
+    this.scene = new THREE.Scene();
 
-    this.resizeListener = () => this.onResize();
-    window.addEventListener('resize', this.resizeListener);
-
-    this.escHint = document.createElement('div');
-    this.escHint.classList.add('esc-hint');
-    this.escHint.innerHTML = '🔙 Press <strong>ESC</strong> to exit fullscreen';
-    this.escHint.style.display = 'none';
-    this.container.appendChild(this.escHint);
-
-    document.addEventListener('fullscreenchange', () => {
-      const fsEl = document.fullscreenElement;
-      const isFullscreen = fsEl === this.renderer?.domElement || fsEl === this.container;
-      this.showEscHint = isFullscreen;
-
-      if (this.escHint) this.escHint.style.display = isFullscreen ? 'block' : 'none';
-      if (this.escHintSprite) this.escHintSprite.visible = isFullscreen;
-    });
+    const container = this.containerRef?.nativeElement;
+    if (!container) {
+      console.error('Container reference is missing.');
+      return;
+    }
 
     if (!this.renderer || !this.renderer.domElement) {
       console.warn(this.translate.instant('ERRORS.RENDERER_NOT_AVAILABLE'));
       return;
     }
 
-    const canvas = this.renderer.domElement;
-    //const container = this.containerRef.nativeElement;
+    this.sceneManager = new SceneManager(container);
 
+    // Append renderer canvas if not already appended
+    const canvas = this.renderer.domElement;
     if (!canvas.parentElement || canvas.parentElement !== container) {
       container.appendChild(canvas);
     }
 
-    Object.assign(container.style, {
-      position: 'relative'
-    });
-
+    // Style container and canvas for correct layout and interaction
+    Object.assign(container.style, { position: 'relative' });
     Object.assign(canvas.style, {
       position: 'absolute',
       top: '0',
@@ -288,22 +305,55 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
       height: '100%',
       display: 'block',
       touchAction: 'none',
-      zIndex: '0'
+      zIndex: '0',
     });
 
     this.canvasRef = new ElementRef(canvas);
     this.renderer.setSize(container.clientWidth, container.clientHeight);
 
+    // Create and add ESC hint sprite and div
     this.escHintSprite = this.createEscHintSprite();
     this.escHintSprite.visible = false;
     this.scene.add(this.escHintSprite);
 
+    this.escHint = document.createElement('div');
+    this.escHint.classList.add('esc-hint');
+    this.escHint.innerHTML = '🔙 Press <strong>ESC</strong> to exit fullscreen';
+    this.escHint.style.display = 'none';
+    container.appendChild(this.escHint);
+
+    // Fullscreen change event: update ESC hint visibility
+    document.addEventListener('fullscreenchange', () => {
+      const fsEl = document.fullscreenElement;
+      const isFullscreen = fsEl === this.renderer.domElement || fsEl === container;
+
+      this.showEscHint = isFullscreen;
+      if (this.escHint) this.escHint.style.display = isFullscreen ? 'block' : 'none';
+      if (this.escHintSprite) this.escHintSprite.visible = isFullscreen;
+    });
+
+    // Listen for window resize to adjust renderer size
+    this.resizeListener = () => this.onResize();
+    window.addEventListener('resize', this.resizeListener);
+
+    // Initialize previous time for animation loop
+    this.prevTime = performance.now();
+
+    // Start animation loop with binding for correct 'this'
+    requestAnimationFrame(this.animate.bind(this));
+
+    // Drag and drop support for loading GLB models
     canvas.addEventListener('dragover', (event) => event.preventDefault());
+
     canvas.addEventListener('drop', (event) => {
       event.preventDefault();
+
       const file = event.dataTransfer?.files?.[0];
       if (file && file.name.endsWith('.glb')) {
-        if (this.sceneLoaded && !confirm(this.translate.instant('ERRORS.DROP_REPLACE_CONFIRM'))) return;
+        if (this.sceneLoaded && !confirm(this.translate.instant('ERRORS.DROP_REPLACE_CONFIRM'))) {
+          return;
+        }
+
         const loader = new GLTFLoader();
         loader.load(
           URL.createObjectURL(file),
@@ -315,19 +365,14 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
             this.applyModelTransform();
             this.logToConsole('MODEL_LOADED', { name: model.name });
           },
-          undefined, // Optional: Handle progress
+          undefined,
           (error) => {
-            this.logToConsole('ERRORS.FAILED_LOAD_MODEL', {
-              fileName: file.name
-            });
+            this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
           }
         );
       }
     });
   }
-
-
-
 
 // ****************************** Resize the window ******************************
 
@@ -353,64 +398,76 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     }
   }
 
-// ****************************** Model Settings ******************************
+// ****************************** THREE Movement ******************************
 
-// private animate = () => {
-//   this.animationId = requestAnimationFrame(this.animate);
+  animate = (time: number) => {
+    if (!this.controls || !this.scene) return;
 
-//   if (this.isLoading) return; // skip animation updates while loading
+    // Calculate delta time in seconds
+    const delta = (time - this.prevTime) / 1000 || 0;
+    this.prevTime = time;
 
-//   const delta = this.clock.getDelta();
+    if (this.isLoading) {
+      requestAnimationFrame(this.animate);
+      return; // skip updating while loading
+    }
 
-//   this.vrHelper.update(); // Update joystick
+    // Update VR joystick, etc.
+    this.vrHelper.update();
 
-//   this.movementHelper.applyFriction(delta, 5.0);
-//   this.movementHelper.updateKeyboardMovement(delta, this.speed); // Only updates velocity.y (gravity/jump)
+    // Apply friction and keyboard movement (gravity/jump)
+    this.playerMovementHelper.applyFriction(delta, 5.0);
+    this.playerMovementHelper.updateKeyboardMovement(
+      delta,
+      this.speed,
+      this.controls.getObject(),
+      this.scene
+    );
 
-//   // Inside animate()
-//   if (this.escHintSprite) {
-//     const offset = new THREE.Vector3(0, -0.8, -2.5);
-//     this.escHintSprite.position.copy(this.camera.localToWorld(offset.clone()));
-//   }
+    // Move escHintSprite with camera if visible
+    if (this.escHintSprite) {
+      const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
+      this.escHintSprite.visible = isInFullscreen;
 
-//   if (this.escHintSprite) {
-//   const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
-//   this.escHintSprite.visible = isInFullscreen;
-// }
+      if (isInFullscreen) {
+        const cameraDirection = new THREE.Vector3();
+        this.camera.getWorldDirection(cameraDirection);
 
-//   this.movementHelper.applyCombinedMovement(
-//     delta,
-//     this.controls.getObject(),
-//     this.controls,
-//     this.keysPressed, // WASD
-//     this.vrHelper.movementVector, // joystick
-//     this.controls.getObject().quaternion, // direction of player
-//     this.isColliding.bind(this)
-//   );
+        const cameraPosition = this.camera.position.clone();
+        this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
+        this.escHintSprite.position.y -= 1.2;
+        this.escHintSprite.quaternion.copy(this.camera.quaternion);
+      }
+    }
 
-//   this.movementHelper.enforceGround(this.controls.object);
+    // Your collision detection logic here
+    const isColliding = (pos: THREE.Vector3) => {
+      // TODO: raycast or collision check against collidable objects
+      return false;
+    };
 
-//   if (this.escHintSprite && this.escHintSprite.visible) {
-//     const cameraDirection = new THREE.Vector3();
-//     this.camera.getWorldDirection(cameraDirection);
+    // Apply combined movement (keyboard + VR)
+    this.playerMovementHelper.applyCombinedMovement(
+      delta,
+      this.controls.getObject(),
+      this.controls,
+      this.playerMovementHelper.keysPressed,
+      this.vrHelper.movementVector,
+      this.controls.getObject().quaternion,
+      isColliding
+    );
 
-//     const cameraPosition = this.camera.position.clone();
-//     this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
-//     this.escHintSprite.position.y -= 1.2;
+    this.playerMovementHelper.enforceGround(this.controls.getObject());
 
-//     this.escHintSprite.quaternion.copy(this.camera.quaternion);
-//   }
+    this.renderer.render(this.scene, this.camera);
 
-//   this.renderer.render(this.scene, this.camera);
+    // For debugging
+    console.log('Facing quaternion:', this.controls.getObject().quaternion);
+    console.log('Joystick Movement:', this.vrHelper.movementVector);
 
-//   console.log('Facing quaternion:', this.controls.getObject().quaternion);
-//   console.log('Joystick Movement:', this.vrHelper.movementVector);
-// };
-
-animate(): void {
-    requestAnimationFrame(() => this.animate());
-    this.sceneManager.render();
-  }
+    // Schedule next frame
+    requestAnimationFrame(this.animate);
+  };
 
   private createEscHintSprite(): THREE.Sprite {
     const canvas = document.createElement('canvas');
@@ -444,6 +501,14 @@ animate(): void {
 
     return sprite;
   }
+
+  onKeyDown = (event: KeyboardEvent) => {
+    this.playerMovementHelper.onKeyDown(event.code);
+  };
+
+  onKeyUp = (event: KeyboardEvent) => {
+    this.playerMovementHelper.onKeyUp(event.code);
+  };
 
 // ****************************** Model Settings ******************************
 

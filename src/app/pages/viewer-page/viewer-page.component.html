@@ -36,7 +36,7 @@
       <div class="mobile-only-buttons">
 
         <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
-        @if (viewerRef?.isVRMode) {
+        @if (viewerRef.isVRMode) {
           <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
         }
       </div>
@@ -151,17 +151,20 @@
 
     <!-- 🖼️ Canvas -->
     <section class="canvas-container">
-      <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
+
+      <canvas #viewerCanvas></canvas>
+      <app-viewer #viewer></app-viewer>
+      <input type="file" #fileInput />
 
       <!-- 👓 Exit VR Button -->
-      @if(viewerRef?.isVRMode) {
+      @if(viewerRef.isVRMode) {
         <button class="vr-exit-button" (click)="exitVRMode()">
           ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
         </button>
       }
 
       <!-- ⛔ Exit Fullscreen Button -->
-        @if(viewerRef?.isInFullscreen && !viewerRef?.isVRMode) {
+        @if(viewerRef.isInFullscreen && !viewerRef.isVRMode) {
         <button class="fullscreen-exit-button" (click)="exitFullscreen()">
           ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
         </button>

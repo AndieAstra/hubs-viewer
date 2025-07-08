@@ -1,33 +1,31 @@
-import {Component, ViewChild, ElementRef, HostListener, AfterViewInit} from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  HostListener,
+  AfterViewInit,
+} from '@angular/core';
 import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { FormsModule } from '@angular/forms';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { SceneControlsService } from '../../services/scene-controls.service'
+import { SceneControlsService } from '../../services/scene-controls.service';
 import { StorageService } from '../../services/storage.service';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 @Component({
   selector: 'app-viewer-page',
   standalone: true,
-  imports: [
-    ViewerComponent,
-    FormsModule,
-    TranslateModule
-  ],
+  imports: [ViewerComponent, FormsModule, TranslateModule],
   templateUrl: './viewer-page.component.html',
   styleUrls: ['./viewer-page.component.scss'],
 })
 export class ViewerPageComponent implements AfterViewInit {
+  // Only define these once
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-
-
-  @ViewChild(ViewerComponent) viewerRef!: ViewerComponent;
-  @ViewChild('viewerRef') viewerComponent!: ViewerComponent;
+  @ViewChild('viewer', { static: true }) viewerRef!: ViewerComponent;
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -40,7 +38,7 @@ export class ViewerPageComponent implements AfterViewInit {
     private router: Router,
     private translate: TranslateService,
     private storageService: StorageService,
-    private sceneControls: SceneControlsService,
+    private sceneControls: SceneControlsService
   ) {
     const savedLang = (localStorage.getItem('preferredLang') as 'en' | 'es') || 'en';
     this.currentLang = savedLang;
@@ -59,23 +57,24 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.resizeCanvas();
+    if (!this.canvasRef || !this.viewerRef) {
+      console.error('Canvas reference or Viewer reference is missing.');
+      return;
+    }
 
+    this.resizeCanvas();
     this.sceneControls.viewerRef = this.viewerRef;
 
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 100);
 
-    if (!this.viewerRef) {
-    console.error("Viewer reference not found!");
-  }
-
     if (!localStorage.getItem('hasSeenTutorial')) {
+      // Tutorial prompt logic if needed
     }
   }
 
-// ----- UI Console Methods -----
+  // ----- UI Console Methods -----
 
   logToConsole(key: string, params?: any): void {
     const timeStamp = new Date().toLocaleTimeString();
@@ -90,7 +89,7 @@ export class ViewerPageComponent implements AfterViewInit {
     this.showConsole = !this.showConsole;
   }
 
-// ----- Canvas Sizing -----
+  // ----- Canvas Sizing -----
 
   resizeCanvas(): void {
     if (!this.canvasRef || !this.viewerRef) {
@@ -113,6 +112,9 @@ export class ViewerPageComponent implements AfterViewInit {
     canvas.width = width;
     canvas.height = height;
 
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
     this.viewerRef.onResize?.(width, height);
     this.viewerRef.renderer?.setSize?.(width, height);
   }
@@ -125,37 +127,30 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-// ----- Buttons -----
+  // ----- Input Binding Handlers -----
 
- onModelSizeInput(event: Event): void {
-    this.viewerComponent.onModelSizeChange(event);
+  onModelSizeInput(event: Event): void {
+    this.viewerRef.onModelSizeChange(event);
   }
 
   onModelHeightInput(event: Event): void {
-    this.viewerComponent.onModelHeightChange(event);
+    this.viewerRef.onModelHeightChange(event);
   }
 
   onSpeedInput(event: Event): void {
-    this.viewerComponent.onCameraSpeedChange(event);
+    this.viewerRef.onCameraSpeedChange(event);
   }
 
   onSunlightInput(event: Event): void {
-    this.viewerComponent.onSunlightIntensityChange(event);
+    this.viewerRef.onSunlightIntensityChange(event);
   }
 
   onEyeLevelInput(event: Event): void {
-    this.viewerComponent.onEyeLevelChange(event);
+    this.viewerRef.onEyeLevelChange(event);
   }
 
-
   resetView(): void {
-    if (!this.viewerRef) {
-      console.warn('Viewer reference not found');
-      return;
-    }
-
     const { camera, controls } = this.viewerRef;
-
     this.sceneControls.resetCameraView(camera, controls);
     this.logToConsole('VIEWER.RESET_VIEW');
   }
@@ -163,11 +158,9 @@ export class ViewerPageComponent implements AfterViewInit {
   onLightColorChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const color = input.value;
-
     this.sceneControls.changeLightColorByValue(color);
     this.logToConsole(`Changed light color to ${color}`);
   }
-
 
   toggleRoomLight(): void {
     const light = this.viewerRef?.ambientLight;
@@ -184,20 +177,18 @@ export class ViewerPageComponent implements AfterViewInit {
     this.sceneControls.toggleWireframe(model, (msgKey) => {
       this.logToConsole(msgKey);
     });
-    }
+  }
 
-// ---- Bug Report Button -------
+  // ---- Bug Report Button -------
 
   openBugReport(): void {
     this.router.navigate(['/bug-report']);
   }
 
-// ---- Tutorial -------
+  // ---- Tutorial -------
 
   startTutorial(): void {
-
     console.log('Tutorial started');
-
     const t = (key: string) => this.translate.instant(key);
 
     const tour = new Shepherd.Tour({
@@ -276,23 +267,21 @@ export class ViewerPageComponent implements AfterViewInit {
     });
 
     tour.on('hide', () => {
-      document
-        .querySelectorAll('.shepherd-highlight')
-        .forEach((el) => el.classList.remove('shepherd-highlight'));
+      document.querySelectorAll('.shepherd-highlight').forEach((el) => el.classList.remove('shepherd-highlight'));
     });
 
     tour.start();
   }
 
-// ----- Language -----
+  // ----- Language -----
 
-switchLanguage(lang: 'en' | 'es'): void {
+  switchLanguage(lang: 'en' | 'es'): void {
     this.currentLang = lang;
     this.translate.use(lang);
     localStorage.setItem('preferredLang', lang);
   }
 
-// ----- VR Mode -----
+  // ----- VR Mode -----
 
   enterVRMode(): void {
     this.viewerRef?.enterVR();
@@ -315,5 +304,4 @@ switchLanguage(lang: 'en' | 'es'): void {
   exitVRMode(): void {
     this.viewerRef?.exitVR();
   }
-
 }
