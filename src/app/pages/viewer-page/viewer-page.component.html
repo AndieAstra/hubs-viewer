@@ -154,18 +154,18 @@
       <app-viewer [glbFile]="selectedFile" #viewerRef></app-viewer>
 
       <!-- 👓 Exit VR Button -->
-     <!-- @if(viewerRef?.isVRMode) {
+      @if(viewerRef?.isVRMode) {
         <button class="vr-exit-button" (click)="exitVRMode()">
           ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
         </button>
-      } -->
+      }
 
       <!-- ⛔ Exit Fullscreen Button -->
-       <!-- @if(viewerRef?.isInFullscreen && !viewerRef?.isVRMode) {
+        @if(viewerRef?.isInFullscreen && !viewerRef?.isVRMode) {
         <button class="fullscreen-exit-button" (click)="exitFullscreen()">
           ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
         </button>
-      } -->
+      }
 
     </section>
   </div>

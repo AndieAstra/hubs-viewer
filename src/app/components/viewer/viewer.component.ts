@@ -15,6 +15,7 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
@@ -23,6 +24,7 @@ import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { PlayerMovementHelper } from '../helpers/player-movement.helper';
 import { StorageService } from '../../services/storage.service';
 import { SceneControlsService } from '../../services/scene-controls.service';
+import { SceneManager } from './scene-manager';
 
 // export interface SavedModel {
 //   models: Array<{
@@ -72,7 +74,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   controls: any; // Assuming some controls for camera movement
 
   private sceneLight!: THREE.DirectionalLight;
-
+  private sceneManager!: SceneManager;
   //
 
   scene!: THREE.Scene;
@@ -120,12 +122,29 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private gravity = 9.8;
   private jumpStrength = 5;
 
+  public ambientLight = new THREE.AmbientLight(0xffffff, 1);
+
   public isVRMode = false;
   public isPlacingModel = false; // Define this property to avoid errors.
 
+  get isInFullscreen(): boolean {
+      return document.fullscreenElement === this.containerRef?.nativeElement;
+    }
+
+  private isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
   @Input() glbFile?: File;
-  //ambientLight: any;
-  public ambientLight = new THREE.AmbientLight(0xffffff, 1);
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.sceneManager?.resize();
+  }
+
+  private originalSize?: { width: number; height: number };    // For restoring size after VR
+  private originalCameraAspect?: number;                       // Used to reset camera aspect
+  private originalSetAnimationLoop: any;                       // Backup of setAnimationLoop
+
+  stereoEffect: any;
 
   constructor(
     private snackBar: MatSnackBar,
@@ -222,7 +241,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   }
 
   ngAfterViewInit() {
-    this.container = this.containerRef.nativeElement;
+    const container = this.containerRef.nativeElement;
+    //this.container = this.containerRef.nativeElement;
+    this.sceneManager = new SceneManager(container);
+    this.animate();
 
     this.resizeListener = () => this.onResize();
     window.addEventListener('resize', this.resizeListener);
@@ -248,7 +270,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     }
 
     const canvas = this.renderer.domElement;
-    const container = this.containerRef.nativeElement;
+    //const container = this.containerRef.nativeElement;
 
     if (!canvas.parentElement || canvas.parentElement !== container) {
       container.appendChild(canvas);
@@ -304,6 +326,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     });
   }
 
+
+
+
 // ****************************** Resize the window ******************************
 
   private resizeListener = () => {
@@ -311,20 +336,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   };
 
   onResize(width?: number, height?: number): void {
-    const container = this.containerRef.nativeElement;
-    const w = width ?? container.clientWidth;
-    const h = height ?? container.clientHeight;
-
-    if (this.renderer && this.camera) {
-      this.renderer.setSize(w, h);
-      this.camera.aspect = w / h;
-      this.camera.updateProjectionMatrix();
-    }
-
-    // If VR Mode is active, adjust accordingly
-    if (this.isVRMode) {
-      // Handle VR resize logic here (e.g. using WebXR)
-    }
+    this.sceneManager.resize();
   }
 
   toggleFullscreen() {
@@ -339,6 +351,65 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
       document.exitFullscreen()
         .catch(err => console.error("Failed to exit fullscreen:", err));
     }
+  }
+
+// ****************************** Model Settings ******************************
+
+// private animate = () => {
+//   this.animationId = requestAnimationFrame(this.animate);
+
+//   if (this.isLoading) return; // skip animation updates while loading
+
+//   const delta = this.clock.getDelta();
+
+//   this.vrHelper.update(); // Update joystick
+
+//   this.movementHelper.applyFriction(delta, 5.0);
+//   this.movementHelper.updateKeyboardMovement(delta, this.speed); // Only updates velocity.y (gravity/jump)
+
+//   // Inside animate()
+//   if (this.escHintSprite) {
+//     const offset = new THREE.Vector3(0, -0.8, -2.5);
+//     this.escHintSprite.position.copy(this.camera.localToWorld(offset.clone()));
+//   }
+
+//   if (this.escHintSprite) {
+//   const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
+//   this.escHintSprite.visible = isInFullscreen;
+// }
+
+//   this.movementHelper.applyCombinedMovement(
+//     delta,
+//     this.controls.getObject(),
+//     this.controls,
+//     this.keysPressed, // WASD
+//     this.vrHelper.movementVector, // joystick
+//     this.controls.getObject().quaternion, // direction of player
+//     this.isColliding.bind(this)
+//   );
+
+//   this.movementHelper.enforceGround(this.controls.object);
+
+//   if (this.escHintSprite && this.escHintSprite.visible) {
+//     const cameraDirection = new THREE.Vector3();
+//     this.camera.getWorldDirection(cameraDirection);
+
+//     const cameraPosition = this.camera.position.clone();
+//     this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
+//     this.escHintSprite.position.y -= 1.2;
+
+//     this.escHintSprite.quaternion.copy(this.camera.quaternion);
+//   }
+
+//   this.renderer.render(this.scene, this.camera);
+
+//   console.log('Facing quaternion:', this.controls.getObject().quaternion);
+//   console.log('Joystick Movement:', this.vrHelper.movementVector);
+// };
+
+animate(): void {
+    requestAnimationFrame(() => this.animate());
+    this.sceneManager.render();
   }
 
   private createEscHintSprite(): THREE.Sprite {
@@ -396,7 +467,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.snackBar.open(this.translate.instant('MESSAGES.MODEL_PLACEMENT_MODE_ACTIVE'), 'OK', { duration: 3000 });
   }
 
-
 // ****************************** THREE helper tools ******************************
 
 // Method called on slider change for model size
@@ -431,14 +501,98 @@ public onCameraSpeedChange(event: any): void {
 
 // ********** VR Tools *************
 
-enterVR(){
-  // TODO: Open bug report form
-  console.log('Entered VR');
+public enterVR(): void {
+  if (!/Mobi|Android/i.test(navigator.userAgent)) {
+     this.snackBar.open(this.translate.instant('MESSAGES.VR_MOBILE_ONLY'), 'OK', { duration: 3000 });
+    return;
+  }
+
+  if (!confirm(this.translate.instant('MESSAGES.ENTER_VR_CONFIRM'))) {
+    return;
+  }
+
+  this.isVRMode = true;
+  document.body.classList.add('vr-mode');
+
+  const canvas = this.renderer.domElement;
+  const container = this.containerRef.nativeElement;
+
+  const requestFullscreen = container.requestFullscreen
+    || (container as any).webkitRequestFullscreen
+    || (container as any).msRequestFullscreen;
+
+  if (requestFullscreen) {
+    requestFullscreen.call(container).catch((err: any) => {
+      console.warn(this.translate.instant('ERRORS.FULLSCREEN_FAILED'), err);
+    });
+  }
+
+  try {
+    (screen.orientation as any)?.lock?.('landscape').catch((err: any) => {
+      console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err);
+    });
+  } catch (err) {
+    console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
+  }
+
+  this.originalSize = {
+    width: container.clientWidth,
+    height: container.clientHeight,
+  };
+  this.originalCameraAspect = this.camera.aspect;
+
+  if (!this.stereoEffect) {
+    this.stereoEffect = new StereoEffect(this.renderer);
+  }
+  this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
+
+  this.renderer.setAnimationLoop(() => this.renderVR());
+
+  history.pushState({ vr: true }, '');
+
+  window.onpopstate = () => {
+    if (this.isVRMode) this.exitVR();
+  };
 }
 
-exitVR(){
-  // TODO: Open bug report form
-    console.log('Exited VR');
+public exitVR(): void {
+  document.body.classList.remove('vr-mode');
+  this.isVRMode = false;
+
+  if (this.renderer?.setAnimationLoop) {
+    this.renderer.setAnimationLoop(null);
+  }
+
+  try {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err: any) => {
+        console.warn(this.translate.instant('ERRORS.EXIT_FULLSCREEN_FAILED'), err);
+      });
+    }
+    (screen.orientation as any)?.unlock?.();
+  } catch (e) {
+    console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
+  }
+
+  if (this.renderer && this.camera && this.originalSize) {
+    this.camera.aspect = this.originalCameraAspect ?? window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.originalSize.width, this.originalSize.height);
+  }
+
+  this.controls.enabled = true;
+  this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
+
+  if (history.state?.vr) {
+    history.back();
+  }
+
+  window.onpopstate = null;
 }
+
+private renderVR = () => {
+  this.camera.position.y = this.cameraHeight;
+  this.stereoEffect.render(this.scene, this.camera);
+};
 
 }

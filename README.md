@@ -85,7 +85,9 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 ---
 
 ## Bug List:
-
+- Reconnecting buttons to new service, functionality lost
+- Need to reinstate threejs viewer
+- Need to reinstate console log
 - Pano Notes: When user clicks to generate a note they keep going back to the center of the sphere. Take a look at the complete script to see why it is not generating a note where the user places it.
 
 ---
