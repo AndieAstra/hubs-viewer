@@ -22,7 +22,6 @@ import { StorageService } from '../../services/storage.service';
   styleUrls: ['./viewer-page.component.scss'],
 })
 export class ViewerPageComponent implements AfterViewInit {
-  // Only define these once
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild('viewer', { static: true }) viewerRef!: ViewerComponent;
@@ -69,24 +68,19 @@ export class ViewerPageComponent implements AfterViewInit {
       window.dispatchEvent(new Event('resize'));
     }, 100);
 
-    if (!localStorage.getItem('hasSeenTutorial')) {
-      // Tutorial prompt logic if needed
-    }
+    this.storageService.consoleMessages = this.storageService.consoleMessages;
+
+    this.storageService.viewerRef = this.viewerRef;
   }
 
-  // ----- UI Console Methods -----
-
-  logToConsole(key: string, params?: any): void {
-    const timeStamp = new Date().toLocaleTimeString();
-    const message = this.translate.instant(key, params);
-    this.consoleMessages.push(`[${timeStamp}] ${message}`);
-    if (this.consoleMessages.length > 50) {
-      this.consoleMessages.shift();
-    }
-  }
+  // ----- UI Console -----
 
   toggleConsole(): void {
     this.showConsole = !this.showConsole;
+  }
+
+   toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
   // ----- Canvas Sizing -----
@@ -127,7 +121,26 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-  // ----- Input Binding Handlers -----
+  onUploadClick(): void {
+    this.fileInput?.nativeElement.click();
+  }
+
+  saveScene(): void {
+    this.storageService.saveSceneAsJson(this.viewerRef);
+  }
+
+  onFileChange(event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+
+  if (!file) return;
+
+  this.selectedFile = file;
+  this.storageService.clearSceneAndLoadFile(file);
+  this.storageService.logToConsole(`Loaded file: ${file.name}`);
+}
+
+// ----- Button Attachments -----
 
   onModelSizeInput(event: Event): void {
     this.viewerRef.onModelSizeChange(event);
@@ -152,14 +165,14 @@ export class ViewerPageComponent implements AfterViewInit {
   resetView(): void {
     const { camera, controls } = this.viewerRef;
     this.sceneControls.resetCameraView(camera, controls);
-    this.logToConsole('VIEWER.RESET_VIEW');
+    this.storageService.logToConsole('VIEWER.RESET_VIEW');
   }
 
   onLightColorChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const color = input.value;
     this.sceneControls.changeLightColorByValue(color);
-    this.logToConsole(`Changed light color to ${color}`);
+    this.storageService.logToConsole(`Changed light color to ${color}`);
   }
 
   toggleRoomLight(): void {
@@ -167,7 +180,7 @@ export class ViewerPageComponent implements AfterViewInit {
     if (!light) return;
 
     this.sceneControls.toggleRoomLight(light);
-    this.logToConsole('VIEWER.TOGGLE_ROOM_LIGHT');
+    this.storageService.logToConsole('VIEWER.TOGGLE_ROOM_LIGHT');
   }
 
   toggleWireframe(): void {
@@ -175,7 +188,7 @@ export class ViewerPageComponent implements AfterViewInit {
     if (!model) return;
 
     this.sceneControls.toggleWireframe(model, (msgKey) => {
-      this.logToConsole(msgKey);
+      this.storageService.logToConsole(msgKey);
     });
   }
 
@@ -304,4 +317,5 @@ export class ViewerPageComponent implements AfterViewInit {
   exitVRMode(): void {
     this.viewerRef?.exitVR();
   }
+
 }

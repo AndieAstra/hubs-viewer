@@ -26,23 +26,51 @@ import { StorageService } from '../../services/storage.service';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { SceneManager } from './scene-manager';
 
-export interface SavedModel {
-  models: Array<{
-    name: string;
-    position: { x: number; y: number; z: number };
-    rotation: { x: number; y: number; z: number };
-    scale: { x: number; y: number; z: number };
-    fileName: string;
-    glbBase64?: string; // Optional: Base64 encoded GLB model data
-    gltfBase64?: string; // Optional: Base64 encoded GLTF model data
-    jsonBase64?: string; // Optional: Base64 encoded JSON model data
-  }>;
+// export interface SavedModel {
+//   models: Array<{
+//     name: string;
+//     position: { x: number; y: number; z: number };
+//     rotation: { x: number; y: number; z: number };
+//     scale: { x: number; y: number; z: number };
+//     fileName: string;
+//     glbBase64?: string; // Optional: Base64 encoded GLB model data
+//     gltfBase64?: string; // Optional: Base64 encoded GLTF model data
+//     jsonBase64?: string; // Optional: Base64 encoded JSON model data
+//   }>;
 
+//   camera: {
+//     position: { x: number; y: number; z: number };
+//     rotation: { x: number; y: number; z: number };
+//   };
+
+//   lighting: {
+//     ambient: {
+//       color: number;
+//       intensity: number;
+//     };
+//     directional: {
+//       color: number;
+//       intensity: number;
+//       position: [number, number, number]; // Position of the directional light in 3D space
+//     };
+//   };
+// }
+
+export interface SavedModel {
+  name: string;
+  position: { x: number; y: number; z: number };
+  rotation: { x: number; y: number; z: number };
+  scale: { x: number; y: number; z: number };
+  fileName: string;
+  glbBase64: string;
+}
+
+export interface SceneData {
+  models: SavedModel[];
   camera: {
     position: { x: number; y: number; z: number };
     rotation: { x: number; y: number; z: number };
   };
-
   lighting: {
     ambient: {
       color: number;
@@ -51,7 +79,7 @@ export interface SavedModel {
     directional: {
       color: number;
       intensity: number;
-      position: [number, number, number]; // Position of the directional light in 3D space
+      position: [number, number, number];
     };
   };
 }
@@ -185,9 +213,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.vrHelper.enabled = true;
     this.canJump = true;
 
-    // Initialize Three.js renderer targeting the canvas element
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.viewerCanvasRef.nativeElement });
-
     // Start animation loop with correct binding
     requestAnimationFrame(this.animate.bind(this));
 
@@ -275,6 +300,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   ngAfterViewInit() {
     this.scene = new THREE.Scene();
+
+    // Initialize Three.js renderer targeting the canvas element
+    this.renderer = new THREE.WebGLRenderer({ canvas: this.viewerCanvasRef.nativeElement });
 
     const container = this.containerRef?.nativeElement;
     if (!container) {

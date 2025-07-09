@@ -5,17 +5,17 @@
     <div class="toolbar-center">
 
 
-<!-- <div class="upload-instructions">
+<div class="upload-instructions">
   <p><strong>{{ 'UPLOAD.INSTRUCTIONS' | translate }}</strong></p>
   <button (click)="onUploadClick()">{{ 'UPLOAD.BUTTON_LABEL' | translate }}</button>
   <input type="file" hidden #fileInput (change)="onFileChange($event)" accept=".glb,.gltf,.json" />
-</div> -->
+</div>
 
 
 </div>
 
     <!-- 📱 Sidebar Toggle Button -->
-    <!-- <button class="sidebar-toggle" (click)="toggleSidebar()">☰</button> -->
+    <button class="sidebar-toggle" (click)="toggleSidebar()">☰</button>
   </header>
 
   <!-- 🧱 Main Layout -->
@@ -54,19 +54,19 @@
 <!--  NEW Save and Load Buttons -->
 
 <!-- Load File Button -->
-<!-- <button class="kid-button purple" (click)="onUploadClick()">
+<button class="kid-button purple" (click)="onUploadClick()">
   <img src="assets/icons/upload.png" alt="Load" />
   <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
-</button> -->
+</button>
 
 <!-- Save File Button -->
-<!-- <button class="kid-button green" (click)="saveSceneAsJson()">
+ <button class="kid-button green" (click)="saveScene()">
   <img src="assets/icons/save.jpg" alt="Save" />
   <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-</button> -->
+</button> -
 
 <!-- Hidden File Input for Loading Files -->
-<!-- <input type="file" #fileInput style="display: none" (change)="onFileChange($event)" accept=".glb,.gltf,.json" /> -->
+ <input type="file" #fileInput style="display: none" (change)="onFileChange($event)" accept=".glb,.gltf,.json" />
 
 <!------------------------------------------------>
         </div>

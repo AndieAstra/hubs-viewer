@@ -1,4 +1,10 @@
 import { Injectable } from '@angular/core';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import * as THREE from 'three';
+import { SceneData, ViewerComponent } from '../components/viewer/viewer.component';
+import { TranslateService } from '@ngx-translate/core';
 
 const STORAGE_KEY = 'lumion_project_data';
 const EXPIRATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
@@ -6,8 +12,198 @@ const EXPIRATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 @Injectable({
   providedIn: 'root',
 })
+
 export class StorageService {
   private readonly expiration = EXPIRATION_MS;
 
+  public viewerRef!: ViewerComponent;
+
+  public consoleMessages: string[] = [];
+
+  constructor(private translate: TranslateService) {}
+
+//
+// ---- Load Model ----
+
+  clearSceneAndLoadFile(file: File): void {
+    this.clearScene(this.viewerRef.scene, () => true, (msg) => {
+      this.logToConsole(msg);
+    });
+
+    // Immediately load the file after clearing
+    this.loadGLB(file);
+  }
+
+  clearScene(scene: THREE.Scene, confirmFn: () => boolean = () => true, logFn: (msg: string) => void = () => {}): void {
+    if (!confirmFn()) return;
+
+    // Now clear the scene as expected
+    const toRemove = scene.children.filter(o => o.userData?.['isLoadedModel']);
+
+    // Remove and dispose the models as needed
+    toRemove.forEach(o => {
+      scene.remove(o);
+      o.traverse(child => {
+        if ((child as THREE.Mesh).isMesh) {
+          const mesh = child as THREE.Mesh;
+          mesh.geometry?.dispose();
+          const disposeMat = (mat?: THREE.Material) => {
+            if (!mat) return;
+            ['map', 'aoMap', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'envMap']
+              .forEach(prop => (mat as any)[prop]?.dispose());
+            mat.dispose?.();
+          };
+          Array.isArray(mesh.material) ? mesh.material.forEach(disposeMat) : disposeMat(mesh.material);
+        }
+      });
+    });
+
+    // Clear background if necessary
+    if (scene.background instanceof THREE.Texture) {
+      scene.background.dispose?.();
+      scene.background = null;
+    }
+
+    logFn('VIEWER.CLEAR_SCENE');
+    // No saving logic here unless intended
+  }
+
+  loadGLB(file: File): void {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arrayBuffer = reader.result as ArrayBuffer;
+      const loader = new GLTFLoader();
+
+  loader.parse(arrayBuffer, '', (gltf: GLTF) => {
+    const scene = this.viewerRef?.scene;
+    if (scene) {
+      console.log("GLTF Loaded:", gltf);
+      scene.add(gltf.scene);
+    } else {
+      console.error('Scene not found.');
+    }
+  }, (error: ErrorEvent) => {
+    console.error('Error loading GLB file:', error.message);
+  });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+// ---- Change Model / Update ----
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    const file = input.files[0];
+
+    if (this.viewerRef) {
+      // Clear the scene and load the file
+      this.clearSceneAndLoadFile(file);
+      this.logToConsole('VIEWER.LOAD_GLB_SUCCESS');
+    } else {
+      console.error('Viewer reference not found!');
+      this.logToConsole('VIEWER.LOAD_GLB_FAIL');
+    }
+  }
+
+// ---- Console ----
+
+  logToConsole(key: string, params?: any): void {
+    const timeStamp = new Date().toLocaleTimeString();
+    const message = this.translate.instant(key, params);
+    this.consoleMessages.push(`[${timeStamp}] ${message}`);
+    if (this.consoleMessages.length > 50) {
+      this.consoleMessages.shift();
+    }
+  }
+
+// ---- Save and Features ----
+
+ saveSceneAsJson(viewerRef: any, logToConsole?: (msgKey: string) => void): void {
+    try {
+      const filename = prompt('Enter filename to save your scene:', 'scene.json');
+      if (!filename) return;
+
+      const safeFilename = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`;
+      const exported = this.exportScene(viewerRef.scene, viewerRef.camera, viewerRef.ambientLight, viewerRef.dirLight, viewerRef.objects);
+
+      const exporter = new GLTFExporter();
+      const modelsToExport = viewerRef.scene.children.filter((obj: THREE.Object3D) => obj.userData?.['isLoadedModel']);
+      const collectedModels: SceneData['models'] = [];
+
+      const processModel = (index: number) => {
+        if (index >= modelsToExport.length) {
+          const fullData: SceneData = { ...exported, models: collectedModels };
+          this.downloadJson(JSON.stringify(fullData), safeFilename);
+          logToConsole?.('VIEWER.SAVE_SCENE');
+          return;
+        }
+
+        const model = modelsToExport[index];
+        exporter.parse(model, (gltf) => {
+          const blob = new Blob([gltf as ArrayBuffer], { type: 'model/gltf-binary' });
+          const reader = new FileReader();
+          reader.onload = () => {
+            const bin = new Uint8Array(reader.result as ArrayBuffer);
+            const base64 = btoa(String.fromCharCode(...bin));
+            collectedModels.push({
+              name: model.name,
+              position: model.position.clone(),
+              rotation: model.rotation,
+              scale: model.scale.clone(),
+              fileName: model.userData['fileName'] || 'unknown.glb',
+              glbBase64: base64,
+            });
+            processModel(index + 1);
+          };
+          reader.readAsArrayBuffer(blob);
+        }, () => {}, { binary: true });
+      };
+
+      processModel(0);
+    } catch (err) {
+      console.error('Error saving scene:', err);
+    }
+  }
+
+// This export scene is a duplicate I think of the
+// sceneData.ts file....
+
+  exportScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ambientLight: THREE.AmbientLight, dirLight: THREE.DirectionalLight, models: THREE.Object3D[]): SceneData {
+  const sceneData = {
+    lighting: {
+      ambient: { color: ambientLight.color.getHex(), intensity: ambientLight.intensity },
+      directional: {
+        color: dirLight.color.getHex(),
+        intensity: dirLight.intensity,
+        position: [dirLight.position.x, dirLight.position.y, dirLight.position.z] as [number, number, number],  // Cast as tuple
+      },
+    },
+    camera: { position: camera.position.clone(), rotation: new THREE.Euler().copy(camera.rotation) },
+    models: [], // Add models
+    lights: {
+      ambientLightVisible: ambientLight.visible,
+      dirLightVisible: dirLight.visible,
+    },
+    wireframe: models.map(model => model.userData?.['wireframe'] || false),
+
+  };
+  return sceneData;
+}
+
+private downloadJson(json: string, filename: string): void {
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+// ------------------------
+
+// ---- ??? ----
 
 }
