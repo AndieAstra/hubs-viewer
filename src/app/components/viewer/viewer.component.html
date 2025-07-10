@@ -1,16 +1,7 @@
-<div #canvasContainer class="viewer-container">
-  <canvas #canvas></canvas>
+<div #sceneContainer class="viewer-container" style="width: 100%; height: 100vh;">
 
-<!-- Fullscreen Button -->
-<button class="fullscreen-btn" (click)="toggleFullscreen()">
-  ⛶ Fullscreen Mode
-</button>
+  <app-scene-manager [container]="sceneContainerRef.nativeElement"></app-scene-manager>
 
-@if (showEscHint) {
-<div class="esc-hint">
-  🔙 Press <strong>ESC</strong> to exit fullscreen
-</div>
-}
+  <button class="fullscreen-btn" (click)="toggleFullscreen()">⛶ Fullscreen Mode</button>
 
 </div>
-

@@ -36,7 +36,7 @@
       <div class="mobile-only-buttons">
 
         <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
-        @if (viewerRef.isVRMode) {
+        @if (viewer.isVRMode) {
           <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
         }
       </div>
@@ -63,7 +63,7 @@
  <button class="kid-button green" (click)="saveScene()">
   <img src="assets/icons/save.jpg" alt="Save" />
   <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
-</button> -
+</button>
 
 <!-- Hidden File Input for Loading Files -->
  <input type="file" #fileInput style="display: none" (change)="onFileChange($event)" accept=".glb,.gltf,.json" />
@@ -152,19 +152,19 @@
     <!-- 🖼️ Canvas -->
     <section class="canvas-container">
 
-      <canvas #viewerCanvas></canvas>
       <app-viewer #viewer></app-viewer>
-      <input type="file" #fileInput />
+
+      <!-- <input type="file" #fileInput /> -->
 
       <!-- 👓 Exit VR Button -->
-      @if(viewerRef.isVRMode) {
+      @if(viewer.isVRMode) {
         <button class="vr-exit-button" (click)="exitVRMode()">
           ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
         </button>
       }
 
       <!-- ⛔ Exit Fullscreen Button -->
-        @if(viewerRef.isInFullscreen && !viewerRef.isVRMode) {
+        @if(viewer.isInFullscreen && !viewer.isVRMode) {
         <button class="fullscreen-exit-button" (click)="exitFullscreen()">
           ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
         </button>

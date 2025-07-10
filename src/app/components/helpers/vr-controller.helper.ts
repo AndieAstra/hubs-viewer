@@ -64,6 +64,7 @@ export class VrControllerHelper {
 update() {
   if (!this.enabled) return;
 
+  // Update movement
   const gp = navigator.getGamepads?.()[0];
   if (gp) {
     const axisX = gp.axes[0] || 0;
@@ -73,16 +74,23 @@ update() {
     const x = Math.abs(axisX) < DEADZONE ? 0 : axisX;
     const y = Math.abs(axisY) < DEADZONE ? 0 : axisY;
 
-    // Set normalized direction vector — NOT scaled
     this.movementVector.set(x, 0, -y);
   } else {
     this.movementVector.set(0, 0, 0);
   }
+
+  // Update target quaternion from orientation
+  this.targetQuaternion.copy(this.getDeviceQuaternion());
 }
+
 
 
   // Apply the orientation smoothing to camera quaternion (call from animate)
   applyRotation(camera: THREE.PerspectiveCamera, lerpFactor = 0.3) {
     camera.quaternion.slerp(this.targetQuaternion, lerpFactor);
   }
+
+  public async enableInteractions(): Promise<void> {
+  await this.start();
+}
 }

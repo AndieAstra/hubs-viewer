@@ -22,9 +22,12 @@ import { StorageService } from '../../services/storage.service';
   styleUrls: ['./viewer-page.component.scss'],
 })
 export class ViewerPageComponent implements AfterViewInit {
-  @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
-  @ViewChild('viewer', { static: true }) viewerRef!: ViewerComponent;
+  // Remove viewerCanvas if you don't actually need a standalone canvas element in the template
+  // If you keep it, keep this reference, otherwise remove this
+  @ViewChild('viewerCanvas', { static: false }) viewerCanvas?: ElementRef<HTMLCanvasElement>;
+
+  @ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
+  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -56,21 +59,24 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    if (!this.canvasRef || !this.viewerRef) {
-      console.error('Canvas reference or Viewer reference is missing.');
+    if (!this.viewer) {
+      console.error('Viewer reference is missing.');
       return;
     }
 
+    // Resize canvas inside the viewer component or its container
     this.resizeCanvas();
-    this.sceneControls.viewerRef = this.viewerRef;
 
+    // Provide viewer ref to sceneControls service
+    this.sceneControls.viewerRef = this.viewer;
+
+    // Sync storage service references
+    this.storageService.viewerRef = this.viewer;
+
+    // Just in case trigger a window resize event
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 100);
-
-    this.storageService.consoleMessages = this.storageService.consoleMessages;
-
-    this.storageService.viewerRef = this.viewerRef;
   }
 
   // ----- UI Console -----
@@ -79,38 +85,40 @@ export class ViewerPageComponent implements AfterViewInit {
     this.showConsole = !this.showConsole;
   }
 
-   toggleSidebar(): void {
+  toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
 
   // ----- Canvas Sizing -----
 
   resizeCanvas(): void {
-    if (!this.canvasRef || !this.viewerRef) {
-      console.error('Canvas reference or Viewer reference is missing.');
+    if (!this.viewer) {
+      console.error('Viewer reference is missing.');
       return;
     }
 
-    const canvas = this.canvasRef.nativeElement;
-    const container = canvas.parentElement;
+    // Assume the viewer component exposes a container for Three.js canvas
+    // and has a resize method on it (as your viewer component seems to have)
+
+    // If you want to resize based on the viewer container's size:
+    const container = this.viewer.sceneContainerRef?.nativeElement ?? null;
     if (!container) {
-      console.error('Canvas container not found.');
+      console.error('Viewer container element is missing.');
       return;
     }
 
     const width = container.clientWidth;
     const height = container.clientHeight;
 
-    console.log(`Resizing canvas to: ${width}x${height}`);
+    console.log(`Resizing viewer canvas to: ${width}x${height}`);
 
-    canvas.width = width;
-    canvas.height = height;
+    // Call viewer's resize handler to update camera, renderer, etc.
+    this.viewer.onResize?.(width, height);
 
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    this.viewerRef.onResize?.(width, height);
-    this.viewerRef.renderer?.setSize?.(width, height);
+    // Also try to update the renderer size if exposed
+    if (this.viewer.renderer) {
+      this.viewer.renderer.setSize(width, height);
+    }
   }
 
   exitFullscreen(): void {
@@ -126,44 +134,49 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   saveScene(): void {
-    this.storageService.saveSceneAsJson(this.viewerRef);
+    if (!this.viewer) {
+      console.error('Viewer reference is missing.');
+      return;
+    }
+    this.storageService.saveSceneAsJson(this.viewer);
   }
 
   onFileChange(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
 
-  if (!file) return;
+    this.selectedFile = file;
+    this.storageService.clearSceneAndLoadFile(file);
+    this.storageService.logToConsole(`Loaded file: ${file.name}`);
+  }
 
-  this.selectedFile = file;
-  this.storageService.clearSceneAndLoadFile(file);
-  this.storageService.logToConsole(`Loaded file: ${file.name}`);
-}
-
-// ----- Button Attachments -----
+  // ----- Model & Viewer controls -----
 
   onModelSizeInput(event: Event): void {
-    this.viewerRef.onModelSizeChange(event);
+    this.viewer?.onModelSizeChange(event);
   }
 
   onModelHeightInput(event: Event): void {
-    this.viewerRef.onModelHeightChange(event);
+    this.viewer?.onModelHeightChange(event);
   }
 
   onSpeedInput(event: Event): void {
-    this.viewerRef.onCameraSpeedChange(event);
+    this.viewer?.onCameraSpeedChange(event);
   }
 
   onSunlightInput(event: Event): void {
-    this.viewerRef.onSunlightIntensityChange(event);
+    this.viewer?.onSunlightIntensityChange(event);
   }
 
   onEyeLevelInput(event: Event): void {
-    this.viewerRef.onEyeLevelChange(event);
+    this.viewer?.onEyeLevelChange(event);
   }
 
   resetView(): void {
-    const { camera, controls } = this.viewerRef;
+    if (!this.viewer) return;
+
+    const { camera, controls } = this.viewer;
     this.sceneControls.resetCameraView(camera, controls);
     this.storageService.logToConsole('VIEWER.RESET_VIEW');
   }
@@ -176,7 +189,7 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   toggleRoomLight(): void {
-    const light = this.viewerRef?.ambientLight;
+    const light = this.viewer?.ambientLight;
     if (!light) return;
 
     this.sceneControls.toggleRoomLight(light);
@@ -184,7 +197,7 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   toggleWireframe(): void {
-    const model = this.viewerRef?.uploadedModel;
+    const model = this.viewer?.uploadedModel;
     if (!model) return;
 
     this.sceneControls.toggleWireframe(model, (msgKey) => {
@@ -201,7 +214,6 @@ export class ViewerPageComponent implements AfterViewInit {
   // ---- Tutorial -------
 
   startTutorial(): void {
-    console.log('Tutorial started');
     const t = (key: string) => this.translate.instant(key);
 
     const tour = new Shepherd.Tour({
@@ -297,11 +309,14 @@ export class ViewerPageComponent implements AfterViewInit {
   // ----- VR Mode -----
 
   enterVRMode(): void {
-    this.viewerRef?.enterVR();
+    this.viewer?.enterVR();
 
-    const canvas = this.canvasRef?.nativeElement;
-    if (canvas) {
-      Object.assign(canvas.style, {
+    // If you want to resize the viewer canvas to fullscreen here,
+    // you should do it through the viewer component or container, not a separate canvas
+
+    const container = this.viewer?.sceneContainerRef?.nativeElement;
+    if (container) {
+      Object.assign(container.style, {
         width: '100vw',
         height: '100vh',
         position: 'absolute',
@@ -315,7 +330,6 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   exitVRMode(): void {
-    this.viewerRef?.exitVR();
+    this.viewer?.exitVR();
   }
-
 }

@@ -29,48 +29,51 @@ export class PlayerMovementHelper {
     this.velocity.z -= this.velocity.z * friction * delta;
   }
 
-updateKeyboardMovement(delta: number, speed: number, playerObj: THREE.Object3D, scene: THREE.Scene) {
-  // Check if the player is on the ground (collisions with the ground surface)
-  this.isGrounded = this.checkIfGrounded(playerObj, scene);
+  updateKeyboardMovement(delta: number, speed: number, playerObj: THREE.Object3D, scene: THREE.Scene, camera: THREE.Camera) {
+    // Check if the player is on the ground (collisions with the ground surface)
+    this.isGrounded = this.checkIfGrounded(playerObj, scene, camera);
 
-  // Gravity: only apply gravity if the player is not grounded
-  if (!this.isGrounded) {
-    this.velocity.y -= this.gravity * delta;  // Apply gravity when not grounded
-  } else {
-    // Reset Y velocity when grounded
-    this.velocity.y = 0;
+    // Gravity: only apply gravity if the player is not grounded
+    if (!this.isGrounded) {
+      this.velocity.y -= this.gravity * delta;  // Apply gravity when not grounded
+    } else {
+      // Reset Y velocity when grounded
+      this.velocity.y = 0;
+    }
+
+    // Jump logic (triggered by spacebar or other controls)
+    if (this.isJumping && this.isGrounded) {
+      this.velocity.y = this.jumpStrength;  // Apply jump strength (positive Y velocity)
+      this.isJumping = false;  // Reset jumping flag after jump
+    }
+
+    // Update movement direction based on keys
+    this.direction.set(0, 0, 0);
+    if (this.keysPressed.forward) this.direction.z += 1;
+    if (this.keysPressed.backward) this.direction.z -= 1;
+    if (this.keysPressed.left) this.direction.x -= 1;
+    if (this.keysPressed.right) this.direction.x += 1;
+    this.direction.normalize();
+
+    if (this.direction.length() > 0) {
+      this.velocity.x += this.direction.x * speed * delta;
+      this.velocity.z += this.direction.z * speed * delta;
+    }
+
+    // Update the player's position
+    playerObj.position.add(this.velocity);
   }
 
-  // Jump logic (triggered by spacebar or other controls)
-  if (this.isJumping && this.isGrounded) {
-    this.velocity.y = this.jumpStrength;  // Apply jump strength (positive Y velocity)
-    this.isJumping = false;  // Reset jumping flag after jump
+  private checkIfGrounded(playerObj: THREE.Object3D, scene: THREE.Scene, camera: THREE.Camera): boolean {
+    const raycaster = new THREE.Raycaster(playerObj.position, new THREE.Vector3(0, -1, 0));
+    raycaster.camera = camera; // **IMPORTANT: Set camera on raycaster before intersecting sprites!**
+
+    // You may want to intersect with specific ground objects rather than whole scene,
+    // but keeping your original logic here:
+    const intersects = raycaster.intersectObject(scene);
+
+    return intersects.length > 0 && intersects[0].distance < this.cameraHeight + 1; // Consider player as grounded if distance is small
   }
-
-  // Update movement direction based on keys
-  this.direction.set(0, 0, 0);
-  if (this.keysPressed.forward) this.direction.z += 1;
-  if (this.keysPressed.backward) this.direction.z -= 1;
-  if (this.keysPressed.left) this.direction.x -= 1;
-  if (this.keysPressed.right) this.direction.x += 1;
-  this.direction.normalize();
-
-  if (this.direction.length() > 0) {
-    this.velocity.x += this.direction.x * speed * delta;
-    this.velocity.z += this.direction.z * speed * delta;
-  }
-
-  // Update the player's position
-  playerObj.position.add(this.velocity);
-}
-
-
-private checkIfGrounded(playerObj: THREE.Object3D, scene: THREE.Scene): boolean {
-  const raycaster = new THREE.Raycaster(playerObj.position, new THREE.Vector3(0, -1, 0));
-  const intersects = raycaster.intersectObject(scene);  // Check intersection with the scene (ground)
-  return intersects.length > 0 && intersects[0].distance < this.cameraHeight + 1; // Consider player as grounded if distance is small
-}
-
 
   applyCombinedMovement(
     delta: number,
@@ -166,7 +169,7 @@ private checkIfGrounded(playerObj: THREE.Object3D, scene: THREE.Scene): boolean 
         this.keysPressed.right = true;
         break;
       case 'Space':
-      if (this.canJump) {
+        if (this.canJump) {
           this.velocity.y = this.jumpStrength;
           this.canJump = false;
           //this.isJumping = true;
