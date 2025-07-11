@@ -173,6 +173,16 @@ app-root, .unity-layout {
   min-height: 200px;
   overflow: hidden;
 
+  /* 👇  ADD THIS right after the .canvas-container block  */
+.canvas-container,
+.canvas-container > .viewer-container {   /* viewer‑component’s inner div  */
+  flex: 1 1 0;        /* let flexbox grow AND shrink it          */
+  min-width: 0;       /* allow width to shrink below content‑size */
+  min-height: 0;      /* (needed in some browsers)               */
+  width: 100%;        /* keep full width once space is available */
+  height: 100%;       /* 100 % of the parent’s height            */
+}
+
   canvas {
     width: 100%;
     height: 100%;

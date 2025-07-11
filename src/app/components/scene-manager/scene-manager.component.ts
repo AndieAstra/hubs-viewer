@@ -156,7 +156,15 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
 
     this.scene.add(new THREE.GridHelper(200, 200, 0xd453ff, 0x444ddd));
     this.scene.add(new THREE.AxesHelper(5));
-  }
+
+    // Test cube
+    const cube = new THREE.Mesh(
+    new THREE.BoxGeometry(1,1,1),
+    new THREE.MeshBasicMaterial({color:0xff0000})
+    );
+    cube.position.set(0,this.cameraHeight,0);
+    this.scene.add(cube);
+      }
 
   render(): void {
     this.renderer.render(this.scene, this.camera);

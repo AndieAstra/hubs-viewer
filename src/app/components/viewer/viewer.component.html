@@ -1,6 +1,8 @@
-<div #sceneContainer class="viewer-container" style="width: 100%; height: 100vh;">
-
-  <app-scene-manager [container]="sceneContainerRef.nativeElement"></app-scene-manager>
+<div #sceneContainer class="viewer-container">   <!-- renamed -->
+  <app-scene-manager
+        [container]="sceneContainer"
+        [cameraHeight]="cameraHeight">
+  </app-scene-manager>
 
   <button class="fullscreen-btn" (click)="toggleFullscreen()">⛶ Fullscreen Mode</button>
 
