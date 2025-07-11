@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnDestroy } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, ElementRef, ViewChild } from '@angular/core';
 
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
@@ -10,9 +10,11 @@ import { VrControllerHelper } from '../helpers/vr-controller.helper';
   selector: 'app-scene-manager',
   standalone: true,
   imports: [],
-  template: ``
+  template: `<div class="scene-manager-root"></div>`
 })
 export class SceneManagerComponent implements OnInit, OnDestroy {
+
+  @ViewChild('sceneRoot', { static: true }) sceneRootRef!: ElementRef<HTMLElement>;
 
   @Input() container!: HTMLElement;
   @Input() cameraHeight: number = 1.6;
@@ -41,6 +43,11 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
       this.container.removeChild(this.instructionsDiv);
     }
   };
+
+  init(): void {
+    // your Three.js initialization logic goes here
+    console.log('Scene initialized.');
+  }
 
   ngOnInit(): void {
     if (!this.container) {
@@ -94,6 +101,11 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
     // Add event listeners for locking controls
     this.container.addEventListener('click', this.lockHandler);
     this.container.addEventListener('touchstart', this.lockHandler, { passive: true });
+
+     if (!this.container) {
+    this.container = this.sceneRootRef.nativeElement;
+      }
+      this.init();
 
     // Start animation loop
     requestAnimationFrame(this.animate);
