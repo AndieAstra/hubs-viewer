@@ -13,28 +13,27 @@ $radius: 12px;
 html, body {
   margin: 0;
   padding: 0;
-  height: 100dvh;
-  font-family: 'Comic Sans MS', 'Nunito', sans-serif;
+  height: 100vh;
+  font-family: $font-family;
   user-select: none;
   touch-action: manipulation;
-  overflow-x: hidden;
-  overflow-y: auto;
-  background: #fdf6e3;
+  overflow: hidden; // no scrollbars
+  background: $bg-main;
 }
 
 app-root, .unity-layout {
-  min-height: 100dvh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
 /* ===================== TOOLBAR ===================== */
 .top-toolbar {
   background: #d3d3d3;
   padding: 8px 16px;
-  position: sticky;
-  top: 0;
+  flex-shrink: 0;
   z-index: 10;
 
   .toolbar-center {
@@ -45,7 +44,7 @@ app-root, .unity-layout {
     .upload-instructions {
       background: #eef6fa;
       padding: 10px;
-      border-left: 4px solid #00bcd4;
+      border-left: 4px solid $accent-color;
       border-radius: 6px;
       text-align: center;
       max-width: 100%;
@@ -59,7 +58,7 @@ app-root, .unity-layout {
   display: flex;
   flex: 1;
   flex-direction: row;
-  overflow-y: auto;
+  overflow: hidden;
   gap: 1rem;
   padding: 0.5rem;
 
@@ -73,7 +72,7 @@ app-root, .unity-layout {
 .sidebar-left {
   width: 280px;
   padding: 1rem;
-  background: #ff6f61;
+  background: $sidebar-bg;
   color: white;
   display: flex;
   flex-direction: column;
@@ -81,6 +80,7 @@ app-root, .unity-layout {
   overflow-y: auto;
   border-radius: 8px;
   flex-shrink: 0;
+  max-height: calc(100vh - 3rem); // prevent overflow
   transition: transform 0.3s ease-in-out;
 
   &.collapsed {
@@ -94,7 +94,7 @@ app-root, .unity-layout {
 
   h4 {
     margin: 0;
-    padding: 5px 5px 5px 5px;
+    padding: 5px;
   }
 
   .sidebar-button-row,
@@ -106,44 +106,40 @@ app-root, .unity-layout {
   }
 
   .button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 1rem;
 
-  button.kid-button {
-    flex: 0 1 auto;
+    button.kid-button {
+      flex: 0 1 auto;
+    }
   }
-}
-
 
   .mobile-only-buttons {
     display: none;
 
     @media (max-width: 768px) {
       display: flex;
-      flex-wrap: wrap;
       flex-direction: row;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-top: 0.5rem;
     }
   }
 
-
   .kid-slider {
     background: #fff59d;
-    border: 2px solid #fbc02d;
-    border-radius: 12px;
+    border: 2px solid $button-border;
+    border-radius: $radius;
     padding: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+
     label {
       font-size: 0.75rem;
       color: #4a4a4a;
     }
+
     input[type='range'] {
       width: 100%;
       accent-color: #ffca28;
@@ -153,8 +149,6 @@ app-root, .unity-layout {
   @media (max-width: 768px) {
     width: 100%;
     flex-wrap: wrap;
-    flex-direction: row;
-    justify-content: center;
     max-height: max-content;
     overflow-y: visible;
   }
@@ -172,16 +166,16 @@ app-root, .unity-layout {
   justify-content: center;
   min-height: 200px;
   overflow: hidden;
+  height: 100%; // fill remaining height
 
-  /* 👇  ADD THIS right after the .canvas-container block  */
-.canvas-container,
-.canvas-container > .viewer-container {   /* viewer‑component’s inner div  */
-  flex: 1 1 0;        /* let flexbox grow AND shrink it          */
-  min-width: 0;       /* allow width to shrink below content‑size */
-  min-height: 0;      /* (needed in some browsers)               */
-  width: 100%;        /* keep full width once space is available */
-  height: 100%;       /* 100 % of the parent’s height            */
-}
+  .canvas-container,
+  .canvas-container > .viewer-container {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+  }
 
   canvas {
     width: 100%;
@@ -201,10 +195,10 @@ app-root, .unity-layout {
 .kid-button {
   width: 70px;
   height: 70px;
-  background: #ffeb3b;
-  border: 2px solid #fbc02d;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: $button-bg;
+  border: 2px solid $button-border;
+  border-radius: $radius;
+  box-shadow: 0 2px 6px $button-shadow;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -249,6 +243,7 @@ app-root, .unity-layout {
   }
 }
 
+/* ===================== COLOR PICKER ===================== */
 .color-picker-label {
   position: relative;
   cursor: pointer;
@@ -267,14 +262,14 @@ app-root, .unity-layout {
   cursor: pointer;
 }
 
-
 /* ===================== CONSOLE ===================== */
 .bottom-bar {
-  background: #fdf6e3;
+  background: $bg-main;
   padding: 0.5rem;
+  flex-shrink: 0;
 
   .tabs button {
-    background: #00bcd4;
+    background: $accent-color;
     color: white;
     padding: 0.5rem 1rem;
     border: none;
@@ -284,8 +279,8 @@ app-root, .unity-layout {
   }
 
   .assets-browser {
-    background: #00bcd4;
-    border-radius: 0 0 12px 12px;
+    background: $accent-color;
+    border-radius: 0 0 $radius $radius;
     padding: 1rem;
 
     .assets-tree .error-bar {
@@ -373,11 +368,11 @@ app-root, .unity-layout {
   top: 1rem;
   left: 1rem;
   z-index: 30;
-  background: #ffeb3b;
-  border: 2px solid #fbc02d;
+  background: $button-bg;
+  border: 2px solid $button-border;
   padding: 0.5rem 1rem;
   font-weight: bold;
-  border-radius: 12px;
+  border-radius: $radius;
   cursor: pointer;
   font-size: 1rem;
   display: none;
@@ -388,7 +383,6 @@ app-root, .unity-layout {
 }
 
 /* ===================== FULLSCREEN ===================== */
-
 .fullscreen-exit-button {
   position: fixed;
   top: 10px;

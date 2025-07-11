@@ -1,26 +1,22 @@
+/* ------------- RESET ------------- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: #f9f9f9;
-  padding: 1rem;
-}
-
-// Language + Title
-.title {
-  background: #bde8f8;
-  padding: 1rem;
-  text-align: center;
+/* ------------- TITLE BAR ------------- */
+.title-bar {
   position: sticky;
   top: 0;
   z-index: 1000;
+  background: #bde8f8;
+  padding: 1rem;
+  text-align: center;
 
   h1 {
     margin-bottom: 0.5rem;
+    font-size: 1.6rem;
   }
 
   .language-select {
@@ -32,139 +28,164 @@ body {
     button {
       background: #008CBA;
       color: #fff;
-      border: none;
+      border: 0;
       padding: 0.4rem 1rem;
       border-radius: 6px;
-      font-size: 0.95rem;
       cursor: pointer;
-      transition: background-color 0.3s;
+      transition: background-color 0.25s;
 
       &:hover {
-        background-color: #005f73;
+        background: #005f73;
       }
     }
   }
 }
 
-// Navigation
+/* ------------- NAV BAR ------------- */
 nav {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.75rem;
   margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+  position: relative;
 
   button {
     background: #4caf50;
-    color: white;
-    border: none;
+    color: #fff;
+    border: 0;
     padding: 0.5rem 1rem;
     border-radius: 6px;
-    font-size: 1rem;
     cursor: pointer;
-    transition: background-color 0.3s;
+    margin: 0.25rem;
+    font-size: 1rem;
+    transition: background-color 0.25s;
 
     &:hover {
-      background-color: #388e3c;
+      background: #388e3c;
     }
   }
-}
-
-// Translated content box
-.translated, p {
-  background-color: #d4f3ff;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
-  margin: 1rem 0;
-}
-
-// VR mode layout override
-:host-context(.vr-mode), body.vr-mode {
-  .canvas-container {
-    position: fixed !important;
-    top: 0; left: 0;
-    width: 100vw !important;
-    height: 100vh !important;
-    z-index: 9999;
-    border-radius: 0 !important;
-  }
-
-  .sidebar-left,
-  .sidebar-right,
-  .bottom-bar,
-  .top-toolbar {
-    display: none !important;
-  }
-
-  body, .canvas-container {
-    margin: 0;
-    padding: 0;
-    background-color: black;
-    overflow: hidden;
-  }
-}
-
-// Mobile responsiveness
-@media (max-width: 768px) {
-  nav, .language-select {
-    flex-direction: column;
-    align-items: center;
-
-    button {
-      width: 100%;
-      max-width: 300px;
-    }
-  }
-
-  .title h1 {
-    font-size: 1.25rem;
-  }
-}
-
-nav {
-  display: flex;
-  justify-content: center;
-  margin: 1rem 0;
 
   .desktop-nav,
   .dropdown-nav {
     display: none;
   }
 
-  button {
-    background: #4caf50;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-    margin: 0.25rem;
-    transition: background-color 0.3s ease;
+  /* 📱 MOBILE */
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: center;
 
-    &:hover {
-      background-color: #388e3c;
+    .dropdown-nav {
+      display: block;
+    }
+
+    .dropdown-toggle {
+      font-size: 1.1rem;
+      padding: 0.6rem 1.2rem;
+    }
+
+    .dropdown-content {
+      flex-direction: row;        /* Horizontal layout */
+      flex-wrap: wrap;            /* Allow wrapping */
+      justify-content: center;
+      gap: 0.5rem;
+      background: #e8f5e9;
+      padding: 0.5rem;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+
+      button {
+        flex: 1 0 auto;
+        width: auto;
+        white-space: nowrap;
+        margin: 0;
+      }
+
+      &.show {
+        display: flex;
+      }
     }
   }
 
+  /* 💻 DESKTOP */
+  @media (min-width: 769px) {
+    .desktop-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+
+  .desktop-dropdown {
+    position: relative;
+    display: inline-block;
+
+    .dropdown-content {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      background-color: #e8f5e9;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .sub-dropdown {
+    margin-top: 0.5rem;
+  }
+}
+
+/* ------------- LANGUAGE SELECTION ------------- */
+
+.language-dropdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin-bottom: 1rem;
+
   .dropdown-toggle {
-    background: #4caf50;
-    font-size: 1.1rem;
-    padding: 0.6rem 1.2rem;
+    background: #2196f3;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.25s;
+
+    &:hover {
+      background: #1565c0;
+    }
   }
 
   .dropdown-content {
     display: none;
     flex-direction: column;
-    align-items: center;
-    background-color: #e8f5e9;
+    background: #e3f2fd;
     padding: 0.5rem;
-    border-radius: 8px;
-    margin-top: 0.5rem;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 0.4rem;
+    position: absolute;
+    top: 100%;
+    z-index: 999;
 
     button {
-      width: 100%;
-      margin: 0.3rem 0;
+      background: transparent;
+      color: #333;
+      padding: 0.4rem 0.8rem;
+      margin: 0.2rem 0;
+      border: none;
+      cursor: pointer;
+      text-align: left;
+
+      &:hover {
+        background: #bbdefb;
+        border-radius: 4px;
+      }
     }
 
     &.show {
@@ -173,35 +194,13 @@ nav {
   }
 }
 
-@media (max-width: 768px) {
-  nav {
-    flex-direction: column;
-    align-items: center;
-
-    .dropdown-nav {
-      display: block;
-    }
-
-    .desktop-nav {
-      display: none;
-    }
-  }
+/* ------------- OPTIONAL: GLOBAL BG ------------- */
+body {
+  background: #f9f9f9;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
-@media (min-width: 769px) {
-  nav {
-    .desktop-nav {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .dropdown-nav {
-      display: none;
-    }
-  }
-}
-
+/* Remove scrollbars in fullscreen VR */
 :fullscreen {
   overflow: hidden;
 }

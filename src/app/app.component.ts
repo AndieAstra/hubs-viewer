@@ -1,50 +1,68 @@
-import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { Router } from '@angular/router';
-import {TranslateModule, TranslateService} from "@ngx-translate/core";
+import { Component, HostListener } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { RouterModule } from '@angular/router';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { filter } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [RouterOutlet, TranslateModule],
+  selector   : 'app-root',
+  standalone : true,
+  /* RouterModule is required for <router-outlet>  */
+  imports    : [RouterModule, TranslateModule],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl   : './app.component.scss'
 })
 export class AppComponent {
 
-dropdownOpen = false;
+  isMobile         = window.innerWidth <= 768;
+  @HostListener('window:resize')
+  onResize() { this.isMobile = window.innerWidth <= 768; }
 
-constructor(
- private router: Router,
+  dropdownOpen     = false;
+  secondaryOpen    = false;
+  langDropdownOpen = false;
+
+
+  constructor(
+    private router   : Router,
     private translate: TranslateService
   ) {
-    this.translate.addLangs(['en', 'es']);
-    this.translate.setDefaultLang('en');
+    /* ─────── i18n set‑up ─────── */
+    translate.addLangs(['en', 'es']);
+    translate.setDefaultLang('en');
 
-    // Use preferred language from localStorage or browser lang fallback
-    const savedLang = localStorage.getItem('preferredLang');
-    const browserLang = this.translate.getBrowserLang();
+    const saved   = localStorage.getItem('preferredLang');
+    const browser = translate.getBrowserLang();
 
-    if (savedLang && ['en', 'es'].includes(savedLang)) {
-      this.translate.use(savedLang);
-    } else if (browserLang && ['en', 'es'].includes(browserLang)) {
-      this.translate.use(browserLang);
-    } else {
-      this.translate.use('en');
-    }
+    if (saved && ['en', 'es'].includes(saved))       translate.use(saved);
+    else if (browser && ['en', 'es'].includes(browser)) translate.use(browser);
+    else                                             translate.use('en');
+
+    /* Collapse the menu after every successful navigation */
+    router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe(() => (this.dropdownOpen = false));
   }
 
-  useLanguage(language: string): void {
-    this.translate.use(language);
-    localStorage.setItem('preferredLang', language);
-  }
+  /* ─────── menu helpers ─────── */
+  toggleLangDropdown() { this.langDropdownOpen = !this.langDropdownOpen; }
+  toggleDropdown()      { this.dropdownOpen   = !this.dropdownOpen; }
+  toggleSecondary()     { this.secondaryOpen  = !this.secondaryOpen; }
 
-  navigateTo(path: string): void {
+  goto(path: string) {
     this.router.navigate([path]);
+    this.dropdownOpen   = false;
+    this.secondaryOpen  = false;
+    this.langDropdownOpen = false;
   }
 
-  toggleDropdown(): void {
-    this.dropdownOpen = !this.dropdownOpen;
-  }
+  /* ─────── language switcher (optional) ─────── */
+  useLanguage(lang: 'en' | 'es'): void {
+      this.translate.use(lang);
+      localStorage.setItem('preferredLang', lang);
+
+      /* 👇 CLOSE language dropdown after pick */
+      this.langDropdownOpen = false;
+    }
 
 }
