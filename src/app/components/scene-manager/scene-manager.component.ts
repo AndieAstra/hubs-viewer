@@ -10,8 +10,7 @@ import { VrControllerHelper } from '../helpers/vr-controller.helper';
   selector: 'app-scene-manager',
   standalone: true,
   imports: [],
-  templateUrl: './scene-manager.component.html',
-  styleUrls: []  // fixed typo here
+  template: ``
 })
 export class SceneManagerComponent implements OnInit, OnDestroy {
 
