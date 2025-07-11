@@ -10,7 +10,6 @@ import { ProjectData } from '../../models/project-data.model';
     <button (click)="save()">💾 Save</button>
     <button (click)="load()">📂 Load</button>
   `,
-  styleUrl: './project-manager.component.scss'
 })
 
 export class ProjectManagerComponent {
@@ -33,7 +32,7 @@ export class ProjectManagerComponent {
       project.modelBase64 = base64;
     }
 
-    this.storage.saveProject(project);
+    this.storage.saveSceneAsJson(project);
     alert('✅ Project saved!');
   }
 

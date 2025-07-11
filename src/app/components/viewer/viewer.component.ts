@@ -17,7 +17,6 @@ import { SceneControlsService } from '../../services/scene-controls.service';
 import { VrControllerHelper } from '../helpers/vr-controller.helper';
 import { SceneManagerComponent } from '../scene-manager/scene-manager.component';
 
-
 export interface SavedModel {
   name: string;
   position: { x: number; y: number; z: number };
@@ -53,32 +52,31 @@ export interface SceneData {
   templateUrl: './viewer.component.html',
   styleUrls: ['./viewer.component.scss']
 })
-
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
   @ViewChild(SceneManagerComponent) sceneManager!: SceneManagerComponent;
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('sceneContainer', { static: true }) sceneContainerRef!: ElementRef<HTMLElement>;
+
   @Input() glbFile?: File;
   @Input() vrHelper!: VrControllerHelper;
 
-  scene!: THREE.Scene;
-  renderer!: THREE.WebGLRenderer;
-  camera: THREE.PerspectiveCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+  stereoEffect?: StereoEffect;
   uploadedModel: THREE.Object3D | null = null;
+  sceneLoaded = false;
+
+  public get scene() { return this.sceneManager?.scene; }
+  public get camera() { return this.sceneManager?.camera; }
+  public get ambient() { return this.sceneManager?.ambientLight; }
+  public get directional() { return this.sceneManager?.dirLight; }
+
+  renderer!: THREE.WebGLRenderer;
   model: THREE.Object3D = new THREE.Object3D();
   controls: any;
-
-  //sceneManager!: SceneManagerComponent;
   sceneManagerContainer!: HTMLElement;
-
   transformControls!: TransformControls;
-  stereoEffect: any;
-  //vrHelper!: VrControllerHelper;
 
-  //playerObj: THREE.Object3D = new THREE.Object3D();
   ambientLight = new THREE.AmbientLight(0xffffff, 1);
   private sceneLight!: THREE.DirectionalLight;
-
   movementHelper!: PlayerMovementHelper;
   private playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
 
@@ -93,7 +91,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   private resizeListener = () => this.onResize();
 
   public controllerSpeed = 3.0;
-  public sceneLoaded = false;
   public isPlacingModel = false;
   public isVRMode = false;
 
@@ -117,51 +114,48 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     private sceneControlsService: SceneControlsService,
   ) {}
 
-ngOnInit() {
-  this.boundOnKeyDown = (event: KeyboardEvent) => this.playerMovementHelper.onKeyDown(event.code);
-  this.boundOnKeyUp = (event: KeyboardEvent) => this.playerMovementHelper.onKeyUp(event.code);
-  window.addEventListener('keydown', this.boundOnKeyDown);
-  window.addEventListener('keyup', this.boundOnKeyUp);
+  ngOnInit() {
+    this.boundOnKeyDown = (event: KeyboardEvent) => this.playerMovementHelper.onKeyDown(event.code);
+    this.boundOnKeyUp = (event: KeyboardEvent) => this.playerMovementHelper.onKeyUp(event.code);
+    window.addEventListener('keydown', this.boundOnKeyDown);
+    window.addEventListener('keyup', this.boundOnKeyUp);
 
-  if (this.vrHelper) {
-    this.vrHelper.enableInteractions();
-  }
-
-  document.addEventListener('fullscreenchange', () => {
-    // Optional: Handle full screen change visuals
-  });
-}
-
-ngAfterViewInit(): void {
-  if (!this.sceneContainerRef?.nativeElement) {
-    console.error('sceneContainerRef is undefined.');
-    return;
-  }
-
-  this.sceneManagerContainer = this.sceneContainerRef.nativeElement;
-
-  const animate = (time: number) => {
-    this.sceneManager?.render();
-    this.animationId = requestAnimationFrame(animate);
-  };
-  this.animationId = requestAnimationFrame(animate);
-
-  document.addEventListener('fullscreenchange', () => {
-    const isFullscreen = document.fullscreenElement !== null;
-    if (this.sceneManager) {
-      this.sceneManager.setEscHintVisible(isFullscreen);
+    if (this.vrHelper) {
+      this.vrHelper.enableInteractions();
     }
-  });
-}
 
+    document.addEventListener('fullscreenchange', () => {
+      // Optional fullscreen visuals
+    });
+  }
+
+  ngAfterViewInit(): void {
+    const containerEl = this.sceneContainerRef?.nativeElement;
+
+    if (!containerEl) {
+      console.error('sceneContainerRef is undefined or not available in the DOM.');
+      return;
+    }
+
+    this.sceneManagerContainer = containerEl;
+
+    const animate = (time: number) => {
+      this.sceneManager?.render();
+      this.animationId = requestAnimationFrame(animate);
+    };
+
+    this.animationId = requestAnimationFrame(animate);
+
+    document.addEventListener('fullscreenchange', () => {
+      const isFullscreen = document.fullscreenElement !== null;
+      this.sceneManager?.setEscHintVisible(isFullscreen);
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['glbFile']?.currentValue && !changes['glbFile'].isFirstChange()) {
       const file = changes['glbFile'].currentValue as File;
-      if (this.sceneLoaded) {
-        const confirmReplace = confirm('A scene is already loaded. Replace it?');
-        if (!confirmReplace) return;
-      }
+      if (this.sceneLoaded && !confirm('A scene is already loaded. Replace it?')) return;
 
       const loader = new GLTFLoader();
       loader.load(
@@ -186,9 +180,9 @@ ngAfterViewInit(): void {
     window.removeEventListener('keyup', this.boundOnKeyUp);
     window.removeEventListener('resize', this.resizeListener);
 
-    if (this.vrHelper) this.vrHelper.stop();
+    this.vrHelper?.stop();
     if (this.animationId) cancelAnimationFrame(this.animationId);
-    if (this.renderer) this.renderer.dispose();
+    this.renderer?.dispose();
 
     this.scene?.traverse((obj) => {
       if ((obj as THREE.Mesh).geometry) (obj as THREE.Mesh).geometry.dispose();
@@ -286,7 +280,7 @@ ngAfterViewInit(): void {
       width: container.clientWidth,
       height: container.clientHeight,
     };
-    this.originalCameraAspect = this.camera.aspect;
+    this.originalCameraAspect = this.camera?.aspect;
 
     if (!this.stereoEffect) {
       this.stereoEffect = new StereoEffect(this.renderer);
@@ -331,17 +325,24 @@ ngAfterViewInit(): void {
 
   private renderVR = () => {
     if (this.vrHelper) {
-      this.vrHelper.update(); // updates orientation + movement
-      this.vrHelper.applyRotation(this.camera); // applies smoothed rotation
-
-      // Apply movement
-      const delta = this.clock.getDelta();
-      const move = this.vrHelper.movementVector.clone().multiplyScalar(delta * this.vrHelper.moveSpeed);
-      this.camera.position.add(move);
+      this.vrHelper.update();
+      if (this.camera) {
+        this.vrHelper.applyRotation(this.camera);
+        const delta = this.clock.getDelta();
+        const move = this.vrHelper.movementVector.clone().multiplyScalar(delta * this.vrHelper.moveSpeed);
+        this.camera.position.add(move);
+        this.camera.position.y = this.cameraHeight;
+      }
     }
 
-    this.camera.position.y = this.cameraHeight;
-    this.stereoEffect.render(this.scene, this.camera);
+    if (this.stereoEffect && this.scene && this.camera) {
+      this.stereoEffect.render(this.scene, this.camera);
+    }
   };
 
+  onFileChange(evt: Event): void {
+    const file = (evt.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.storageService.loadProject(file);
+  }
 }

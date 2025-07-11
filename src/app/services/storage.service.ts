@@ -3,11 +3,20 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as THREE from 'three';
+
 import { SceneData, ViewerComponent } from '../components/viewer/viewer.component';
 import { TranslateService } from '@ngx-translate/core';
 
 const STORAGE_KEY = 'lumion_project_data';
 const EXPIRATION_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+export interface ProjectData {
+  timestamp: number;
+  scene?: SceneData;
+  lights: { color: string; intensity: number }[];
+  notes: string[];
+  modelBase64?: string;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -20,11 +29,220 @@ export class StorageService {
 
   public consoleMessages: string[] = [];
 
+  private _pendingJsonFile?: File;
+
   constructor(private translate: TranslateService) {}
 
-//
+
 // ---- Load Model ----
 
+  loadProject(
+      fileOrSceneData?:
+        | File
+        | {
+            scene: THREE.Scene;
+            camera: THREE.Camera;
+            ambient: THREE.Light;
+            directional: THREE.Light;
+            onModelsLoaded: (m: THREE.Object3D[]) => void;
+            onError?: (e: any) => void;
+          }
+    ): boolean {
+
+      if (!fileOrSceneData) {
+        return this._loadFromStorage() !== null;
+      }
+
+      if (fileOrSceneData instanceof File) {
+        const file = fileOrSceneData;
+        const ext  = file.name.split('.').pop()?.toLowerCase();
+
+        if (ext === 'glb' || ext === 'gltf') {
+          this._loadGLTF(file, this.viewerRef, (msg: string) => this.logToConsole(msg));
+          return true;
+        }
+
+        if (ext === 'json') {
+          this._pendingJsonFile = file;                        // cache until we get scene handles
+          return true;
+        }
+
+        console.warn('Unsupported file type:', ext);
+        return false;
+      }
+      //----
+      if (this._pendingJsonFile) {
+        this._loadJsonScene(
+          this._pendingJsonFile,
+          fileOrSceneData.scene,
+          fileOrSceneData.camera,
+          fileOrSceneData.ambient,
+          fileOrSceneData.directional,
+          fileOrSceneData.onModelsLoaded,
+          fileOrSceneData.onError
+        );
+        this._pendingJsonFile = undefined;
+        return true;
+      }
+
+      console.warn('loadProject was called with unrecognised arguments.');
+      return false;
+    }
+
+  private _loadFromStorage(): ProjectData | null {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+
+    try {
+      const data = JSON.parse(raw) as ProjectData;
+      if (Date.now() - data.timestamp > this.expiration) {
+        this.clear();
+        return null;
+      }
+      return data;
+    } catch {
+      this.clear();
+      return null;
+    }
+  }
+
+  private _loadGLTF(file: File, viewerRef: ViewerComponent, log?: (m: string) => void): void {
+    // re‑use your existing GLB implementation so nothing breaks
+    this.loadGLB(file);
+    log?.(`File loaded: ${file.name}`);
+  }
+
+  private _loadJsonScene(
+    file: File,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+    ambientLight: THREE.Light,
+    dirLight: THREE.Light,
+    onModelsLoaded: (models: THREE.Object3D[]) => void,
+    onError?: (err: any) => void
+  ): void {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const sceneData = JSON.parse(reader.result as string);
+        this._loadSceneFromJson(sceneData, scene, camera, ambientLight, dirLight, onModelsLoaded, onError);
+      } catch (err) {
+        console.error('Invalid JSON file:', err);
+        onError?.(err);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  private _loadSceneFromJson(
+    sceneData: any,
+    scene: THREE.Scene,
+    camera: THREE.Camera,
+    ambientLight: THREE.Light,
+    dirLight: THREE.Light,
+    onModelsLoaded: (models: THREE.Object3D[]) => void,
+    onError?: (err: any) => void
+  ): void {
+    try {
+      // ------- VALIDATE DATA
+      if (!sceneData.camera) throw new Error("Scene data is missing 'camera' property.");
+      this.clearScene(scene);
+
+      // ------- RESTORE CAMERA
+      const { position, rotation } = sceneData.camera;
+      if (!position || !rotation) throw new Error("Camera position or rotation is missing in scene data.");
+      camera.position.set(position.x, position.y, position.z);
+      camera.rotation.set(rotation.x, rotation.y, rotation.z);
+
+      // ------- RESTORE LIGHTING
+      const { ambient, directional } = sceneData.lighting;
+      ambientLight.color.setHex(ambient.color);
+      ambientLight.intensity = ambient.intensity;
+      dirLight.color.setHex(directional.color);
+      dirLight.intensity = directional.intensity;
+      dirLight.position.set(...(directional.position as [number, number, number]));
+
+      // ------- LOAD MODELS (unchanged logic)
+      const loader  = new GLTFLoader();
+      const loaded: THREE.Object3D[] = [];
+      const modelsArr = sceneData.models || [];
+      let done = 0;
+
+      if (!modelsArr.length) {
+        onModelsLoaded([]); // nothing to load
+        return;
+      }
+
+      modelsArr.forEach((md: any) => {
+        if (!md.glbBase64) {
+          done++;
+          if (done === modelsArr.length) onModelsLoaded(loaded);
+          return;
+        }
+
+        const binStr  = atob(md.glbBase64);
+        const buffer  = new Uint8Array(binStr.length);
+        for (let i = 0; i < binStr.length; i++) buffer[i] = binStr.charCodeAt(i);
+
+        loader.parse(buffer.buffer, '', (gltf) => {
+          const model = gltf.scene;
+          model.name  = md.name || 'Model';
+          model.position.copy(md.position);
+          model.rotation.set(md.rotation.x, md.rotation.y, md.rotation.z);
+          model.scale.copy(md.scale);
+          model.userData['isLoadedModel'] = true;
+          model.userData['fileName']      = md.fileName || 'unknown.glb';
+
+          scene.add(model);
+          loaded.push(model);
+
+          done++;
+          if (done === modelsArr.length) onModelsLoaded(loaded);
+        },
+        (e) => {                                   // onError
+          console.error('Parse error', e);
+          done++;
+          if (done === modelsArr.length) onModelsLoaded(loaded);
+          onError?.(e);
+        });
+      });
+
+    } catch (e) {
+      console.error('Error loading scene:', e);
+      onError?.(e);
+    }
+  }
+
+  loadGLB(file: File): void {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const arrayBuffer = reader.result as ArrayBuffer;
+      const loader = new GLTFLoader();
+
+  loader.parse(arrayBuffer, '', (gltf: GLTF) => {
+    const scene = this.viewerRef?.scene;
+    if (scene) {
+      console.log("GLTF Loaded:", gltf);
+      scene.add(gltf.scene);
+    } else {
+      console.error('Scene not found.');
+    }
+  }, (error: ErrorEvent) => {
+    console.error('Error loading GLB file:', error.message);
+  });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+// ---- Clear Scene ----
+
+// Clear project data from localStorage
+  clear(): void {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+// what does this connect to?
+// Make sure it's when you re-upload a file!
   clearSceneAndLoadFile(file: File): void {
     this.clearScene(this.viewerRef.scene, () => true, (msg) => {
       this.logToConsole(msg);
@@ -33,6 +251,7 @@ export class StorageService {
     // Immediately load the file after clearing
     this.loadGLB(file);
   }
+//
 
   clearScene(scene: THREE.Scene, confirmFn: () => boolean = () => true, logFn: (msg: string) => void = () => {}): void {
     if (!confirmFn()) return;
@@ -66,27 +285,6 @@ export class StorageService {
 
     logFn('VIEWER.CLEAR_SCENE');
     // No saving logic here unless intended
-  }
-
-  loadGLB(file: File): void {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const arrayBuffer = reader.result as ArrayBuffer;
-      const loader = new GLTFLoader();
-
-  loader.parse(arrayBuffer, '', (gltf: GLTF) => {
-    const scene = this.viewerRef?.scene;
-    if (scene) {
-      console.log("GLTF Loaded:", gltf);
-      scene.add(gltf.scene);
-    } else {
-      console.error('Scene not found.');
-    }
-  }, (error: ErrorEvent) => {
-    console.error('Error loading GLB file:', error.message);
-  });
-    };
-    reader.readAsArrayBuffer(file);
   }
 
 // ---- Change Model / Update ----
@@ -191,6 +389,8 @@ export class StorageService {
   };
   return sceneData;
 }
+//
+//
 
 private downloadJson(json: string, filename: string): void {
     const blob = new Blob([json], { type: 'application/json' });
@@ -201,9 +401,5 @@ private downloadJson(json: string, filename: string): void {
     a.click();
     URL.revokeObjectURL(url);
   }
-
-// ------------------------
-
-// ---- ??? ----
 
 }

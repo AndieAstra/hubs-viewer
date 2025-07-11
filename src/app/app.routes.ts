@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { PanoramaViewerComponent } from './components/panorama-viewer/panorama-viewer.component';
+import { PanoramaViewerComponent } from './pages/panorama-viewer/panorama-viewer.component';
 import { ViewerPageComponent } from './pages/viewer-page/viewer-page.component';
 import { ContactComponent } from './pages/contact/contact.component';
 import { BugReportComponent } from './pages/bug-report/bug-report.component';
