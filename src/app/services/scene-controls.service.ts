@@ -3,7 +3,9 @@ import * as THREE from 'three';
 import { ViewerComponent } from '../components/viewer/viewer.component';
 
 @Injectable({ providedIn: 'root' })
+
 export class SceneControlsService {
+
 
   fileInput?: ElementRef<HTMLInputElement>;
   viewerRef!: ViewerComponent;
@@ -85,5 +87,15 @@ changeLightColorByValue(color: string): void {
   updateEyeLevel(camera: THREE.Camera, eyeLevel: number): void {
     camera.position.y = eyeLevel;
     console.log(`Eye level updated to: ${eyeLevel}`);
+  }
+
+  updateMovementSpeed(speed: number): void {
+    if (!this.viewerRef?.sceneManager) return;
+
+    // the value SceneManager uses each frame
+    this.viewerRef.sceneManager.speed = speed;
+
+    // keep helper in sync so keyboard movement feels the same
+    this.viewerRef.sceneManager.playerMovementHelper.moveSpeed = speed;
   }
 }

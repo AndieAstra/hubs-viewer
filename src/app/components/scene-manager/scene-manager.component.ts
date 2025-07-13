@@ -30,7 +30,7 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
   controls!: PointerLockControls;
   gui: GUI = new GUI();
   objects: THREE.Object3D[] = [];
-  private playerMovementHelper!: PlayerMovementHelper;
+  public playerMovementHelper!: PlayerMovementHelper;
   private prevTime = 0;
   public  vrHelper = new VrControllerHelper(3.0);
   speed = 5;

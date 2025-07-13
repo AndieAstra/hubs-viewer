@@ -236,9 +236,17 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneControlsService.updateModelHeight(this.model, event.target.value);
   }
 
+  //
+  //
   onCameraSpeedChange(event: any): void {
     this.sceneControlsService.updateCameraSpeed(this.controls, event.target.value);
   }
+
+  public setWalkSpeed(speed: number): void {
+    this.sceneControlsService.updateMovementSpeed(speed);
+  }
+  //
+  //
 
   onSunlightIntensityChange(event: any): void {
     this.sceneControlsService.updateSunlightIntensity(this.sceneLight, event.target.value);

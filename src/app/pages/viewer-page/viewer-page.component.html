@@ -100,14 +100,29 @@
       <section>
         <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
         <div class="button-row">
-          <div class="kid-slider">
+
+          <!-- <div class="kid-slider">
             <label>{{ 'SLIDERS.SPEED' | translate }}</label>
             <input type="range" (input)="onSpeedInput($event)" />
-          </div>
+          </div> -->
+
+          <div class="kid-slider">
+          <label for="speedControl">{{ 'SLIDERS.SPEED' | translate }}</label>
+          <input
+            id="speedControl"
+            type="range"
+            min="0.5"
+            max="6"
+            step="0.1"
+            (input)="onSpeedInput($event)"
+            />
+            </div>
+
           <div class="kid-slider">
             <label>{{ 'SLIDERS.EYE_LEVEL' | translate }}</label>
             <input type="range" (input)="onEyeLevelInput($event)" />
           </div>
+
         </div>
       </section>
 

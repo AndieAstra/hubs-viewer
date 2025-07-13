@@ -47,13 +47,19 @@ export class PlayerMovementHelper {
       this.isJumping = false;  // Reset jumping flag after jump
     }
 
-    // Update movement direction based on keys
-    this.direction.set(0, 0, 0);
-    if (this.keysPressed.forward) this.direction.z += 1;
-    if (this.keysPressed.backward) this.direction.z -= 1;
-    if (this.keysPressed.left) this.direction.x -= 1;
-    if (this.keysPressed.right) this.direction.x += 1;
-    this.direction.normalize();
+
+// Update movement direction based on keys
+this.direction.set(0, 0, 0);
+
+/* ---------- FIX ---------- */
+if (this.keysPressed.forward)  this.direction.z -= 1;  // forward = -Z
+if (this.keysPressed.backward) this.direction.z += 1;  // backward = +Z
+/* ------------------------- */
+
+if (this.keysPressed.left)     this.direction.x -= 1;
+if (this.keysPressed.right)    this.direction.x += 1;
+this.direction.normalize();
+
 
     if (this.direction.length() > 0) {
       this.velocity.x += this.direction.x * speed * delta;
@@ -127,16 +133,20 @@ export class PlayerMovementHelper {
     if (Math.abs(this.velocity.x) < EPSILON) this.velocity.x = 0;
     if (Math.abs(this.velocity.z) < EPSILON) this.velocity.z = 0;
 
-    // 🚶 Move with collision checks
-    const moveX = this.velocity.x * delta;
-    const moveZ = this.velocity.z * delta;
-    const oldPos = playerObj.position.clone();
 
-    controls.moveRight(moveX);
-    if (isColliding(playerObj.position)) playerObj.position.x = oldPos.x;
 
-    controls.moveForward(moveZ);
-    if (isColliding(playerObj.position)) playerObj.position.z = oldPos.z;
+// 🚶 Move with collision checks
+const moveX = this.velocity.x * delta;
+const moveZ = this.velocity.z * delta;
+const oldPos = playerObj.position.clone();
+
+controls.moveRight( moveX );              // X‑axis is fine
+if ( isColliding( playerObj.position ) ) playerObj.position.x = oldPos.x;
+
+/* ✨ flip Z so “forward” becomes positive for PointerLockControls */
+controls.moveForward( -moveZ );           // <-- negate here
+if ( isColliding( playerObj.position ) ) playerObj.position.z = oldPos.z;
+
 
     // Apply gravity and Y-axis movement
     playerObj.position.y += this.velocity.y * delta;

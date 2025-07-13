@@ -1,8 +1,9 @@
 <nav>
-  <!-- 📱 MOBILE  ──────────────────────────────────────────── -->
-  @if (isMobile) {
 
-    <!-- Main (hamburger) menu -->
+<!------ Mobile ------->
+
+@if (isMobile) {
+
     <div class="dropdown-nav">
       <button class="dropdown-toggle" (click)="toggleDropdown()">
         ☰ {{ 'NAV.MENU' | translate }}
@@ -16,10 +17,9 @@
       </div>
     </div>
 
-    <!-- Language selector (always a dropdown) -->
     <div class="language-dropdown">
       <button class="dropdown-toggle" (click)="toggleLangDropdown()">
-        🌐 {{ 'NAV.LANGUAGE' | translate }}
+        {{ 'NAV.LANGUAGE' | translate }}
       </button>
 
       <div class="dropdown-content" [class.show]="langDropdownOpen">
@@ -29,13 +29,13 @@
     </div>
   }
 
-  <!-- 💻 DESKTOP  ────────────────────────────────────────── -->
+<!------ Desktop ------->
+
   @if (!isMobile) {
 
-    <!-- Language selector (dropdown) -->
     <div class="language-dropdown">
       <button class="dropdown-toggle" (click)="toggleLangDropdown()">
-        🌐 {{ 'NAV.LANGUAGE' | translate }}
+        {{ 'NAV.LANGUAGE' | translate }}
       </button>
 
       <div class="dropdown-content" [class.show]="langDropdownOpen">

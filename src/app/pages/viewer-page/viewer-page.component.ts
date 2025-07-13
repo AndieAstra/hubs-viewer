@@ -161,8 +161,9 @@ export class ViewerPageComponent implements AfterViewInit {
     this.viewer?.onModelHeightChange(event);
   }
 
-  onSpeedInput(event: Event): void {
-    this.viewer?.onCameraSpeedChange(event);
+  onSpeedInput(evt: Event): void {
+    const value = +(evt.target as HTMLInputElement).value;   // to number
+    this.viewer?.setWalkSpeed(value);
   }
 
   onSunlightInput(event: Event): void {
