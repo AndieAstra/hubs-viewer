@@ -30,15 +30,15 @@ export class SceneControlsService {
     light.visible = !light.visible;
   }
 
-// Toggle light color
-setAmbientLight(light: THREE.AmbientLight): void {
-  this.ambientLight = light;
-}
+  // Toggle light color
+  setAmbientLight(light: THREE.AmbientLight): void {
+    this.ambientLight = light;
+  }
 
-changeLightColorByValue(color: string): void {
-  if (!this.ambientLight) return;
-  this.ambientLight.color.set(color);
-}
+  changeLightColorByValue(color: string): void {
+    if (!this.ambientLight) return;
+    this.ambientLight.color.set(color);
+  }
 
   // Reset camera to its default position and rotation
   resetCameraView(

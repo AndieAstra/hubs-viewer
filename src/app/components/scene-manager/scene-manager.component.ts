@@ -135,46 +135,44 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
     this.gui?.destroy();
   }
 
-animate = (time: number): void => {
-  if (!this.scene || !this.controls) return;
+  animate = (time: number): void => {
+    if (!this.scene || !this.controls) return;
 
-  const delta = (time - this.prevTime) / 1000 || 0;
-  this.prevTime = time;
+    const delta = (time - this.prevTime) / 1000 || 0;
+    this.prevTime = time;
 
-  // VR controller input
-  this.vrHelper?.update?.();
+    // VR controller input
+    this.vrHelper?.update?.();
 
-  // Player movement
-  this.playerMovementHelper?.applyFriction?.(delta, 5.0);
-  this.playerMovementHelper.updateKeyboardMovement(
-    delta,
-    this.speed,
-    this.playerObj,
-    this.scene,
-    this.camera
-  );
+    // Player movement
+    this.playerMovementHelper?.applyFriction?.(delta, 5.0);
+    this.playerMovementHelper.updateKeyboardMovement(
+      delta,
+      this.speed,
+      this.playerObj,
+      this.scene,
+      this.camera
+    );
 
-  // ESC hint sprite billboard logic
-  if (this.escHintSprite) {
-    const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
-    this.escHintSprite.visible = isInFullscreen;
+    // ESC hint sprite billboard logic
+    if (this.escHintSprite) {
+      const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
+      this.escHintSprite.visible = isInFullscreen;
 
-    if (isInFullscreen) {
-      const cameraDirection = new THREE.Vector3();
-      this.camera.getWorldDirection(cameraDirection);
-      const cameraPosition = this.camera.position.clone();
+      if (isInFullscreen) {
+        const cameraDirection = new THREE.Vector3();
+        this.camera.getWorldDirection(cameraDirection);
+        const cameraPosition = this.camera.position.clone();
 
-      this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
-      this.escHintSprite.position.y -= 1.2;
-      this.escHintSprite.quaternion.copy(this.camera.quaternion);
+        this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
+        this.escHintSprite.position.y -= 1.2;
+        this.escHintSprite.quaternion.copy(this.camera.quaternion);
+      }
     }
-  }
 
-  this.render();
-  requestAnimationFrame(this.animate);
-};
-
-
+    this.render();
+    requestAnimationFrame(this.animate);
+  };
 
   private initUI(): void {
     this.escHintDiv = document.createElement('div');
@@ -261,4 +259,17 @@ animate = (time: number): void => {
   public setEscHintVisible(visible: boolean) {
     this.escHintSprite.visible = visible;
   }
+
+  setEyeLevel(y: number): void {
+    // move the Three.js camera
+    this.camera.position.y = y;
+
+    // move the Pointer‑Lock Controls’ “player capsule”
+    this.controls.getObject().position.y = y;
+
+    // tell the movement helper what “grounded” means now
+    this.playerMovementHelper.cameraHeight = y;
+  }
+
+
 }

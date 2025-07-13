@@ -21,7 +21,7 @@ export class PlayerMovementHelper {
     public moveSpeed: number,
     private gravity: number,
     private jumpStrength: number,
-    private cameraHeight: number
+    public cameraHeight: number
   ) {}
 
   applyFriction(delta: number, friction: number) {

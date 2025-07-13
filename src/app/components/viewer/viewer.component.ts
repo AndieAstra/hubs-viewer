@@ -238,9 +238,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   //
   //
-  onCameraSpeedChange(event: any): void {
-    this.sceneControlsService.updateCameraSpeed(this.controls, event.target.value);
-  }
+  // Are these two the same thing???
+  // onCameraSpeedChange(event: any): void {
+  //   this.sceneControlsService.updateCameraSpeed(this.controls, event.target.value);
+  // }
 
   public setWalkSpeed(speed: number): void {
     this.sceneControlsService.updateMovementSpeed(speed);
@@ -252,8 +253,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneControlsService.updateSunlightIntensity(this.sceneLight, event.target.value);
   }
 
-  onEyeLevelChange(event: any): void {
-    this.sceneControlsService.updateEyeLevel(this.camera, event.target.value);
+  onEyeLevelChange(evt: Event): void {
+    const val = +(evt.target as HTMLInputElement).value;
+    this.sceneManager?.setEyeLevel(val);
   }
 
   enterVR(): void {
