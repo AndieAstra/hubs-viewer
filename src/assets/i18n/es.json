@@ -10,11 +10,6 @@
     "LANGUAGE": "Seleccionar Idioma"
   },
 
-  "UPLOAD": {
-    "INSTRUCTIONS": "Elige tu modelo 3D (glb/gltf/JSON), luego usa las teclas WASD para moverte y ESPACIO para saltar.",
-    "BUTTON_LABEL": "Subir Modelo"
-  },
-
   "INSTRUCTION_THREE": {
     "START_WALKING": "¡Haz clic para empezar a caminar!"
   },
@@ -26,8 +21,8 @@
     "ENTER_VR": "🕶 Entrar en VR",
     "EXIT_VR": "🚪 Salir de VR",
     "RESET_CAMERA": "Restablecer Cámara",
-    "SAVE_SCENE": "Guardar Escena",
-    "LOAD_SCENE": "Cargar Escena",
+    "SAVE_SCENE": "Guardar",
+    "LOAD_SCENE": "Cargar",
     "SUNLIGHT_COLOR": "Color del Sol",
     "ROOM_LIGHT": "Luz de la Habitación"
   },

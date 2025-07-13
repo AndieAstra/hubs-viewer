@@ -144,10 +144,10 @@ export class ViewerPageComponent implements AfterViewInit {
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file) return;
+    if (!file || !this.viewer) return;
 
-    this.selectedFile = file;
-    this.storageService.clearSceneAndLoadFile(file);
+  /* was: storageService.clearSceneAndLoadFile(file) */
+    this.viewer.loadFile(file);                 // 👈 hand it straight to the viewer
     this.storageService.logToConsole(`Loaded file: ${file.name}`);
   }
 
@@ -158,7 +158,10 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   onModelHeightInput(event: Event): void {
-    this.viewer?.onModelHeightChange(event);
+    const val = +(event.target as HTMLInputElement).value;
+    if (this.viewer?.uploadedModel) {
+      this.sceneControls.updateModelHeight(this.viewer.uploadedModel, val);
+    }
   }
 
   onSpeedInput(evt: Event): void {

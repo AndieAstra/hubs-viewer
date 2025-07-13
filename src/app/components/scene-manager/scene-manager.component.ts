@@ -5,8 +5,8 @@ import {
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 import { GUI } from 'dat.gui';
-import { PlayerMovementHelper } from '../helpers/player-movement.helper';
-import { VrControllerHelper } from '../helpers/vr-controller.helper';
+import { VrControllerHelper } from '../../helpers/vr-controller.helper';
+import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
 
 @Component({
   selector   : 'app-scene-manager',

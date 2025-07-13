@@ -213,26 +213,34 @@ export class StorageService {
     }
   }
 
-  loadGLB(file: File): void {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const arrayBuffer = reader.result as ArrayBuffer;
-      const loader = new GLTFLoader();
+ loadGLB(file: File): void {
+  const reader = new FileReader();
 
-  loader.parse(arrayBuffer, '', (gltf: GLTF) => {
-    const scene = this.viewerRef?.scene;
-    if (scene) {
-      console.log("GLTF Loaded:", gltf);
-      scene.add(gltf.scene);
-    } else {
-      console.error('Scene not found.');
-    }
-  }, (error: ErrorEvent) => {
-    console.error('Error loading GLB file:', error.message);
-  });
-    };
-    reader.readAsArrayBuffer(file);
-  }
+  reader.onload = () => {
+    const arrayBuffer = reader.result as ArrayBuffer;
+    const loader = new GLTFLoader();
+
+    loader.parse(arrayBuffer, '', (gltf: GLTF) => {
+      const root = gltf.scene;
+      root.userData['isLoadedModel'] = true;
+
+      const scene = this.viewerRef?.scene;
+      if (scene) {
+        scene.add(root);
+        this.viewerRef.uploadedModel = root; // <-- Key assignment for slider control
+        console.log('GLTF loaded and added to scene:', root);
+      } else {
+        console.error('Viewer scene is not available.');
+      }
+    },
+    (error) => {
+      console.error('Error loading GLB file:', error.message);
+    });
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
 
 // ---- Clear Scene ----
 

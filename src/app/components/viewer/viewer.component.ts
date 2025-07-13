@@ -11,10 +11,10 @@ import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 
-import { PlayerMovementHelper } from '../helpers/player-movement.helper';
+import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
 import { StorageService } from '../../services/storage.service';
 import { SceneControlsService } from '../../services/scene-controls.service';
-import { VrControllerHelper } from '../helpers/vr-controller.helper';
+import { VrControllerHelper } from '../../helpers/vr-controller.helper';
 import { SceneManagerComponent } from '../scene-manager/scene-manager.component';
 
 export interface SavedModel {
@@ -232,11 +232,16 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneControlsService.updateModelSize(this.model, event.target.value);
   }
 
-  onModelHeightChange(event: any): void {
-    this.sceneControlsService.updateModelHeight(this.model, event.target.value);
+  /** fired by the “Model Height” range input */
+  onModelHeightChange(evt: Event): void {
+    const y = parseFloat((evt.target as HTMLInputElement).value);
+
+    // the object that is really shown in the scene
+    const target = this.uploadedModel ?? this.model;
+
+    this.sceneControlsService.updateModelHeight(target, y);
   }
 
-  //
   //
   // Are these two the same thing???
   // onCameraSpeedChange(event: any): void {
@@ -355,4 +360,37 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     if (!file) return;
     this.storageService.loadProject(file);
   }
+
+handleLocalFile(file: File): void {
+  const loader = new GLTFLoader();
+  loader.load(URL.createObjectURL(file), (gltf) => {
+
+    // ⬇️ ⮕ centre the model
+    const box = new THREE.Box3().setFromObject(gltf.scene);
+    const c   = new THREE.Vector3();
+    box.getCenter(c);
+    gltf.scene.position.sub(c);
+
+    // (optionally ground it)
+    const s = new THREE.Vector3();
+    box.getSize(s);
+    gltf.scene.position.y += s.y * 0.5;
+
+    // ------------------------------
+    this.uploadedModel = gltf.scene;
+    this.scene.add(gltf.scene);
+    this.applyModelTransform();
+    this.logToConsole('MODEL_LOADED', { name: gltf.scene.name });
+  }, undefined,
+    err => this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name })
+  );
+}
+
+
+/** Called by the page component when the user chooses a file */
+  loadFile(file: File): void {
+    this.handleLocalFile(file);
+  }
+
+
 }

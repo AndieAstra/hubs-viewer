@@ -10,11 +10,6 @@
     "LANGUAGE": "Select Language"
   },
 
-  "UPLOAD": {
-    "INSTRUCTIONS": "Choose your 3D model (glb/gltf/JSON), then use the WASD keys to move around, SPACE to jump.",
-    "BUTTON_LABEL": "Upload Model"
-  },
-
     "INSTRUCTION_THREE": {
     "START_WALKING": "Click to start walking!"
   },
@@ -26,8 +21,8 @@
     "ENTER_VR": "🕶 Enter VR",
     "EXIT_VR": "🚪 Exit VR",
     "RESET_CAMERA": "Reset Camera",
-    "SAVE_SCENE": "Save Scene",
-    "LOAD_SCENE": "Load Scene",
+    "SAVE_SCENE": "Save",
+    "LOAD_SCENE": "Load",
     "SUNLIGHT_COLOR": "Sunlight Color",
     "ROOM_LIGHT": "Room Light"
   },
