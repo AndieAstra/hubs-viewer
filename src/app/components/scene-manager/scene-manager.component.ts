@@ -196,7 +196,7 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
     });
     this.container.appendChild(this.instructionsDiv);
 
-    this.gui = new GUI({ width: 280 });
+    //this.gui = new GUI({ width: 280 });
     this.gui.domElement.style.display = 'none';
   }
 
