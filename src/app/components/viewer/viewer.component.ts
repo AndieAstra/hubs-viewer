@@ -220,15 +220,58 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneManager?.resize();
   }
 
-  toggleFullscreen() {
-    const canvas = this.renderer?.domElement;
-    if (!canvas) return;
+async toggleFullscreen(): Promise<void> {
+  const container = this.sceneContainerRef?.nativeElement
+                 ?? this.renderer?.domElement as HTMLElement | undefined;
+  if (!container) return;
 
-    if (!document.fullscreenElement) {
-      canvas.requestFullscreen().catch(err => console.error("Fullscreen failed:", err));
-    } else {
-      document.exitFullscreen().catch(err => console.error("Exit fullscreen failed:", err));
+  const enterFullscreen = async () => {
+    const req = container.requestFullscreen
+             || (container as any).webkitRequestFullscreen
+             || (container as any).msRequestFullscreen;
+
+    if (!req) {
+      console.warn('Fullscreen API not supported');
+      return;
     }
+
+    await req.call(container);
+
+    // Try locking to landscape on supported devices
+    try {
+      const ori = screen.orientation as ScreenOrientation & {
+        lock?: (mode: 'any' | 'natural' | 'landscape' | 'portrait' | 'landscape-primary' | 'landscape-secondary' | 'portrait-primary' | 'portrait-secondary') => Promise<void>;
+        unlock?: () => void;
+      };
+      await ori?.lock?.('landscape');
+    } catch (e) {
+      console.warn('Orientation lock failed or unsupported:', e);
+    }
+
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+  };
+
+  const exitFullscreen = async () => {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => {});
+    }
+
+    try {
+      (screen.orientation as any)?.unlock?.();
+    } catch {}
+
+    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+  };
+
+  try {
+    document.fullscreenElement ? await exitFullscreen() : await enterFullscreen();
+  } catch (err) {
+    console.error('Fullscreen toggle failed:', err);
+  }
+}
+
+  get isPortrait(): boolean {
+    return window.innerHeight > window.innerWidth;
   }
 
   applyModelTransform() {
@@ -249,20 +292,14 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   onModelSizeChange(event: Event): void {
     const size = +(event.target as HTMLInputElement).value;
-
-    /* scale only the GLB the user has loaded */
     if (this.uploadedModel) {
       this.sceneControlsService.updateModelSize(this.uploadedModel, size);
     }
   }
 
-  /** fired by the “Model Height” range input */
   onModelHeightChange(evt: Event): void {
     const y = parseFloat((evt.target as HTMLInputElement).value);
-
-    // the object that is really shown in the scene
     const target = this.uploadedModel ?? this.model;
-
     this.sceneControlsService.updateModelHeight(target, y);
   }
 
@@ -392,36 +429,30 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.storageService.loadProject(file);
   }
 
-handleLocalFile(file: File): void {
-  const loader = new GLTFLoader();
-  loader.load(URL.createObjectURL(file), (gltf) => {
+  handleLocalFile(file: File): void {
+    const loader = new GLTFLoader();
+    loader.load(URL.createObjectURL(file), (gltf) => {
 
-    // ⬇️ ⮕ centre the model
-    const box = new THREE.Box3().setFromObject(gltf.scene);
-    const c   = new THREE.Vector3();
-    box.getCenter(c);
-    gltf.scene.position.sub(c);
+      const box = new THREE.Box3().setFromObject(gltf.scene);
+      const c   = new THREE.Vector3();
+      box.getCenter(c);
+      gltf.scene.position.sub(c);
 
-    // (optionally ground it)
-    const s = new THREE.Vector3();
-    box.getSize(s);
-    gltf.scene.position.y += s.y * 0.5;
+      const s = new THREE.Vector3();
+      box.getSize(s);
+      gltf.scene.position.y += s.y * 0.5;
 
-    // ------------------------------
-    this.uploadedModel = gltf.scene;
-    this.scene.add(gltf.scene);
-    this.applyModelTransform();
-    this.logToConsole('MODEL_LOADED', { name: gltf.scene.name });
-  }, undefined,
-    err => this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name })
-  );
-}
+      this.uploadedModel = gltf.scene;
+      this.scene.add(gltf.scene);
+      this.applyModelTransform();
+      this.logToConsole('MODEL_LOADED', { name: gltf.scene.name });
+    }, undefined,
+      err => this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name })
+    );
+  }
 
-
-/** Called by the page component when the user chooses a file */
   loadFile(file: File): void {
     this.handleLocalFile(file);
   }
-
 
 }

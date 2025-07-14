@@ -219,90 +219,100 @@ export class ViewerPageComponent implements AfterViewInit {
 
   // ---- Tutorial -------
 
-  startTutorial(): void {
-    const t = (key: string) => this.translate.instant(key);
+startTutorial(): void {
+  const t = (k: string) => this.translate.instant(k);
 
-    const tour = new Shepherd.Tour({
-      useModalOverlay: true,
-      defaultStepOptions: {
-        cancelIcon: { enabled: true },
-        scrollTo: { behavior: 'smooth', block: 'center' },
-        classes: 'shepherd-theme-default',
-        modalOverlayOpeningPadding: 8,
-        modalOverlayOpeningRadius: 8,
-        canClickTarget: false,
-      },
-    });
+  /* Helper: reusable buttons ---------------------------------------- */
+  const next = { text: t('BUTTONS.NEXT') || 'Next', action: () => tour.next() };
+  const back = { text: t('BUTTONS.BACK') || 'Back', action: () => tour.back() };
 
-    tour.addStep({
-      id: 'welcome',
-      text: t('START_TUTORIAL'),
-      buttons: [{ text: 'Next', action: tour.next }],
-    });
-    tour.addStep({
-      id: 'upload',
-      attachTo: { element: '.upload-instructions', on: 'bottom' },
-      text: t('UPLOAD_INSTRUCTION'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'scene-controls',
-      attachTo: { element: '.sidebar-left', on: 'right' },
-      text: t('SCENE_SETTINGS'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'canvas',
-      attachTo: { element: '.canvas-container', on: 'top' },
-      text: t('MODEL_SETTINGS'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'console',
-      attachTo: { element: '.bottom-bar', on: 'top' },
-      text: t('CONSOLE_SHEPHARD'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Next', action: tour.next },
-      ],
-    });
-    tour.addStep({
-      id: 'finish',
-      attachTo: { element: '.sidebar-right', on: 'left' },
-      text: t('FINISH_TUTORIAL'),
-      buttons: [
-        { text: 'Back', action: tour.back },
-        { text: 'Done', action: tour.complete },
-      ],
-    });
+  /* Shepherd tour ---------------------------------------------------- */
+  const tour = new Shepherd.Tour({
+    useModalOverlay: true,
+    defaultStepOptions: {
+      cancelIcon: { enabled: true },
+      scrollTo: { behavior: 'smooth', block: 'center' },
+      classes: 'shepherd-theme-default',
+      modalOverlayOpeningPadding: 8,
+      modalOverlayOpeningRadius: 8,
+      canClickTarget: false,
+      // highlight class we’ll toggle below
+      highlightClass: 'shepherd-highlight'
+    }
+  });
 
-    const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
-    tour.on('complete', markTutorialSeen);
-    tour.on('cancel', markTutorialSeen);
+  /* 1 ─ Welcome (floating, no target) */
+  tour.addStep({
+    id: 'welcome',
+    text: t('START_TUTORIAL'),
+    buttons: [next]
+  });
 
-    tour.on('show', () => {
-      const currentStep = tour.getCurrentStep();
-      const el = currentStep?.options.attachTo?.element;
-      if (typeof el === 'string') {
-        document.querySelector(el)?.classList.add('shepherd-highlight');
-      }
-    });
+  /* 2 ─ Upload hint (toolbar strip) */
+  tour.addStep({
+    id: 'upload',
+    attachTo: { element: '.upload-instructions', on: 'bottom' },
+    text: t('UPLOAD_INSTRUCTION'),
+    buttons: [back, next]
+  });
 
-    tour.on('hide', () => {
-      document.querySelectorAll('.shepherd-highlight').forEach((el) => el.classList.remove('shepherd-highlight'));
-    });
+  /* 3 ─ Scene controls (left sidebar) */
+  tour.addStep({
+    id: 'scene-controls',
+    attachTo: { element: '.sidebar-left', on: 'right' },
+    text: t('SCENE_SETTINGS'),
+    buttons: [back, next]
+  });
 
-    tour.start();
-  }
+  /* 4 ─ 3‑D viewer (canvas area) – anchor on **left** so card isn’t
+         hidden by fullscreen canvas; the modal overlay still surrounds
+         the viewer to draw attention. */
+  tour.addStep({
+    id: 'canvas',
+    attachTo: { element: '.canvas-container', on: 'left' },
+    text: t('MODEL_SETTINGS'),
+    buttons: [back, next]
+  });
+
+  /* 5 ─ Console (bottom bar) */
+  tour.addStep({
+    id: 'console',
+    attachTo: { element: '.bottom-bar', on: 'top' },
+    text: t('CONSOLE_SHEPHARD'),
+    buttons: [back, next]
+  });
+
+  /* 6 ─ Finish – point to the ☰ toggle so users know how to reopen
+         the sidebar when it’s collapsed on mobile. */
+  tour.addStep({
+    id: 'finish',
+    attachTo: { element: '.sidebar-toggle', on: 'bottom' },
+    text: t('FINISH_TUTORIAL'),
+    buttons: [back,
+      { text: t('BUTTONS.DONE') || 'Done', action: () => tour.complete() }]
+  });
+
+  /* Mark tutorial as seen ------------------------------------------- */
+  const markSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
+  tour.on('complete', markSeen);
+  tour.on('cancel',   markSeen);
+
+  /* Highlight target element while its step is visible -------------- */
+  tour.on('show', () => {
+    // Shepherd adds `is-active` class to the current step element, so
+    // we can query the attachTo target via API:
+    const el = tour.getCurrentStep()?.options.attachTo?.element as string | undefined;
+    if (el) document.querySelector(el)?.classList.add('shepherd-highlight');
+  });
+  tour.on('hide', () =>
+    document
+      .querySelectorAll('.shepherd-highlight')
+      .forEach(el => el.classList.remove('shepherd-highlight'))
+  );
+
+  tour.start();
+}
+
 
   // ----- Language -----
 

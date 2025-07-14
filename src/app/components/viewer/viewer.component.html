@@ -1,9 +1,18 @@
-<div #sceneContainer class="viewer-container">   <!-- renamed -->
+<div #sceneContainer class="viewer-container">
   <app-scene-manager
         [container]="sceneContainer"
         [cameraHeight]="cameraHeight">
   </app-scene-manager>
 
-  <button class="fullscreen-btn" (click)="toggleFullscreen()">⛶ Fullscreen Mode</button>
+  <button class="fullscreen-btn"
+          type="button"
+          (click)="toggleFullscreen()">
+    ⛶ Fullscreen
+  </button>
 
+@if (isPortrait) {
+<div class="rotate-device-warning">
+  📱 Please rotate your device for full experience.
+</div>
+}
 </div>

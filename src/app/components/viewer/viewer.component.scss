@@ -100,7 +100,6 @@ canvas:-webkit-full-screen {
   }
 }
 
-
 /* Container that holds canvas and overlay */
 .threejs-container {
   position: relative;  // required for absolute positioning inside
@@ -138,4 +137,40 @@ canvas:-webkit-full-screen {
   pointer-events: none;
   z-index: 10;
   display: none;
+}
+
+/* ---------- FULLSCREEN STYLES ---------- */
+
+/* Standard spec */
+:fullscreen .viewer-container,
+:fullscreen .threejs-container {
+  width: 100vw;
+  height: 100dvh;   /* <— 100 dvh adapts when URL bar hides */
+}
+
+/* WebKit (iOS Safari 15‑) */
+:-webkit-full-screen .viewer-container,
+:-webkit-full-screen .threejs-container {
+  width: 100vw;
+  height: 100vh;    /* WebKit does not support dvh, but that’s OK */
+}
+
+/* Ensure the canvas always fills its parent */
+.viewer-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.rotate-warning {
+  position: fixed;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, .7);
+  color: #fff;
+  padding: .4rem .8rem;
+  border-radius: 8px;
+  font-size: .85rem;
+  z-index: 10000;
 }

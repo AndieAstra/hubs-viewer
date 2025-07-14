@@ -402,3 +402,104 @@ app-root, .unity-layout {
     display: none; // Desktop has ESC key
   }
 }
+
+/* ===================== SHEPHERD (TUTORIAL) ===================== */
+
+/* Allow scrolling while tutorial is active and dampen iOS bounce */
+body.shepherd-active {
+  overflow: auto !important;
+  overscroll-behavior: contain;
+}
+
+/* Dimmed page overlay */
+.shepherd-modal-overlay-container {
+  position: fixed !important;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 11000 !important; // above VR & fullscreen layers
+  transition: opacity .25s ease;
+}
+
+/* Core tooltip */
+.shepherd-element {
+  z-index: 11010 !important;
+  max-width: min(90vw, 420px);
+  font-family: $font-family;
+  background: #fff;
+  border: 2px solid $accent-color;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+}
+
+.shepherd-element,
+.shepherd-modal-overlay-container,
+.shepherd-modal-overlay-container .shepherd-modal-overlay {
+  z-index: 99999 !important;
+}
+
+canvas, model-viewer, .your-3d-container {
+  z-index: 0 !important; /* Lower than shepherd */
+}
+
+/* Title */
+.shepherd-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: $accent-color;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.2;
+}
+
+/* Text */
+.shepherd-text {
+  color: #333;
+  line-height: 1.45;
+}
+
+/* Footer & buttons */
+.shepherd-footer {
+  margin-top: 0.75rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.shepherd-button {
+  background: $button-bg;
+  border: 2px solid $button-border;
+  border-radius: 6px;
+  color: #000;
+  font-weight: bold;
+  padding: 0.4rem 0.8rem;
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: lighten($button-bg, 4%);
+  }
+}
+
+/* Arrow matches card */
+.shepherd-arrow::before {
+  background: #fff !important;
+  border: 2px solid $accent-color !important;
+}
+
+/* Highlight ring on the target element */
+.shepherd-highlight {
+  position: relative;
+  isolation: isolate;
+  border-radius: 6px;
+  box-shadow: 0 0 0 4px $accent-color, 0 0 12px rgba($accent-color, 0.8);
+  transition: box-shadow 0.25s ease-in-out;
+}
+
+/* Keep interactions on highlighted canvas */
+.canvas-container.shepherd-highlight canvas {
+  pointer-events: auto;
+}
+
+@media (max-width: 768px) {
+  .shepherd-element {
+    max-width: 95vw;
+  }
+}
