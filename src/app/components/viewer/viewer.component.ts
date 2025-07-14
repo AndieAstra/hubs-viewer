@@ -127,6 +127,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     document.addEventListener('fullscreenchange', () => {
       // Optional fullscreen visuals
     });
+
+    /* give SceneControlsService the ambient light it should edit */
+    this.sceneControlsService.setAmbientLight(this.sceneManager.ambientLight);
   }
 
   ngAfterViewInit(): void {
@@ -228,8 +231,13 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     console.log(message, details);
   }
 
-  onModelSizeChange(event: any): void {
-    this.sceneControlsService.updateModelSize(this.model, event.target.value);
+  onModelSizeChange(event: Event): void {
+    const size = +(event.target as HTMLInputElement).value;
+
+    /* scale only the GLB the user has loaded */
+    if (this.uploadedModel) {
+      this.sceneControlsService.updateModelSize(this.uploadedModel, size);
+    }
   }
 
   /** fired by the “Model Height” range input */
