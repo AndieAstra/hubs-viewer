@@ -223,8 +223,8 @@ startTutorial(): void {
   const t = (k: string) => this.translate.instant(k);
 
   /* Helper: reusable buttons ---------------------------------------- */
-  const next = { text: t('BUTTONS.NEXT') || 'Next', action: () => tour.next() };
-  const back = { text: t('BUTTONS.BACK') || 'Back', action: () => tour.back() };
+  const next = { text: t('BUTTONS_NEXT') || 'Next', action: () => tour.next() };
+  const back = { text: t('BUTTONS_BACK') || 'Back', action: () => tour.back() };
 
   /* Shepherd tour ---------------------------------------------------- */
   const tour = new Shepherd.Tour({
@@ -289,7 +289,8 @@ startTutorial(): void {
     attachTo: { element: '.sidebar-toggle', on: 'bottom' },
     text: t('FINISH_TUTORIAL'),
     buttons: [back,
-      { text: t('BUTTONS.DONE') || 'Done', action: () => tour.complete() }]
+
+    { text: t('BUTTONS_DONE') || 'Done', action: () => tour.complete() }]
   });
 
   /* Mark tutorial as seen ------------------------------------------- */

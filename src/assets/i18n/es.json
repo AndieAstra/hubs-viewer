@@ -57,9 +57,11 @@
 
   "CONSOLE_SHEPHARD": "Los registros y mensajes de la consola aparecen aquí.",
 
-  "FINISH_TUTORIAL": "¡Felicidades! Este es el final del tutorial. Vamos a crear tu sistema de agricultura virtual."
+  "FINISH_TUTORIAL": "¡Felicidades! Este es el final del tutorial. Vamos a crear tu sistema de agricultura virtual.",
 
-  ,
+  "BUTTONS_NEXT": "Próxima",
+  "BUTTONS_BACK": "Atras",
+  "BUTTONS_DONE": "Terminar",
 
   "CONTACT": {
     "TITLE": "📬 Envíanos un Mensaje",

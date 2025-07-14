@@ -59,6 +59,9 @@
 
   "FINISH_TUTORIAL": "Congrats! This is the end of the tutorial. Let's get to making your virtual farming system."
   ,
+  "BUTTONS_NEXT": "Next",
+  "BUTTONS_BACK": "Back",
+  "BUTTONS_DONE": "Finish",
 
   "CONTACT": {
     "TITLE": "📬 Send Us a Message",
