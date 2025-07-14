@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { ChangeDetectorRef, Injectable } from '@angular/core';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -28,6 +28,8 @@ export class StorageService {
   public viewerRef!: ViewerComponent;
 
   public consoleMessages: string[] = [];
+
+  private cdRef?: ChangeDetectorRef;
 
   private _pendingJsonFile?: File;
 
@@ -244,7 +246,6 @@ export class StorageService {
 
 // ---- Clear Scene ----
 
-// Clear project data from localStorage
   clear(): void {
     localStorage.removeItem(STORAGE_KEY);
   }
@@ -255,19 +256,13 @@ export class StorageService {
     this.clearScene(this.viewerRef.scene, () => true, (msg) => {
       this.logToConsole(msg);
     });
-
-    // Immediately load the file after clearing
     this.loadGLB(file);
   }
 //
 
   clearScene(scene: THREE.Scene, confirmFn: () => boolean = () => true, logFn: (msg: string) => void = () => {}): void {
     if (!confirmFn()) return;
-
-    // Now clear the scene as expected
     const toRemove = scene.children.filter(o => o.userData?.['isLoadedModel']);
-
-    // Remove and dispose the models as needed
     toRemove.forEach(o => {
       scene.remove(o);
       o.traverse(child => {
@@ -285,14 +280,12 @@ export class StorageService {
       });
     });
 
-    // Clear background if necessary
     if (scene.background instanceof THREE.Texture) {
       scene.background.dispose?.();
       scene.background = null;
     }
 
     logFn('VIEWER.CLEAR_SCENE');
-    // No saving logic here unless intended
   }
 
 // ---- Change Model / Update ----
@@ -304,7 +297,6 @@ export class StorageService {
     const file = input.files[0];
 
     if (this.viewerRef) {
-      // Clear the scene and load the file
       this.clearSceneAndLoadFile(file);
       this.logToConsole('VIEWER.LOAD_GLB_SUCCESS');
     } else {
@@ -315,13 +307,29 @@ export class StorageService {
 
 // ---- Console ----
 
+  // logToConsole(key: string, params?: any): void {
+  //   const timeStamp = new Date().toLocaleTimeString();
+  //   const message = this.translate.instant(key, params);
+  //   this.consoleMessages.push(`[${timeStamp}] ${message}`);
+  //   if (this.consoleMessages.length > 50) {
+  //     this.consoleMessages.shift();
+  //   }
+  // }
+
+  registerChangeDetector(cd: ChangeDetectorRef) {  // call once from the page
+    this.cdRef = cd;
+  }
+
   logToConsole(key: string, params?: any): void {
-    const timeStamp = new Date().toLocaleTimeString();
-    const message = this.translate.instant(key, params);
-    this.consoleMessages.push(`[${timeStamp}] ${message}`);
-    if (this.consoleMessages.length > 50) {
-      this.consoleMessages.shift();
-    }
+    const time = new Date().toLocaleTimeString();
+    const text = this.translate.instant(key, params);
+    this.consoleMessages.push(`[${time}] ${text}`);
+
+    // trim
+    if (this.consoleMessages.length > 50) this.consoleMessages.shift();
+
+    // wake Angular (only needed with OnPush)
+    this.cdRef?.markForCheck();
   }
 
 // ---- Save and Features ----
@@ -375,7 +383,6 @@ export class StorageService {
 
 // This export scene is a duplicate I think of the
 // sceneData.ts file....
-
   exportScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ambientLight: THREE.AmbientLight, dirLight: THREE.DirectionalLight, models: THREE.Object3D[]): SceneData {
   const sceneData = {
     lighting: {
@@ -383,11 +390,11 @@ export class StorageService {
       directional: {
         color: dirLight.color.getHex(),
         intensity: dirLight.intensity,
-        position: [dirLight.position.x, dirLight.position.y, dirLight.position.z] as [number, number, number],  // Cast as tuple
+        position: [dirLight.position.x, dirLight.position.y, dirLight.position.z] as [number, number, number],
       },
     },
     camera: { position: camera.position.clone(), rotation: new THREE.Euler().copy(camera.rotation) },
-    models: [], // Add models
+    models: [],
     lights: {
       ambientLightVisible: ambientLight.visible,
       dirLightVisible: dirLight.visible,

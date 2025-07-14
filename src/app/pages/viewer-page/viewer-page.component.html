@@ -69,7 +69,14 @@
 
           <div class="kid-slider">
             <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
-            <input type="range" (input)="onSunlightInput($event)" />
+
+            <!-- bind to [value] so the knob shows the current value -->
+            <input  type="range"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    [value]="sunIntensity"
+                    (input)="onSunlightInput($event)">
           </div>
         </div>
       </section>

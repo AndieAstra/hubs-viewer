@@ -22,10 +22,7 @@ import { StorageService } from '../../services/storage.service';
   styleUrls: ['./viewer-page.component.scss'],
 })
 export class ViewerPageComponent implements AfterViewInit {
-  // Remove viewerCanvas if you don't actually need a standalone canvas element in the template
-  // If you keep it, keep this reference, otherwise remove this
   @ViewChild('viewerCanvas', { static: false }) viewerCanvas?: ElementRef<HTMLCanvasElement>;
-
   @ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
@@ -35,6 +32,8 @@ export class ViewerPageComponent implements AfterViewInit {
   consoleMessages: string[] = [];
 
   currentLang: 'en' | 'es' = 'en';
+
+  sunIntensity = 1;
 
   constructor(
     private router: Router,
@@ -59,6 +58,9 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+
+    this.consoleMessages = this.storageService.consoleMessages;
+
     if (!this.viewer) {
       console.error('Viewer reference is missing.');
       return;
@@ -181,21 +183,21 @@ export class ViewerPageComponent implements AfterViewInit {
     this.storageService.logToConsole('VIEWER.RESET_VIEW');
   }
 
-  onSunlightInput(e: Event) {          // ✔ forwards the sun light & value
-    const sun = this.viewer?.sceneManager?.dirLight;
-    if (sun) this.sceneControls.updateSunlightIntensity(
-      sun,
-      +(e.target as HTMLInputElement).value
-    );
-  }
+  onSunlightInput(evt: Event): void {
+      const val = +(evt.target as HTMLInputElement).value;
+      this.sunIntensity = val;
+      if (this.viewer?.directional) {
+        this.sceneControls.updateSunlightIntensity(this.viewer.directional, val);
+      }
+    }
 
   onLightColorChange(evt: Event): void {
-  const hex = (evt.target as HTMLInputElement).value;      // "#rrggbb"
-  this.sceneControls.changeSunlightColor(hex);             // ⬅️ new
+  const hex = (evt.target as HTMLInputElement).value;
+  this.sceneControls.changeSunlightColor(hex);
   this.storageService.logToConsole(`Sunlight colour → ${hex}`);
 }
 
-  toggleRoomLight() {                  // ✔ forwards the ambient light
+  toggleRoomLight() {
     const amb = this.viewer?.sceneManager?.ambientLight;
     if (amb) this.sceneControls.toggleRoomLight(amb);
   }
@@ -317,7 +319,6 @@ export class ViewerPageComponent implements AfterViewInit {
 
     // If you want to resize the viewer canvas to fullscreen here,
     // you should do it through the viewer component or container, not a separate canvas
-
     const container = this.viewer?.sceneContainerRef?.nativeElement;
     if (container) {
       Object.assign(container.style, {

@@ -47,15 +47,16 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 
 - Load JSON scenes w/lighting
 - Save JSON scenes w/lighting
-- Upload GLTF/GLB models
-- Modals notifications as you change GLB/GLTF models
+- Upload GLTF/GLB/JSON models and scenes
+- Modals notifications as you change models/scenes
 - Modal notification when the model fails to load/scene is empty
 - Capability to use WSAD keys to move around the scene
 - Capability to change light color, intensity, and camera height
 - VR split screen added
 - Language selection added
 - Docker container added
-- Tutorial added
+- User Tutorial added
+- Error messages to user console to teach users dev troubleshooting
 
 ---
 
@@ -65,8 +66,8 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 - Update UI to match National 4-H brand
 - Fix sunlight slider max and min
 - Fix acceleration, min too slow
+- Expand language selection
 - Add screen reader capability for text
-- Expand upon language selection, including error messages to teach students dev troubleshooting
 - Remove "auto VR mode" capability in landscape mobile mode
 - Fix fullscreen on mobile so "exit VR" button fits to upper corner landscape or portrait
 - Connect bug report to database
@@ -85,8 +86,6 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 ---
 
 ## Bug List:
-- Reconnecting buttons to new service, functionality lost
-- Need to reinstate threejs viewer
 - Need to reinstate console log
 - Pano Notes: When user clicks to generate a note they keep going back to the center of the sphere. Take a look at the complete script to see why it is not generating a note where the user places it.
 

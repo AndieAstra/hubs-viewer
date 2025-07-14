@@ -1,6 +1,7 @@
 import {
   Component, ElementRef, Input, OnInit, OnChanges, SimpleChanges,
-  AfterViewInit, OnDestroy, ViewChild, HostListener
+  AfterViewInit, OnDestroy, ViewChild, HostListener,
+  ChangeDetectorRef
 } from '@angular/core';
 
 import * as THREE from 'three';
@@ -114,6 +115,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     private translate: TranslateService,
     private storageService: StorageService,
     private sceneControlsService: SceneControlsService,
+    private cdRef: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
@@ -127,11 +129,11 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     }
 
     document.addEventListener('fullscreenchange', () => {
-      // Optional fullscreen visuals
     });
 
-    /* give SceneControlsService the ambient light it should edit */
     this.sceneControlsService.setAmbientLight(this.sceneManager.ambientLight);
+
+    this.storageService.registerChangeDetector(this.cdRef);
   }
 
   ngAfterViewInit(): void {
