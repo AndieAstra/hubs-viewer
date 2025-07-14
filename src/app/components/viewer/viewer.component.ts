@@ -76,6 +76,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   transformControls!: TransformControls;
 
   ambientLight = new THREE.AmbientLight(0xffffff, 1);
+  public dirLight!: THREE.DirectionalLight;
+
   private sceneLight!: THREE.DirectionalLight;
   movementHelper!: PlayerMovementHelper;
   private playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
@@ -153,6 +155,18 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
       const isFullscreen = document.fullscreenElement !== null;
       this.sceneManager?.setEscHintVisible(isFullscreen);
     });
+
+ // Create and add ambient light (room light)
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // color, intensity
+    this.scene.add(this.ambientLight);
+
+    // Create and add directional light (sunlight)
+    this.dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    this.dirLight.position.set(5, 10, 7.5);
+    this.scene.add(this.dirLight);
+
+   /* 👉  give the service access to the sun light */
+  this.sceneControlsService.setDirectionalLight(this.sceneManager.dirLight);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -265,6 +279,13 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   onSunlightIntensityChange(event: any): void {
     this.sceneControlsService.updateSunlightIntensity(this.sceneLight, event.target.value);
   }
+
+  onSunlightColorChange(event: Event): void {
+  const hexColor = (event.target as HTMLInputElement).value;
+  if (this.dirLight) {
+    this.dirLight.color = new THREE.Color(hexColor);
+  }
+}
 
   onEyeLevelChange(evt: Event): void {
     const val = +(evt.target as HTMLInputElement).value;

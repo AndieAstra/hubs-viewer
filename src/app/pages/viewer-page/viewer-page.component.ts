@@ -169,10 +169,6 @@ export class ViewerPageComponent implements AfterViewInit {
     this.viewer?.setWalkSpeed(value);
   }
 
-  onSunlightInput(event: Event): void {
-    this.viewer?.onSunlightIntensityChange(event);
-  }
-
   onEyeLevelInput(event: Event): void {
     this.viewer?.onEyeLevelChange(event);
   }
@@ -185,19 +181,23 @@ export class ViewerPageComponent implements AfterViewInit {
     this.storageService.logToConsole('VIEWER.RESET_VIEW');
   }
 
-  onLightColorChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const color = input.value;
-    this.sceneControls.changeLightColorByValue(color);
-    this.storageService.logToConsole(`Changed light color to ${color}`);
+  onSunlightInput(e: Event) {          // ✔ forwards the sun light & value
+    const sun = this.viewer?.sceneManager?.dirLight;
+    if (sun) this.sceneControls.updateSunlightIntensity(
+      sun,
+      +(e.target as HTMLInputElement).value
+    );
   }
 
-  toggleRoomLight(): void {
-    const light = this.viewer?.ambientLight;
-    if (!light) return;
+  onLightColorChange(evt: Event): void {
+  const hex = (evt.target as HTMLInputElement).value;      // "#rrggbb"
+  this.sceneControls.changeSunlightColor(hex);             // ⬅️ new
+  this.storageService.logToConsole(`Sunlight colour → ${hex}`);
+}
 
-    this.sceneControls.toggleRoomLight(light);
-    this.storageService.logToConsole('VIEWER.TOGGLE_ROOM_LIGHT');
+  toggleRoomLight() {                  // ✔ forwards the ambient light
+    const amb = this.viewer?.sceneManager?.ambientLight;
+    if (amb) this.sceneControls.toggleRoomLight(amb);
   }
 
   toggleWireframe(): void {

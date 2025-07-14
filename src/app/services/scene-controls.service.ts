@@ -12,6 +12,7 @@ export class SceneControlsService {
   logToConsole?: (msgKey: string, params?: any) => void;
 
   private ambientLight?: THREE.AmbientLight;
+  private dirLight?: THREE.DirectionalLight;
 
   // Toggle wireframe mode on a model
   toggleWireframe(model: THREE.Object3D, logFn: (msg: string) => void): void {
@@ -29,17 +30,33 @@ export class SceneControlsService {
   toggleRoomLight(light: THREE.Light): void {
     light.visible = !light.visible;
   }
-
-  // Toggle light color
+//
+//
   setAmbientLight(light: THREE.AmbientLight): void {
     this.ambientLight = light;
+  }
+
+  changeAmbientColor(hex: string): void {
+    this.ambientLight?.color.set(hex);
+  }
+//
+//
+  setDirectionalLight(light: THREE.DirectionalLight): void {
+    this.dirLight = light;
+  }
+//
+//
+   changeSunlightColor(hex: string): void {
+    this.dirLight?.color.set(hex);
+    console.log(`Sunlight colour set to ${hex}`);
   }
 
   changeLightColorByValue(color: string): void {
     if (!this.ambientLight) return;
     this.ambientLight.color.set(color);
   }
-
+//
+//
   // Reset camera to its default position and rotation
   resetCameraView(
     camera: THREE.Camera,
