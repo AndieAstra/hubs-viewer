@@ -36,8 +36,11 @@ export class ViewerPageComponent implements AfterViewInit {
   currentLang: 'en' | 'es' = 'en';
   sunIntensity = 1;
 
-  fs!: FullscreenHelper;
+  //fs!: FullscreenHelper;
   showRotateWarning = false;
+
+  get fs(): FullscreenHelper | undefined { return this._fs; }
+  private _fs!: FullscreenHelper;
 
   constructor(
     private router: Router,
@@ -61,7 +64,7 @@ export class ViewerPageComponent implements AfterViewInit {
 
     if (this.isPortrait) {
       this.showRotateWarning = true;
-      if (this.fs.isActive()) {
+      if (this.fs?.isActive()) {
       }
     } else {
       this.showRotateWarning = false;
@@ -106,11 +109,12 @@ export class ViewerPageComponent implements AfterViewInit {
       window.dispatchEvent(new Event('resize'));
     }, 100);
 
-    this.fs = new FullscreenHelper(this.shell.nativeElement);
+    //this.fs = new FullscreenHelper(this.shell.nativeElement);
+    this._fs = new FullscreenHelper(this.viewer!.sceneContainerRef.nativeElement);
   }
 
   ngOnDestroy() {
-    this.fs.dispose();
+    this.fs?.dispose();
   }
 
   // ----- UI Console -----
@@ -122,6 +126,10 @@ export class ViewerPageComponent implements AfterViewInit {
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
+
+  onToggleFullscreen() {
+  this._fs?.toggle();
+}
 
   // ----- Canvas Sizing -----
 
@@ -328,6 +336,7 @@ export class ViewerPageComponent implements AfterViewInit {
 
   enterVRMode(): void {
     this.viewer?.enterVR();
+    this._fs?.enter();
     const container = this.viewer?.sceneContainerRef?.nativeElement;
     if (container) {
       Object.assign(container.style, {
@@ -345,16 +354,18 @@ export class ViewerPageComponent implements AfterViewInit {
 
   exitVRMode(): void {
     this.viewer?.exitVR();
+    this._fs?.exit();
+    setTimeout(() => this.resizeCanvas(), 200);
   }
 
   // ----- Fullscreen -----
 
   enterFullscreen() {
-    this.fs.enter();
+    this.fs?.enter();
   }
 
   exitFullscreen() {
-    this.fs.exit();
+    this.fs?.exit();
   }
 
 }

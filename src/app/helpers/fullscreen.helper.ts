@@ -1,6 +1,8 @@
 export class FullscreenHelper {
   private _listeners = new Set<(active: boolean) => void>();
 
+  isFullscreen(): boolean { return this.isActive(); }
+
   constructor(private host: HTMLElement, private pseudoClass = 'pseudo-fullscreen') {
     this._onNativeChange = this._onNativeChange.bind(this);
     document.addEventListener('fullscreenchange', this._onNativeChange);
