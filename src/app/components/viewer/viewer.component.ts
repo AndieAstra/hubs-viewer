@@ -270,10 +270,6 @@ async toggleFullscreen(): Promise<void> {
   }
 }
 
-  get isPortrait(): boolean {
-    return window.innerHeight > window.innerWidth;
-  }
-
   applyModelTransform() {
     if (this.uploadedModel) {
       this.uploadedModel.scale.set(this.modelScale, this.modelScale, this.modelScale);

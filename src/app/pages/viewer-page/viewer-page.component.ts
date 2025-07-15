@@ -13,6 +13,8 @@ import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { StorageService } from '../../services/storage.service';
+import { FullscreenHelper } from '../../helpers/fullscreen.helper';
+
 
 @Component({
   selector: 'app-viewer-page',
@@ -25,15 +27,17 @@ export class ViewerPageComponent implements AfterViewInit {
   @ViewChild('viewerCanvas', { static: false }) viewerCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('viewerShell', { static: true }) shell!: ElementRef<HTMLElement>;
 
   selectedFile?: File;
   sidebarCollapsed = false;
   showConsole = true;
   consoleMessages: string[] = [];
-
   currentLang: 'en' | 'es' = 'en';
-
   sunIntensity = 1;
+
+  fs!: FullscreenHelper;
+  showRotateWarning = false;
 
   constructor(
     private router: Router,
@@ -47,9 +51,40 @@ export class ViewerPageComponent implements AfterViewInit {
     this.translate.use(this.currentLang);
   }
 
+  get isPortrait(): boolean {
+    return window.matchMedia("(orientation: portrait)").matches;
+  }
+
+ @HostListener('window:resize')
+  onResize(): void {
+    this.resizeCanvas();
+
+    if (this.isPortrait) {
+      this.showRotateWarning = true;   // Show the warning UI
+
+      // Optionally, attempt to enter fullscreen on portrait:
+      if (!this.fs.isFullscreen()) {
+        // Fullscreen must be triggered by user gesture, so you might
+        // only want to prompt user or enable a button here.
+        // You could do this:
+        // this.enterFullscreen();
+
+        // Or prompt the user to enter fullscreen, e.g. by showing a button
+        // or dialog that calls enterFullscreen() on click.
+      }
+    } else {
+      this.showRotateWarning = false;  // Hide warning when landscape
+    }
+  }
+
   @HostListener('document:fullscreenchange')
   onFullscreenChange(): void {
-    this.resizeCanvas();
+    const container = this.viewer?.sceneContainerRef?.nativeElement;
+    if (container) {
+      const isFullscreen = !!document.fullscreenElement;
+      container.classList.toggle('fullscreen-enabled', isFullscreen);
+      this.resizeCanvas();
+    }
   }
 
   @HostListener('window:resize')
@@ -79,6 +114,12 @@ export class ViewerPageComponent implements AfterViewInit {
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 100);
+
+    this.fs = new FullscreenHelper(this.shell.nativeElement);
+  }
+
+  ngOnDestroy() {
+    this.fs.dispose();
   }
 
   // ----- UI Console -----
@@ -94,41 +135,13 @@ export class ViewerPageComponent implements AfterViewInit {
   // ----- Canvas Sizing -----
 
   resizeCanvas(): void {
-    if (!this.viewer) {
-      console.error('Viewer reference is missing.');
-      return;
-    }
+    const container = this.viewer?.sceneContainerRef?.nativeElement;
+    if (!container) return;
 
-    // Assume the viewer component exposes a container for Three.js canvas
-    // and has a resize method on it (as your viewer component seems to have)
-
-    // If you want to resize based on the viewer container's size:
-    const container = this.viewer.sceneContainerRef?.nativeElement ?? null;
-    if (!container) {
-      console.error('Viewer container element is missing.');
-      return;
-    }
-
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-
+    const { width, height } = container.getBoundingClientRect();
     console.log(`Resizing viewer canvas to: ${width}x${height}`);
-
-    // Call viewer's resize handler to update camera, renderer, etc.
-    this.viewer.onResize?.(width, height);
-
-    // Also try to update the renderer size if exposed
-    if (this.viewer.renderer) {
-      this.viewer.renderer.setSize(width, height);
-    }
-  }
-
-  exitFullscreen(): void {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch((err) => {
-        console.warn('Failed to exit fullscreen:', err);
-      });
-    }
+    this.viewer?.onResize?.(width, height);
+    this.viewer?.renderer?.setSize(width, height);
   }
 
   onUploadClick(): void {
@@ -219,101 +232,100 @@ export class ViewerPageComponent implements AfterViewInit {
 
   // ---- Tutorial -------
 
-startTutorial(): void {
-  const t = (k: string) => this.translate.instant(k);
+  startTutorial(): void {
+    const t = (k: string) => this.translate.instant(k);
 
-  /* Helper: reusable buttons ---------------------------------------- */
-  const next = { text: t('BUTTONS_NEXT') || 'Next', action: () => tour.next() };
-  const back = { text: t('BUTTONS_BACK') || 'Back', action: () => tour.back() };
+    /* Helper: reusable buttons ---------------------------------------- */
+    const next = { text: t('BUTTONS_NEXT') || 'Next', action: () => tour.next() };
+    const back = { text: t('BUTTONS_BACK') || 'Back', action: () => tour.back() };
 
-  /* Shepherd tour ---------------------------------------------------- */
-  const tour = new Shepherd.Tour({
-    useModalOverlay: true,
-    defaultStepOptions: {
-      cancelIcon: { enabled: true },
-      scrollTo: { behavior: 'smooth', block: 'center' },
-      classes: 'shepherd-theme-default',
-      modalOverlayOpeningPadding: 8,
-      modalOverlayOpeningRadius: 8,
-      canClickTarget: false,
-      // highlight class we’ll toggle below
-      highlightClass: 'shepherd-highlight'
-    }
-  });
+    /* Shepherd tour ---------------------------------------------------- */
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        cancelIcon: { enabled: true },
+        scrollTo: { behavior: 'smooth', block: 'center' },
+        classes: 'shepherd-theme-default',
+        modalOverlayOpeningPadding: 8,
+        modalOverlayOpeningRadius: 8,
+        canClickTarget: false,
+        // highlight class we’ll toggle below
+        highlightClass: 'shepherd-highlight'
+      }
+    });
 
-  /* 1 ─ Welcome (floating, no target) */
-  tour.addStep({
-    id: 'welcome',
-    text: t('START_TUTORIAL'),
-    buttons: [next]
-  });
+    /* 1 ─ Welcome (floating, no target) */
+    tour.addStep({
+      id: 'welcome',
+      text: t('START_TUTORIAL'),
+      buttons: [next]
+    });
 
-  /* 2 ─ Upload hint (toolbar strip) */
-  tour.addStep({
-    id: 'upload',
-    attachTo: { element: '.upload-instructions', on: 'bottom' },
-    text: t('UPLOAD_INSTRUCTION'),
-    buttons: [back, next]
-  });
+    /* 2 ─ Upload hint (toolbar strip) */
+    tour.addStep({
+      id: 'upload',
+      attachTo: { element: '.upload-instructions', on: 'bottom' },
+      text: t('UPLOAD_INSTRUCTION'),
+      buttons: [back, next]
+    });
 
-  /* 3 ─ Scene controls (left sidebar) */
-  tour.addStep({
-    id: 'scene-controls',
-    attachTo: { element: '.sidebar-left', on: 'right' },
-    text: t('SCENE_SETTINGS'),
-    buttons: [back, next]
-  });
+    /* 3 ─ Scene controls (left sidebar) */
+    tour.addStep({
+      id: 'scene-controls',
+      attachTo: { element: '.sidebar-left', on: 'right' },
+      text: t('SCENE_SETTINGS'),
+      buttons: [back, next]
+    });
 
-  /* 4 ─ 3‑D viewer (canvas area) – anchor on **left** so card isn’t
-         hidden by fullscreen canvas; the modal overlay still surrounds
-         the viewer to draw attention. */
-  tour.addStep({
-    id: 'canvas',
-    attachTo: { element: '.canvas-container', on: 'left' },
-    text: t('MODEL_SETTINGS'),
-    buttons: [back, next]
-  });
+    /* 4 ─ 3‑D viewer (canvas area) – anchor on **left** so card isn’t
+          hidden by fullscreen canvas; the modal overlay still surrounds
+          the viewer to draw attention. */
+    tour.addStep({
+      id: 'canvas',
+      attachTo: { element: '.canvas-container', on: 'left' },
+      text: t('MODEL_SETTINGS'),
+      buttons: [back, next]
+    });
 
-  /* 5 ─ Console (bottom bar) */
-  tour.addStep({
-    id: 'console',
-    attachTo: { element: '.bottom-bar', on: 'top' },
-    text: t('CONSOLE_SHEPHARD'),
-    buttons: [back, next]
-  });
+    /* 5 ─ Console (bottom bar) */
+    tour.addStep({
+      id: 'console',
+      attachTo: { element: '.bottom-bar', on: 'top' },
+      text: t('CONSOLE_SHEPHARD'),
+      buttons: [back, next]
+    });
 
-  /* 6 ─ Finish – point to the ☰ toggle so users know how to reopen
-         the sidebar when it’s collapsed on mobile. */
-  tour.addStep({
-    id: 'finish',
-    attachTo: { element: '.sidebar-toggle', on: 'bottom' },
-    text: t('FINISH_TUTORIAL'),
-    buttons: [back,
+    /* 6 ─ Finish – point to the ☰ toggle so users know how to reopen
+          the sidebar when it’s collapsed on mobile. */
+    tour.addStep({
+      id: 'finish',
+      attachTo: { element: '.sidebar-toggle', on: 'bottom' },
+      text: t('FINISH_TUTORIAL'),
+      buttons: [back,
 
-    { text: t('BUTTONS_DONE') || 'Done', action: () => tour.complete() }]
-  });
+      { text: t('BUTTONS_DONE') || 'Done', action: () => tour.complete() }]
+    });
 
-  /* Mark tutorial as seen ------------------------------------------- */
-  const markSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
-  tour.on('complete', markSeen);
-  tour.on('cancel',   markSeen);
+    /* Mark tutorial as seen ------------------------------------------- */
+    const markSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
+    tour.on('complete', markSeen);
+    tour.on('cancel',   markSeen);
 
-  /* Highlight target element while its step is visible -------------- */
-  tour.on('show', () => {
-    // Shepherd adds `is-active` class to the current step element, so
-    // we can query the attachTo target via API:
-    const el = tour.getCurrentStep()?.options.attachTo?.element as string | undefined;
-    if (el) document.querySelector(el)?.classList.add('shepherd-highlight');
-  });
-  tour.on('hide', () =>
-    document
-      .querySelectorAll('.shepherd-highlight')
-      .forEach(el => el.classList.remove('shepherd-highlight'))
-  );
+    /* Highlight target element while its step is visible -------------- */
+    tour.on('show', () => {
+      // Shepherd adds `is-active` class to the current step element, so
+      // we can query the attachTo target via API:
+      const el = tour.getCurrentStep()?.options.attachTo?.element as string | undefined;
+      if (el) document.querySelector(el)?.classList.add('shepherd-highlight');
+    });
+    tour.on('hide', () =>
+      document
+        .querySelectorAll('.shepherd-highlight')
+        .forEach(el => el.classList.remove('shepherd-highlight'))
+    );
 
-  tour.start();
-}
-
+    tour.start();
+  }
 
   // ----- Language -----
 
@@ -327,9 +339,6 @@ startTutorial(): void {
 
   enterVRMode(): void {
     this.viewer?.enterVR();
-
-    // If you want to resize the viewer canvas to fullscreen here,
-    // you should do it through the viewer component or container, not a separate canvas
     const container = this.viewer?.sceneContainerRef?.nativeElement;
     if (container) {
       Object.assign(container.style, {
@@ -348,4 +357,13 @@ startTutorial(): void {
   exitVRMode(): void {
     this.viewer?.exitVR();
   }
+
+  enterFullscreen() {
+    this.fs.enter();
+  }
+
+  exitFullscreen() {
+    this.fs.exit();
+  }
+
 }

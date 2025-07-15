@@ -63,3 +63,12 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
   box-shadow: 0 0 0 4px #ffeb3b, 0 0 12px 4px rgba(255, 235, 59, 0.6);
   border-radius: 12px;
 }
+
+ .pseudo-fullscreen {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100dvh; /* iOS 17+, Chrome 108+ */
+      background: black;
+      z-index: 1000;
+    }

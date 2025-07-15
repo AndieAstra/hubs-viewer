@@ -17,7 +17,7 @@ html, body {
   font-family: $font-family;
   user-select: none;
   touch-action: manipulation;
-  overflow: hidden; // no scrollbars
+  overflow: hidden;
   background: $bg-main;
 }
 
@@ -80,7 +80,7 @@ app-root, .unity-layout {
   overflow-y: auto;
   border-radius: 8px;
   flex-shrink: 0;
-  max-height: calc(100vh - 3rem); // prevent overflow
+  max-height: calc(100vh - 3rem);
   transition: transform 0.3s ease-in-out;
 
   &.collapsed {
@@ -98,7 +98,8 @@ app-root, .unity-layout {
   }
 
   .sidebar-button-row,
-  .mobile-only-buttons {
+  .mobile-only-buttons,
+  .button-row {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
@@ -106,10 +107,6 @@ app-root, .unity-layout {
   }
 
   .button-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
     margin-bottom: 1rem;
 
     button.kid-button {
@@ -155,8 +152,16 @@ app-root, .unity-layout {
 }
 
 /* ===================== CANVAS ===================== */
+.canvas-container,
+.canvas-container > .viewer-container {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
 .canvas-container {
-  flex: 1;
   background: black;
   padding: 0.5rem;
   border: 2px solid #ccc;
@@ -166,16 +171,6 @@ app-root, .unity-layout {
   justify-content: center;
   min-height: 200px;
   overflow: hidden;
-  height: 100%; // fill remaining height
-
-  .canvas-container,
-  .canvas-container > .viewer-container {
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 0;
-    width: 100%;
-    height: 100%;
-  }
 
   canvas {
     width: 100%;
@@ -331,6 +326,16 @@ app-root, .unity-layout {
     border-radius: 0 !important;
   }
 
+  :host ::ng-deep .canvas-container.fullscreen-enabled {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    z-index: 1000;
+    background-color: black;
+  }
+
   .sidebar-left,
   .sidebar-right,
   .bottom-bar,
@@ -346,19 +351,8 @@ app-root, .unity-layout {
   }
 
   .vr-exit-button {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 10000;
+    @extend .fullscreen-exit-button;
     background: #ff8a80;
-    border: none;
-    padding: 0.5rem 1rem;
-    font-weight: bold;
-    border-radius: 8px;
-    cursor: pointer;
-    color: white;
-    font-size: 1rem;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   }
 }
 
@@ -399,28 +393,24 @@ app-root, .unity-layout {
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 
   @media (min-width: 769px) {
-    display: none; // Desktop has ESC key
+    display: none;
   }
 }
 
 /* ===================== SHEPHERD (TUTORIAL) ===================== */
-
-/* Allow scrolling while tutorial is active and dampen iOS bounce */
 body.shepherd-active {
   overflow: auto !important;
   overscroll-behavior: contain;
 }
 
-/* Dimmed page overlay */
 .shepherd-modal-overlay-container {
   position: fixed !important;
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
-  z-index: 11000 !important; // above VR & fullscreen layers
+  z-index: 11000 !important;
   transition: opacity .25s ease;
 }
 
-/* Core tooltip */
 .shepherd-element {
   z-index: 11010 !important;
   max-width: min(90vw, 420px);
@@ -438,10 +428,9 @@ body.shepherd-active {
 }
 
 canvas, model-viewer, .your-3d-container {
-  z-index: 0 !important; /* Lower than shepherd */
+  z-index: 0 !important;
 }
 
-/* Title */
 .shepherd-title {
   font-size: 1.25rem;
   font-weight: 700;
@@ -450,13 +439,11 @@ canvas, model-viewer, .your-3d-container {
   line-height: 1.2;
 }
 
-/* Text */
 .shepherd-text {
   color: #333;
   line-height: 1.45;
 }
 
-/* Footer & buttons */
 .shepherd-footer {
   margin-top: 0.75rem;
   display: flex;
@@ -478,13 +465,11 @@ canvas, model-viewer, .your-3d-container {
   }
 }
 
-/* Arrow matches card */
 .shepherd-arrow::before {
   background: #fff !important;
   border: 2px solid $accent-color !important;
 }
 
-/* Highlight ring on the target element */
 .shepherd-highlight {
   position: relative;
   isolation: isolate;
@@ -493,7 +478,6 @@ canvas, model-viewer, .your-3d-container {
   transition: box-shadow 0.25s ease-in-out;
 }
 
-/* Keep interactions on highlighted canvas */
 .canvas-container.shepherd-highlight canvas {
   pointer-events: auto;
 }
@@ -502,4 +486,20 @@ canvas, model-viewer, .your-3d-container {
   .shepherd-element {
     max-width: 95vw;
   }
+}
+
+.rotate-device-warning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 50px;
+  background: #fffae6;
+  color: #333;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
 }
