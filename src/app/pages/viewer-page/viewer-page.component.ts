@@ -60,20 +60,11 @@ export class ViewerPageComponent implements AfterViewInit {
     this.resizeCanvas();
 
     if (this.isPortrait) {
-      this.showRotateWarning = true;   // Show the warning UI
-
-      // Optionally, attempt to enter fullscreen on portrait:
-      if (!this.fs.isFullscreen()) {
-        // Fullscreen must be triggered by user gesture, so you might
-        // only want to prompt user or enable a button here.
-        // You could do this:
-        // this.enterFullscreen();
-
-        // Or prompt the user to enter fullscreen, e.g. by showing a button
-        // or dialog that calls enterFullscreen() on click.
+      this.showRotateWarning = true;
+      if (this.fs.isActive()) {
       }
     } else {
-      this.showRotateWarning = false;  // Hide warning when landscape
+      this.showRotateWarning = false;
     }
   }
 

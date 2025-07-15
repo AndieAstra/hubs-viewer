@@ -78,25 +78,34 @@ canvas:-webkit-full-screen {
 }
 
 .fullscreen-btn {
-  position: fixed;
-  bottom: 20px; // ✅ Pushes the button 20px from the bottom of the screen
-  right: 20px;
-  z-index: 999;
-  padding: 8px 12px;
-  font-size: 14px;
-  background-color: rgba(0, 0, 0, 0.7);
-  color: white;
-  border: none;
-  border-radius: 6px;
+  display: inline-flex; /* or block */
+  align-items: center;
+  justify-content: center;
+  width: auto; /* or a fixed width if needed */
+  padding: 10px 16px;
   cursor: pointer;
   user-select: none;
-}
+  border: none;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 9999;
 
-@media (max-width: 768px) {
-  .fullscreen-btn {
+  &:hover,
+  &:focus {
+    background-color: rgba(0, 0, 0, 0.9);
+    outline: none;
+  }
+
+  @media (max-width: 768px) {
     bottom: 12px;
     right: 12px;
     font-size: 16px;
+    padding: 12px 18px;
   }
 }
 

@@ -17,6 +17,7 @@ import { StorageService } from '../../services/storage.service';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { VrControllerHelper } from '../../helpers/vr-controller.helper';
 import { SceneManagerComponent } from '../scene-manager/scene-manager.component';
+import { toggleFullscreen } from '../../helpers/fullscreen.helper';
 
 export interface SavedModel {
   name: string;
@@ -220,56 +221,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneManager?.resize();
   }
 
-async toggleFullscreen(): Promise<void> {
-  const container = this.sceneContainerRef?.nativeElement
-                 ?? this.renderer?.domElement as HTMLElement | undefined;
-  if (!container) return;
-
-  const enterFullscreen = async () => {
-    const req = container.requestFullscreen
-             || (container as any).webkitRequestFullscreen
-             || (container as any).msRequestFullscreen;
-
-    if (!req) {
-      console.warn('Fullscreen API not supported');
-      return;
-    }
-
-    await req.call(container);
-
-    // Try locking to landscape on supported devices
-    try {
-      const ori = screen.orientation as ScreenOrientation & {
-        lock?: (mode: 'any' | 'natural' | 'landscape' | 'portrait' | 'landscape-primary' | 'landscape-secondary' | 'portrait-primary' | 'portrait-secondary') => Promise<void>;
-        unlock?: () => void;
-      };
-      await ori?.lock?.('landscape');
-    } catch (e) {
-      console.warn('Orientation lock failed or unsupported:', e);
-    }
-
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
-  };
-
-  const exitFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen().catch(() => {});
-    }
-
-    try {
-      (screen.orientation as any)?.unlock?.();
-    } catch {}
-
-    setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
-  };
-
-  try {
-    document.fullscreenElement ? await exitFullscreen() : await enterFullscreen();
-  } catch (err) {
-    console.error('Fullscreen toggle failed:', err);
-  }
-}
-
   applyModelTransform() {
     if (this.uploadedModel) {
       this.uploadedModel.scale.set(this.modelScale, this.modelScale, this.modelScale);
@@ -450,5 +401,13 @@ async toggleFullscreen(): Promise<void> {
   loadFile(file: File): void {
     this.handleLocalFile(file);
   }
+
+  async onToggleFullscreen(): Promise<void> {
+  const container = this.sceneContainerRef?.nativeElement
+                 ?? this.renderer?.domElement as HTMLElement | undefined;
+  if (container) {
+    await toggleFullscreen(container);
+  }
+}
 
 }
