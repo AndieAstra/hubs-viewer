@@ -1,3 +1,14 @@
+:host {
+  /* create no new stacking‑context */
+  position: static !important;
+  z-index: auto !important;
+}
+
+canvas {
+  position: absolute;  /* keep your layout */
+  z-index: 0 !important;
+}
+
 // -------- VR Viewer ---------------------
 
 .viewer-container {

@@ -252,15 +252,7 @@ export class ViewerPageComponent implements AfterViewInit {
       buttons: [next]
     });
 
-    /* 2 ─ Upload hint (toolbar strip) */
-    tour.addStep({
-      id: 'upload',
-      attachTo: { element: '.upload-instructions', on: 'bottom' },
-      text: t('UPLOAD_INSTRUCTION'),
-      buttons: [back, next]
-    });
-
-    /* 3 ─ Scene controls (left sidebar) */
+    /* 2 ─ Scene controls (left sidebar) */
     tour.addStep({
       id: 'scene-controls',
       attachTo: { element: '.sidebar-left', on: 'right' },
@@ -268,17 +260,24 @@ export class ViewerPageComponent implements AfterViewInit {
       buttons: [back, next]
     });
 
-    /* 4 ─ 3‑D viewer (canvas area) – anchor on **left** so card isn’t
+    /* 3 ─ 3‑D viewer (canvas area) – anchor on **left** so card isn’t
           hidden by fullscreen canvas; the modal overlay still surrounds
           the viewer to draw attention. */
     tour.addStep({
       id: 'canvas',
-      attachTo: { element: '.canvas-container', on: 'left' },
+      attachTo: { element: '#canvas-tour-target', on: 'right' },
       text: t('MODEL_SETTINGS'),
-      buttons: [back, next]
+      buttons: [back, next],
+       when: {
+    show: () => {
+      setTimeout(() => {
+        document.querySelector('.shepherd-element')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
+  }
     });
 
-    /* 5 ─ Console (bottom bar) */
+    /* 4 ─ Console (bottom bar) */
     tour.addStep({
       id: 'console',
       attachTo: { element: '.bottom-bar', on: 'top' },
@@ -286,11 +285,10 @@ export class ViewerPageComponent implements AfterViewInit {
       buttons: [back, next]
     });
 
-    /* 6 ─ Finish – point to the ☰ toggle so users know how to reopen
+    /* 5 ─ Finish – point to the ☰ toggle so users know how to reopen
           the sidebar when it’s collapsed on mobile. */
     tour.addStep({
       id: 'finish',
-      attachTo: { element: '.sidebar-toggle', on: 'bottom' },
       text: t('FINISH_TUTORIAL'),
       buttons: [back,
 
@@ -348,6 +346,8 @@ export class ViewerPageComponent implements AfterViewInit {
   exitVRMode(): void {
     this.viewer?.exitVR();
   }
+
+  // ----- Fullscreen -----
 
   enterFullscreen() {
     this.fs.enter();

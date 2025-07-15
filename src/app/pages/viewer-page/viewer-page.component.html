@@ -153,7 +153,11 @@
 
     <!-- 🖼️ Canvas Area -->
     <section class="canvas-container">
+      <div class="viewer-wrapper" id="canvas-tour-target">
+
       <app-viewer #viewer></app-viewer>
+
+      </div>
 
       <!-- 👓 Exit VR Button -->
       @if(viewer.isVRMode) {

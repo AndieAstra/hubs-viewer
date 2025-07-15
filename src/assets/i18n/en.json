@@ -49,8 +49,6 @@
 
   "START_TUTORIAL": "Welcome to the editor! Let’s take a quick tour.",
 
-  "UPLOAD_INSTRUCTION": "Start by uploading a 3D model (glb) here. Then use the WASD keys to move and SPACE to jump.",
-
   "SCENE_SETTINGS": "Use these buttons to save, load, and reset your scene.",
 
   "MODEL_SETTINGS": "Here is where your 3D model will appear.",
