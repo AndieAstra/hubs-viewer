@@ -1,15 +1,15 @@
 <nav>
 
-<!------ Mobile ------->
+  <!-- 📱 MOBILE ----------------------------------------------------------->
+  @if (isMobile) {
 
-@if (isMobile) {
-
-    <div class="dropdown-nav">
-      <button class="dropdown-toggle" (click)="toggleDropdown()">
+    <!-- Main mobile menu -->
+    <div class="mobile-nav mobile-only">
+      <button class="mobile-dropdown-toggle" (click)="toggleDropdown()">
         ☰ {{ 'NAV.MENU' | translate }}
       </button>
 
-      <div class="dropdown-content" [class.show]="dropdownOpen">
+      <div class="mobile-dropdown-content" [class.show]="dropdownOpen">
         <button (click)="goto('/3dviewer')">   {{ 'NAV.VIEWER'   | translate }}</button>
         <button (click)="goto('/panorama')">   {{ 'NAV.PANORAMA' | translate }}</button>
         <button (click)="goto('/contact')">    {{ 'NAV.CONTACT'  | translate }}</button>
@@ -17,49 +17,50 @@
       </div>
     </div>
 
-    <div class="language-dropdown">
-      <button class="dropdown-toggle" (click)="toggleLangDropdown()">
+    <!-- Mobile‑only language switcher -->
+    <div class="language-dropdown mobile-only">
+      <button class="language-dropdown-toggle" (click)="toggleLangDropdown()">
         {{ 'NAV.LANGUAGE' | translate }}
       </button>
 
-      <div class="dropdown-content" [class.show]="langDropdownOpen">
+      <div class="language-dropdown-content" [class.show]="langDropdownOpen">
         <button (click)="useLanguage('en')">🇺🇸 English</button>
         <button (click)="useLanguage('es')">🇪🇸 Español</button>
       </div>
     </div>
   }
 
-<!------ Desktop ------->
-
+  <!-- 💻 DESKTOP ---------------------------------------------------------->
   @if (!isMobile) {
 
-    <div class="language-dropdown">
-      <button class="dropdown-toggle" (click)="toggleLangDropdown()">
+    <!-- Desktop language switcher -->
+    <div class="language-dropdown desktop-only">
+      <button class="language-dropdown-toggle" (click)="toggleLangDropdown()">
         {{ 'NAV.LANGUAGE' | translate }}
       </button>
 
-      <div class="dropdown-content" [class.show]="langDropdownOpen">
-      <button (click)="useLanguage('en')">
-        <img src="assets/flags/us.svg" alt="English" width="20" style="margin-right: 6px;">
-        English
-      </button>
+      <div class="language-dropdown-content" [class.show]="langDropdownOpen">
+        <button (click)="useLanguage('en')">
+          <img src="assets/flags/us.svg" alt="English" width="20" style="margin-right: 6px;">
+          English
+        </button>
 
-      <button (click)="useLanguage('es')">
-        <img src="assets/flags/es.svg" alt="Español" width="20" style="margin-right: 6px;">
-        Español
-      </button>
-
+        <button (click)="useLanguage('es')">
+          <img src="assets/flags/es.svg" alt="Español" width="20" style="margin-right: 6px;">
+          Español
+        </button>
       </div>
     </div>
 
     <!-- Horizontal button strip -->
-    <div class="desktop-nav">
+    <div class="desktop-nav desktop-only">
       <button (click)="goto('/3dviewer')">   {{ 'NAV.VIEWER'   | translate }}</button>
       <button (click)="goto('/panorama')">   {{ 'NAV.PANORAMA' | translate }}</button>
       <button (click)="goto('/contact')">    {{ 'NAV.CONTACT'  | translate }}</button>
       <button (click)="goto('/bug-report')"> {{ 'NAV.BUG'      | translate }}</button>
     </div>
   }
+
 </nav>
 
 <router-outlet></router-outlet>

@@ -19,9 +19,11 @@
       <!-- 📱 Mobile VR -->
       <div class="mobile-only-buttons">
         <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
+
         @if (viewer.isVRMode) {
           <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
         }
+
       </div>
 
       <!-- 🔧 Scene Settings -->

@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
@@ -12,7 +12,7 @@ import { filter } from 'rxjs/operators';
   templateUrl: './app.component.html',
   styleUrl   : './app.component.scss'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
 
   isMobile         = window.innerWidth <= 768;
   @HostListener('window:resize')
@@ -42,6 +42,11 @@ export class AppComponent {
     router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => (this.dropdownOpen = false));
+  }
+
+
+  ngOnInit(){
+     this.isMobile = window.innerWidth <= 768;
   }
 
   /* ─────── menu helpers ─────── */
