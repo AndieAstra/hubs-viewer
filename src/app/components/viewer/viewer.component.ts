@@ -278,80 +278,105 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneManager?.setEyeLevel(val);
   }
 
-  enterVR(): void {
-    if (!/Mobi|Android/i.test(navigator.userAgent)) {
-      this.snackBar.open(this.translate.instant('MESSAGES.VR_MOBILE_ONLY'), 'OK', { duration: 3000 });
-      return;
-    }
+ enterVR(): void {
+  if (!/Mobi|Android/i.test(navigator.userAgent)) {
+    this.snackBar.open(this.translate.instant('MESSAGES.VR_MOBILE_ONLY'), 'OK', { duration: 3000 });
+    return;
+  }
 
-    if (!confirm(this.translate.instant('MESSAGES.ENTER_VR_CONFIRM'))) return;
+  if (!confirm(this.translate.instant('MESSAGES.ENTER_VR_CONFIRM'))) return;
 
-    this.isVRMode = true;
-    document.body.classList.add('vr-mode');
+  this.isVRMode = true;
+  document.body.classList.add('vr-mode');
 
-    const container = this.sceneContainerRef.nativeElement;
-    const requestFullscreen = container.requestFullscreen
-      || (container as any).webkitRequestFullscreen
-      || (container as any).msRequestFullscreen;
+  const container = this.sceneContainerRef.nativeElement;
 
-    requestFullscreen?.call(container).catch((err: any) =>
-      console.warn(this.translate.instant('ERRORS.FULLSCREEN_FAILED'), err)
+  // Request fullscreen on the container element
+  const requestFullscreen = container.requestFullscreen
+    || (container as any).webkitRequestFullscreen
+    || (container as any).msRequestFullscreen;
+
+  requestFullscreen?.call(container).catch((err: any) =>
+    console.warn(this.translate.instant('ERRORS.FULLSCREEN_FAILED'), err)
+  );
+
+  // Try to lock screen orientation to landscape
+  try {
+    (screen.orientation as any)?.lock?.('landscape').catch((err: any) =>
+      console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err)
     );
+  } catch (err) {
+    console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
+  }
 
-    try {
-      (screen.orientation as any)?.lock?.('landscape').catch((err: any) =>
-        console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err)
+  // Save original container size and camera aspect
+  this.originalSize = {
+    width: container.clientWidth,
+    height: container.clientHeight,
+  };
+  this.originalCameraAspect = this.camera?.aspect;
+
+  // Initialize and set size for stereoEffect
+  if (!this.stereoEffect) {
+    this.stereoEffect = new StereoEffect(this.renderer);
+  }
+  this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
+
+  // Start VR rendering loop using stereoEffect
+  this.renderer.setAnimationLoop(() => this.renderVR());
+
+  // Push VR state to history to handle back button exit
+  history.pushState({ vr: true }, '');
+  window.onpopstate = () => {
+    if (this.isVRMode) this.exitVR();
+  };
+}
+
+exitVR(): void {
+  this.isVRMode = false;
+  document.body.classList.remove('vr-mode');
+
+  // Stop VR animation loop
+  this.renderer?.setAnimationLoop(null);
+
+  // Exit fullscreen if active
+  try {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch((err: any) =>
+        console.warn(this.translate.instant('ERRORS.EXIT_FULLSCREEN_FAILED'), err)
       );
-    } catch (err) {
-      console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
     }
 
-    this.originalSize = {
-      width: container.clientWidth,
-      height: container.clientHeight,
-    };
-    this.originalCameraAspect = this.camera?.aspect;
-
-    if (!this.stereoEffect) {
-      this.stereoEffect = new StereoEffect(this.renderer);
-    }
-    this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setAnimationLoop(() => this.renderVR());
-
-    history.pushState({ vr: true }, '');
-    window.onpopstate = () => {
-      if (this.isVRMode) this.exitVR();
-    };
+    // Unlock screen orientation
+    (screen.orientation as any)?.unlock?.();
+  } catch (e) {
+    console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
   }
 
-  exitVR(): void {
-    this.isVRMode = false;
-    document.body.classList.remove('vr-mode');
-
-    this.renderer?.setAnimationLoop(null);
-    try {
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch((err: any) =>
-          console.warn(this.translate.instant('ERRORS.EXIT_FULLSCREEN_FAILED'), err)
-        );
-      }
-      (screen.orientation as any)?.unlock?.();
-    } catch (e) {
-      console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
-    }
-
-    if (this.renderer && this.camera && this.originalSize) {
-      this.camera.aspect = this.originalCameraAspect ?? window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(this.originalSize.width, this.originalSize.height);
-    }
-
-    this.controls.enabled = true;
-    this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
-
-    if (history.state?.vr) history.back();
-    window.onpopstate = null;
+  // Restore camera aspect ratio and renderer size
+  if (this.renderer && this.camera && this.originalSize) {
+    this.camera.aspect = this.originalCameraAspect ?? window.innerWidth / window.innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(this.originalSize.width, this.originalSize.height);
   }
+
+  // Reset container styles (in case you changed them on enter VR)
+  const container = this.sceneContainerRef.nativeElement;
+  Object.assign(container.style, {
+    width: '',
+    height: '',
+    position: '',
+    top: '',
+    left: '',
+    display: '',
+  });
+
+  this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
+
+  // Go back in history if VR state was pushed
+  if (history.state?.vr) history.back();
+  window.onpopstate = null;
+}
 
   private renderVR = () => {
     if (this.vrHelper) {

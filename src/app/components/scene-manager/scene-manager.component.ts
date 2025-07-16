@@ -21,6 +21,8 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
   @Input() container!: HTMLElement;
   @Input() cameraHeight: number = 1.6;
 
+  public isVRMode = false;
+
   playerObj: THREE.Object3D = new THREE.Object3D();        // will be overwritten by controls.getObject()
   scene!: THREE.Scene;
   camera!: THREE.PerspectiveCamera;
@@ -135,16 +137,21 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
     this.gui?.destroy();
   }
 
-  animate = (time: number): void => {
-    if (!this.scene || !this.controls) return;
+ animate = (time: number): void => {
+  if (!this.scene || !this.controls) return;
 
-    const delta = (time - this.prevTime) / 1000 || 0;
-    this.prevTime = time;
+  const delta = (time - this.prevTime) / 1000 || 0;
+  this.prevTime = time;
 
-    // VR controller input
+  if (this.isVRMode) {
+    // Update VR controllers and movement from VR input
     this.vrHelper?.update?.();
 
-    // Player movement
+    // TODO: add VR-based movement here if needed, e.g.:
+    // this.vrHelper.applyMovementTo(this.playerObj);
+
+  } else {
+    // Apply friction and update keyboard-based movement only outside VR
     this.playerMovementHelper?.applyFriction?.(delta, 5.0);
     this.playerMovementHelper.updateKeyboardMovement(
       delta,
@@ -153,26 +160,27 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
       this.scene,
       this.camera
     );
+  }
 
-    // ESC hint sprite billboard logic
-    if (this.escHintSprite) {
-      const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
-      this.escHintSprite.visible = isInFullscreen;
+  // ESC hint sprite billboard logic - always update
+  if (this.escHintSprite) {
+    const isInFullscreen = document.fullscreenElement === this.renderer.domElement;
+    this.escHintSprite.visible = isInFullscreen;
 
-      if (isInFullscreen) {
-        const cameraDirection = new THREE.Vector3();
-        this.camera.getWorldDirection(cameraDirection);
-        const cameraPosition = this.camera.position.clone();
+    if (isInFullscreen) {
+      const cameraDirection = new THREE.Vector3();
+      this.camera.getWorldDirection(cameraDirection);
 
-        this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
-        this.escHintSprite.position.y -= 1.2;
-        this.escHintSprite.quaternion.copy(this.camera.quaternion);
-      }
+      const cameraPosition = this.camera.position.clone();
+      this.escHintSprite.position.copy(cameraPosition).add(cameraDirection.multiplyScalar(2));
+      this.escHintSprite.position.y -= 1.2;
+      this.escHintSprite.quaternion.copy(this.camera.quaternion);
     }
+  }
 
-    this.render();
-    requestAnimationFrame(this.animate);
-  };
+  this.render();
+  requestAnimationFrame(this.animate);
+};
 
   private initUI(): void {
     this.escHintDiv = document.createElement('div');
@@ -199,6 +207,8 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
     //this.gui = new GUI({ width: 280 });
     this.gui.domElement.style.display = 'none';
   }
+
+
 
   private initSceneObjects(): void {
     const floor = new THREE.Mesh(
