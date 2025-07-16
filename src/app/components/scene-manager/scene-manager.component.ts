@@ -65,34 +65,7 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
 
   init(): void {
     console.log('Scene initialized.');
-
-    if (!this.enterVRButton) {
-      this.enterVRButton = document.createElement('button');
-      this.enterVRButton.innerText = 'Enter VR';
-      this.enterVRButton.style.position = 'absolute';
-      this.enterVRButton.style.bottom = '20px';
-      this.enterVRButton.style.left = '20px';
-      this.enterVRButton.style.zIndex = '999';
-      this.enterVRButton.onclick = () => this.enterVR();
-      this.container.appendChild(this.enterVRButton);
-    }
-
-    if (!this.exitVRButton) {
-      this.exitVRButton = document.createElement('button');
-      this.exitVRButton.innerText = 'Exit VR';
-      this.exitVRButton.style.position = 'absolute';
-      this.exitVRButton.style.bottom = '20px';
-      this.exitVRButton.style.left = '100px';
-      this.exitVRButton.style.zIndex = '999';
-      this.exitVRButton.style.display = 'none';
-      this.exitVRButton.onclick = () => this.exitVR();
-      this.container.appendChild(this.exitVRButton);
-    }
-
     this.updateUIForVR(false);
-
-    this.enterVRButton.style.display = this.isVRMode ? 'none' : 'block';
-    this.exitVRButton.style.display = this.isVRMode ? 'block' : 'none';
   }
 
   ngOnInit(): void {
@@ -167,42 +140,6 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
         this.stereoscopeHelper.disable();
       }
     });
-
-    // Add VR Buttons — already in init() but repeated here (optional, can remove duplication)
-    this.enterVRButton = document.createElement('button');
-    this.enterVRButton.innerText = 'Enter VR';
-    Object.assign(this.enterVRButton.style, {
-      position: 'absolute',
-      bottom: '20px',
-      left: '20px',
-      padding: '10px 16px',
-      background: '#222',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      zIndex: '999',
-    });
-    this.enterVRButton.onclick = () => this.enterVR();
-    this.container.appendChild(this.enterVRButton);
-
-    this.exitVRButton = document.createElement('button');
-    this.exitVRButton.innerText = 'Exit VR';
-    Object.assign(this.exitVRButton.style, {
-      position: 'absolute',
-      bottom: '20px',
-      left: '20px',
-      padding: '10px 16px',
-      background: '#800',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      display: 'none',
-      zIndex: '999',
-    });
-    this.exitVRButton.onclick = () => this.exitVR();
-    this.container.appendChild(this.exitVRButton);
 
     this.renderer.xr.enabled = true;
     this.renderer.setAnimationLoop(this.animate);
