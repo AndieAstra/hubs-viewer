@@ -535,14 +535,77 @@ async loadFile(file: File): Promise<void> {
   const fileName = file.name.toLowerCase();
 
   if (fileName.endsWith('.json')) {
-    await this.loadJsonScene(file); // handles JSON scene loading
+    try {
+      await this.loadJsonScene(file); // Handles JSON scene loading
+    } catch (err) {
+      console.error('Failed to load JSON scene:', err);
+      this.storageService.logToConsole('ERROR_LOADING_JSON_SCENE');
+    }
   } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
-    await this.handleLocalModelFile(file); // handles single model loading
+    await this.handleLocalModelFile(file); // Handles single model loading
   } else {
     console.error('Unsupported file type:', file.name);
     this.storageService.logToConsole('ERROR.UNSUPPORTED_FILE_TYPE');
   }
 }
+
+
+// async loadJsonScene(file: File): Promise<void> {
+//   const reader = new FileReader();
+
+//   reader.onload = async () => {
+//     try {
+//       const jsonText = reader.result as string;
+//       const projectData = JSON.parse(jsonText) as ProjectData;
+
+//       const sceneData = projectData.scene;
+//       if (!sceneData) throw new Error('No scene data found in file.');
+
+
+
+
+
+//       this.clearScene(); // make sure you implement this
+//       this.restoreScene(sceneData); // make sure you implement this
+
+//       if (!this.scene) throw new Error('Scene not initialized.');
+
+//       for (const modelData of sceneData.models) {
+//         const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
+//         const blob = new Blob([binary], { type: 'model/gltf-binary' });
+//         const url = URL.createObjectURL(blob);
+
+//         const loader = new GLTFLoader();
+//         const gltf = await loader.loadAsync(url);
+//         URL.revokeObjectURL(url);
+
+//         const model = gltf.scene;
+//         model.name = modelData.name;
+//         model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
+//         model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+//         model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+//         model.userData['isLoadedModel'] = true;
+//         model.userData['fileName'] = modelData.fileName;
+
+//         this.scene.add(model);
+//       }
+
+//       this.sceneLoaded = true;
+//       this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
+//     } catch (e) {
+//       console.error('Failed to load JSON scene:', e);
+//       this.storageService.logToConsole('ERROR_LOADING_SCENE');
+//     }
+//   };
+
+//   reader.onerror = () => {
+//     this.storageService.logToConsole('ERROR_READING_FILE');
+//   };
+
+//   reader.readAsText(file);
+// }
+
+
 
 async loadJsonScene(file: File): Promise<void> {
   const reader = new FileReader();
@@ -550,18 +613,29 @@ async loadJsonScene(file: File): Promise<void> {
   reader.onload = async () => {
     try {
       const jsonText = reader.result as string;
-      const projectData = JSON.parse(jsonText) as ProjectData;
+      const sceneData = JSON.parse(jsonText) as SceneData;  // Directly parse as SceneData
 
-      const sceneData = projectData.scene;
-      if (!sceneData) throw new Error('No scene data found in file.');
+      if (!sceneData) {
+        throw new Error('No scene data found in file.');
+      }
 
-      this.clearScene(); // make sure you implement this
-      this.restoreScene(sceneData); // make sure you implement this
+      // Clear any existing objects in the scene before loading new ones
+      this.clearScene();
 
-      if (!this.scene) throw new Error('Scene not initialized.');
+      // Restore the scene with the loaded data
+      this.restoreScene(sceneData);
 
+      // Ensure the scene is initialized properly
+      if (!this.scene) {
+        throw new Error('Scene not initialized.');
+      }
+
+      // Load models from the scene data
       for (const modelData of sceneData.models) {
-        const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
+        const binary = Uint8Array.from(
+          atob(modelData.glbBase64),
+          (c) => c.charCodeAt(0)
+        );
         const blob = new Blob([binary], { type: 'model/gltf-binary' });
         const url = URL.createObjectURL(blob);
 
@@ -571,17 +645,31 @@ async loadJsonScene(file: File): Promise<void> {
 
         const model = gltf.scene;
         model.name = modelData.name;
-        model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-        model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-        model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+        model.position.set(
+          modelData.position.x,
+          modelData.position.y,
+          modelData.position.z
+        );
+        model.rotation.set(
+          modelData.rotation.x,
+          modelData.rotation.y,
+          modelData.rotation.z
+        );
+        model.scale.set(
+          modelData.scale.x,
+          modelData.scale.y,
+          modelData.scale.z
+        );
         model.userData['isLoadedModel'] = true;
         model.userData['fileName'] = modelData.fileName;
 
         this.scene.add(model);
       }
 
+      // Set the scene as loaded and log the success
       this.sceneLoaded = true;
       this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
+
     } catch (e) {
       console.error('Failed to load JSON scene:', e);
       this.storageService.logToConsole('ERROR_LOADING_SCENE');
@@ -594,6 +682,9 @@ async loadJsonScene(file: File): Promise<void> {
 
   reader.readAsText(file);
 }
+
+
+
 
 async handleLocalModelFile(file: File): Promise<void> {
   const url = URL.createObjectURL(file);
@@ -617,6 +708,9 @@ async handleLocalModelFile(file: File): Promise<void> {
     this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
   }
 }
+
+
+
 
 
 
