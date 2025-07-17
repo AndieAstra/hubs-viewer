@@ -228,11 +228,11 @@ export class StorageService {
 
   const root = gltf.scene;
 
-  // 🔧 Tag root
+  // Tag root
   root.userData['isLoadedModel'] = true;
   root.userData['fileName'] = file.name;
 
-  // ✅ Also optionally tag its children (if you want finer-grain filtering)
+  // Also optionally tag its children (if you want finer-grain filtering)
   root.traverse((child) => {
     if ((child as THREE.Mesh).isMesh) {
       child.userData['isLoadedModel'] = true;
@@ -248,9 +248,6 @@ export class StorageService {
   } else {
     console.error('Viewer scene is not available.');
   }
-
-
-
 
 
     },

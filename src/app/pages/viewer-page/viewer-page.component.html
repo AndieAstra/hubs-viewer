@@ -1,22 +1,22 @@
-<!-- 🧱 Main App Layout -->
+<!-- Main App Layout -->
 <div class="unity-layout">
 
-  <!-- 📱 Sidebar Toggle Button -->
+  <!-- Sidebar Toggle Button -->
   <button class="sidebar-toggle" (click)="toggleSidebar()">☰</button>
 
-  <!-- 🧱 Main Body -->
+  <!-- Main Body -->
   <div class="main-body">
 
-    <!-- 📁 Sidebar -->
+    <!-- Sidebar -->
     <aside class="sidebar-left" [class.collapsed]="sidebarCollapsed">
 
-      <!-- 🎛 Top Buttons -->
+      <!-- Top Buttons -->
       <div class="sidebar-button-row">
         <button class="kid-button purple" (click)="startTutorial()">{{ 'BUTTONS.TUTORIAL' | translate }}</button>
         <button class="kid-button danger small" (click)="openBugReport()">{{ 'BUTTONS.BUG_REPORT' | translate }}</button>
       </div>
 
-      <!-- 📱 Mobile VR -->
+      <!-- Mobile VR -->
       <div class="mobile-only-buttons">
 
         <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
@@ -27,7 +27,7 @@
 
       </div>
 
-      <!-- 🔧 Scene Settings -->
+      <!-- Scene Settings -->
       <section>
         <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
         <div class="button-row">
@@ -60,7 +60,7 @@
         </div>
       </section>
 
-      <!-- 💡 Lighting -->
+      <!-- Lighting -->
       <section>
         <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
         <div class="button-row">
@@ -90,7 +90,7 @@
         </div>
       </section>
 
-      <!-- 📐 Model Settings -->
+      <!-- Model Settings -->
       <section>
         <h4>{{ 'SECTIONS.MODEL_SETTINGS' | translate }}</h4>
         <div class="button-row">
@@ -125,7 +125,7 @@
         </div>
       </section>
 
-      <!-- 🎥 Camera Movement -->
+      <!-- Camera Movement -->
       <section>
         <h4>{{ 'SECTIONS.CAMERA_MOVEMENT' | translate }}</h4>
         <div class="button-row">
@@ -158,7 +158,7 @@
 
     </aside>
 
-    <!-- 🖼️ Canvas Area -->
+    <!-- Canvas Area -->
     <section class="canvas-container">
       <div class="viewer-wrapper" id="canvas-tour-target">
 
@@ -173,7 +173,7 @@
         </button>
       }
 
-      <!-- ⛔ Exit Fullscreen Button -->
+      <!-- Exit Fullscreen Button -->
       @if(viewer.isInFullscreen && !viewer.isVRMode) {
         <button class="fullscreen-exit-button" (click)="exitFullscreen()">
           ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
@@ -183,7 +183,7 @@
 
   </div>
 
-  <!-- 📌 Bottom Console -->
+  <!-- Bottom Console -->
   <footer class="bottom-bar">
     <div class="tabs">
       <button (click)="toggleConsole()">
@@ -207,7 +207,7 @@
 
 @if (isPortrait) {
 <div class="rotate-device-warning">
-  📱 Please rotate your device for full experience.
+  Please rotate your device for full experience.
 </div>
 }
 

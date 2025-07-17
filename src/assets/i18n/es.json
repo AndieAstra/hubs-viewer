@@ -127,7 +127,8 @@
     "GRID_HIDDEN": "Cuadrícula oculta",
     "SCENE_CLEARED_CONFIRM": "¿Seguro que quieres eliminar todos los modelos?",
     "SCENE_CLEARED": "¡Escena limpiada!",
-    "SCENE_EXPORT_COMPLETE": "Exportación de escena completada."
+    "SCENE_EXPORT_COMPLETE": "Exportación de escena completada.",
+     "REPLACE_MODEL_CONFIRM": "¿Le gustaría reemplazar su modelo?"
   },
 
    "VIEWER": {

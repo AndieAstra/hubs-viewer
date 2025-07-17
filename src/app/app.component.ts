@@ -7,7 +7,6 @@ import { filter } from 'rxjs/operators';
 @Component({
   selector   : 'app-root',
   standalone : true,
-  /* RouterModule is required for <router-outlet>  */
   imports    : [RouterModule, TranslateModule],
   templateUrl: './app.component.html',
   styleUrl   : './app.component.scss'
@@ -65,8 +64,6 @@ export class AppComponent implements OnInit {
   useLanguage(lang: 'en' | 'es'): void {
       this.translate.use(lang);
       localStorage.setItem('preferredLang', lang);
-
-      /* 👇 CLOSE language dropdown after pick */
       this.langDropdownOpen = false;
     }
 

@@ -175,7 +175,16 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['glbFile']?.currentValue && !changes['glbFile'].isFirstChange()) {
       const file = changes['glbFile'].currentValue as File;
-      if (this.sceneLoaded && !confirm('A scene is already loaded. Replace it?')) return;
+
+
+          if (this.sceneLoaded) {
+        this.snackBar.open(this.translate.instant('MESSAGES.REPLACE_MODEL_CONFIRM'), 'OK', { duration: 5000 });
+        // Wait for user response before replacing the model
+        setTimeout(() => {
+          this.loadNewModel(file);
+        }, 5000);
+        return;
+      }
 
       const loader = new GLTFLoader();
       loader.load(
@@ -550,104 +559,206 @@ async loadFile(file: File): Promise<void> {
 }
 
 async loadJsonScene(file: File): Promise<void> {
+  // Create a FileReader instance to read the file content
   const reader = new FileReader();
 
+  // This function is triggered when the file is successfully loaded
   reader.onload = async () => {
     try {
+      // Convert the file content to a string (JSON)
       const jsonText = reader.result as string;
+
+      // Parse the JSON string into a 'SceneData' object
       const sceneData = JSON.parse(jsonText) as SceneData;
 
+      // If the scene data is empty, throw an error
       if (!sceneData) {
         throw new Error('No scene data found in file.');
       }
 
-      // Clear and restore the scene
+      // Clear any existing scene before adding new models or objects
       this.clearScene();
+
+      // Restore the scene based on the data provided in the 'sceneData' object
       this.restoreScene(sceneData);
 
-      // Add Ambient Light with higher intensity if not already present
+      // Add Ambient Light if it doesn't already exist in the scene
       if (!this.scene.getObjectByName('ambientLight')) {
-        const ambientLight = new THREE.AmbientLight(0x404040, 2); // Increase intensity to 2
-        ambientLight.name = 'ambientLight'; // Add a name to track
-        this.scene.add(ambientLight);
+        const ambientLight = new THREE.AmbientLight(0x404040, 2); // Set the ambient light color and intensity
+        ambientLight.name = 'ambientLight';  // Name the light object for future reference
+        this.scene.add(ambientLight);  // Add the light to the scene
+        console.log('Added ambient light');  // Log success
       }
 
-      // Add Directional Light with proper target if not already present
+      // Add Directional Light if it doesn't already exist in the scene
       if (!this.scene.getObjectByName('directionalLight')) {
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White light
-        directionalLight.position.set(5, 10, 7); // Adjust the position
-        directionalLight.name = 'directionalLight'; // Add a name to track
-        this.scene.add(directionalLight);
-
-        // Create a target object for directional light
-        const target = new THREE.Object3D();
-        target.position.set(0, 0, 0); // Make it point to the origin
-        directionalLight.target = target;
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 3); // Set the light color (white) and intensity
+        directionalLight.position.set(5, 10, 7);  // Set the position of the light in the scene
+        directionalLight.name = 'directionalLight';  // Name the directional light for future reference
+        this.scene.add(directionalLight);  // Add the directional light to the scene
+        console.log('Added directional light');  // Log success
       }
 
-      // Ensure the camera is facing the scene
+      // Debugging: Traverse through all objects in the scene and log information for any lights found
+      this.scene.traverse((child) => {
+        if (child instanceof THREE.Light) {
+          console.log('Light found:', child.name);  // Log each light found in the scene
+        }
+      });
+
+      // Check if a camera is already set, if not, throw an error
       if (!this.camera) {
         throw new Error('Camera not found');
       }
 
-      this.camera.position.set(0, 1, 3); // Position the camera slightly above and looking at the origin
-      this.camera.lookAt(0, 0, 0); // Make sure camera faces the origin of the scene
+      // Set the camera's position in the scene and ensure it's looking at the origin (0, 0, 0)
+      this.camera.position.set(0, 1, 3); // Set default camera position
+      this.camera.lookAt(0, 0, 0); // Make sure the camera looks at the origin
 
-      // Load models from the scene data
+      // Initialize an array to hold loaded models
+      const models = [];
+
+      // Iterate through all models in 'sceneData'
       for (const modelData of sceneData.models) {
-        const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
+        // Convert the base64-encoded string for the model into a binary format (Uint8Array)
+        const binary = Uint8Array.from(atob(modelData.glbBase64), (c) => c.charCodeAt(0));
+
+        // Create a Blob from the binary data and define the MIME type as 'model/gltf-binary'
         const blob = new Blob([binary], { type: 'model/gltf-binary' });
+
+        // Create a URL for the Blob to be used as the source for the GLTFLoader
         const url = URL.createObjectURL(blob);
 
+        // Load the model using GLTFLoader asynchronously
         const loader = new GLTFLoader();
         const gltf = await loader.loadAsync(url);
+
+        // Revoke the object URL after loading the model (to release memory)
         URL.revokeObjectURL(url);
 
+        // Get the loaded model's scene
         const model = gltf.scene;
+
+        // Set model name, position, rotation, and scale based on the data in 'modelData'
         model.name = modelData.name;
         model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
         model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
         model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+
+        // Add some custom user data for the model (can be used for other purposes later)
         model.userData['isLoadedModel'] = true;
         model.userData['fileName'] = modelData.fileName;
 
-        // Debug: Check model material type
-        model.traverse((child) => {
-          // TypeScript requires type assertion here for meshes
+        // Traverse through the model and set its materials' colors to a neutral gray (0x888888)
+        model.traverse((child: THREE.Object3D) => {
           if ((child as THREE.Mesh).isMesh) {
             const mesh = child as THREE.Mesh;
-            console.log('Model Material Type:', mesh.material);
 
-            // Ensure materials are standard materials that require lighting
-            if (!(mesh.material instanceof THREE.MeshStandardMaterial)) {
-              console.warn('Non-Standard material found, switching to MeshStandardMaterial');
-              mesh.material = new THREE.MeshStandardMaterial({
-                color: 0xffffff,
-                roughness: 0.5,
-                metalness: 0.5,
+            // If the material is an array (multiple materials), loop through them
+            if (Array.isArray(mesh.material)) {
+              mesh.material.forEach((material) => {
+                // Ensure that the material is of a type that has a 'color' property
+                if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshBasicMaterial) {
+                  material.color.set(0x888888); // Set the material's color to neutral gray
+                }
               });
+            } else {
+              // If it's a single material, just set its color
+              if (mesh.material instanceof THREE.MeshStandardMaterial || mesh.material instanceof THREE.MeshBasicMaterial) {
+                mesh.material.color.set(0x888888); // Set the material's color to neutral gray
+              }
             }
           }
         });
 
+        // Log the details of the loaded model (name, position, rotation, scale)
+        console.log('Loaded model:', modelData.name);
+        console.log('Position:', model.position, 'Rotation:', model.rotation, 'Scale:', model.scale);
+
+        // Add the loaded model to the scene and store it in the models array
         this.scene.add(model);
+        models.push(model);
       }
 
-      this.sceneLoaded = true;
-      this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
+      // After all models are added, calculate the bounding box that encompasses all objects in the scene
+      const boundingBox = new THREE.Box3().setFromObject(this.scene);
+
+      // Get the center and size of the bounding box
+      const center = boundingBox.getCenter(new THREE.Vector3());
+      const size = boundingBox.getSize(new THREE.Vector3());
+
+      // Get the largest dimension of the bounding box
+      const maxDim = Math.max(size.x, size.y, size.z);
+
+      // Adjust the camera position to ensure the entire scene fits in view
+      this.camera.position.set(center.x, center.y, center.z + maxDim * 1.5);  // Move the camera back to view the entire scene
+      this.camera.lookAt(center);  // Make sure the camera is looking at the center of the scene
+
+      // Log that the scene has been successfully loaded
+      console.log('Scene loaded successfully');
+      this.sceneLoaded = true;  // Set a flag to indicate that the scene has been loaded
+      this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);  // Log the file load event
 
     } catch (e) {
+      // Catch any errors during the process and log them
       console.error('Failed to load JSON scene:', e);
-      this.storageService.logToConsole('ERROR_LOADING_SCENE');
+      this.storageService.logToConsole('ERROR_LOADING_SCENE');  // Log the error event
     }
   };
 
+  // This function is triggered if there's an error reading the file
   reader.onerror = () => {
-    this.storageService.logToConsole('ERROR_READING_FILE');
+    this.storageService.logToConsole('ERROR_READING_FILE');  // Log the read error event
   };
 
+  // Start reading the file content as text
   reader.readAsText(file);
 }
+
+
+
+loadNewModel(file: File) {
+  const loader = new GLTFLoader();
+  loader.load(
+    URL.createObjectURL(file),
+    (gltf) => {
+      const model = gltf.scene;
+      this.uploadedModel = model;
+      this.sceneLoaded = true;
+      this.applyModelTransform();
+      this.logToConsole('MODEL_LOADED', { name: model.name });
+    },
+    undefined,
+    (error) => {
+      this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
+    }
+  );
+}
+
+
+private restoreSceneLighting(lightingData: any): void {
+  if (!lightingData) return;
+
+  // Restore ambient light
+  if (lightingData.ambient) {
+    if (!this.scene.getObjectByName('ambientLight')) {
+      const ambientLight = new THREE.AmbientLight(lightingData.ambient.color, lightingData.ambient.intensity);
+      ambientLight.name = 'ambientLight';
+      this.scene.add(ambientLight);
+    }
+  }
+
+  // Restore directional light
+  if (lightingData.directional) {
+    if (!this.scene.getObjectByName('directionalLight')) {
+      const directionalLight = new THREE.DirectionalLight(lightingData.directional.color, lightingData.directional.intensity);
+      directionalLight.position.set(lightingData.directional.position.x, lightingData.directional.position.y, lightingData.directional.position.z);
+      directionalLight.name = 'directionalLight';
+      this.scene.add(directionalLight);
+    }
+  }
+}
+
 
 
 async handleLocalModelFile(file: File): Promise<void> {

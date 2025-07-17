@@ -69,10 +69,7 @@ blockArrowKeysWhenTyping(e: KeyboardEvent) {
 ngOnInit(): void {
   this.initThree();
   this.ngZone.runOutsideAngular(() => this.animate());
-
   const c = this.renderer.domElement;
-
-  // Correct order: bind BEFORE adding as listener
   this.onDoubleClick = this.onDoubleClick.bind(this);
 
     c.addEventListener('mousedown', this.onMouseDown.bind(this));
@@ -84,7 +81,6 @@ ngOnInit(): void {
     c.addEventListener(ev, (this as any)[`on${ev.charAt(0).toUpperCase()+ev.slice(1)}`], { passive: ev==='touchmove'?false:true })
   );
 
-  // place hotspot via double-click/tap
   c.addEventListener('dblclick', this.onDoubleClick);
 
   this.renderer.domElement.addEventListener('mousemove', e => {
@@ -226,8 +222,6 @@ onPointerMove(e: MouseEvent) {
 }
 
 placeNoteAtPointer() {
-  // The last mouse position in pointerX/Y is screen pixels.
-  // Convert to normalized device coords:
   const rect = this.renderer.domElement.getBoundingClientRect();
   const mouse = new THREE.Vector2(
     ((this.pointerX - rect.left) / rect.width) * 2 - 1,

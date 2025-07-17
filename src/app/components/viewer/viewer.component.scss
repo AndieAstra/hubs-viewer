@@ -1,11 +1,10 @@
 :host {
-  /* create no new stacking‑context */
   position: static !important;
   z-index: auto !important;
 }
 
 canvas {
-  position: absolute;  /* keep your layout */
+  position: absolute;
   z-index: 0 !important;
 }
 
@@ -18,7 +17,7 @@ canvas {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: black; // fallback in case render fails
+  background: black;
   overflow: hidden;
 }
 
@@ -89,10 +88,10 @@ canvas:-webkit-full-screen {
 }
 
 .fullscreen-btn {
-  display: inline-flex; /* or block */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: auto; /* or a fixed width if needed */
+  width: auto;
   padding: 10px 16px;
   cursor: pointer;
   user-select: none;
@@ -122,11 +121,11 @@ canvas:-webkit-full-screen {
 
 /* Container that holds canvas and overlay */
 .threejs-container {
-  position: relative;  // required for absolute positioning inside
+  position: relative;
   width: 100%;
-  height: 100vh;       // or fixed height if you want
+  height: 100vh;
   overflow: hidden;
-  border: 2px dashed red; // optional for debug
+  border: 2px dashed red;
 }
 
 /* The WebGL canvas */
@@ -142,7 +141,6 @@ canvas:-webkit-full-screen {
   z-index: 0;
 }
 
-/* ESC hint overlay */
 .esc-hint {
   position: absolute;
   bottom: 10px;
@@ -161,21 +159,19 @@ canvas:-webkit-full-screen {
 
 /* ---------- FULLSCREEN STYLES ---------- */
 
-/* Standard spec */
 :fullscreen .viewer-container,
 :fullscreen .threejs-container {
   width: 100vw;
-  height: 100dvh;   /* <— 100 dvh adapts when URL bar hides */
+  height: 100dvh;
 }
 
 /* WebKit (iOS Safari 15‑) */
 :-webkit-full-screen .viewer-container,
 :-webkit-full-screen .threejs-container {
   width: 100vw;
-  height: 100vh;    /* WebKit does not support dvh, but that’s OK */
+  height: 100vh;
 }
 
-/* Ensure the canvas always fills its parent */
 .viewer-container canvas {
   width: 100% !important;
   height: 100% !important;

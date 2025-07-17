@@ -16,8 +16,6 @@ export class StereoscopeHelper {
   constructor(private renderer: THREE.WebGLRenderer, private scene: THREE.Scene, private camera: THREE.Camera) {
     this.stereoEffect = new StereoEffect(this.renderer);
     this.resize(window.innerWidth, window.innerHeight);
-
-    // Optionally update size on window resize
     window.addEventListener('resize', () => {
       this.resize(window.innerWidth, window.innerHeight);
     });

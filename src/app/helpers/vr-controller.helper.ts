@@ -3,13 +3,8 @@ import * as THREE from 'three';
 export class VrControllerHelper {
   private deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
   public enabled = false;
-
-  // Smoothed target quaternion for camera rotation
   private targetQuaternion = new THREE.Quaternion();
-
-  // Movement vector to apply (axes from gamepad)
   public movementVector = new THREE.Vector3(0, 0, 0);
-
   public moveSpeed: number;
 
   constructor(moveSpeed = 3.0) {
@@ -47,13 +42,11 @@ export class VrControllerHelper {
     this.deviceOrientation.gamma = event.gamma ?? 0;
   };
 
-  // Get quaternion from device orientation angles
+
   getDeviceQuaternion(): THREE.Quaternion {
     const x = THREE.MathUtils.degToRad(this.deviceOrientation.beta);
     const y = THREE.MathUtils.degToRad(this.deviceOrientation.alpha);
     const z = THREE.MathUtils.degToRad(this.deviceOrientation.gamma);
-
-    // Use Euler angles in ZXY order for correct orientation
     const euler = new THREE.Euler(x, y, z, 'ZXY');
     const q = new THREE.Quaternion();
     q.setFromEuler(euler);
@@ -63,8 +56,6 @@ export class VrControllerHelper {
 
 update() {
   if (!this.enabled) return;
-
-  // Update movement
   const gp = navigator.getGamepads?.()[0];
   if (gp) {
     const axisX = gp.axes[0] || 0;
@@ -78,14 +69,10 @@ update() {
   } else {
     this.movementVector.set(0, 0, 0);
   }
-
-  // Update target quaternion from orientation
   this.targetQuaternion.copy(this.getDeviceQuaternion());
 }
 
 
-
-  // Apply the orientation smoothing to camera quaternion (call from animate)
   applyRotation(camera: THREE.PerspectiveCamera, lerpFactor = 0.3) {
     camera.quaternion.slerp(this.targetQuaternion, lerpFactor);
   }

@@ -11,7 +11,7 @@ export class PlayerMovementHelper {
     right: false,
   };
   private canJump = true;
-  private isJumping = false;  // Added isJumping flag
+  private isJumping = false;
   friction = 6;
   readonly EPSILON = 0.001;
 
@@ -30,32 +30,24 @@ export class PlayerMovementHelper {
   }
 
   updateKeyboardMovement(delta: number, speed: number, playerObj: THREE.Object3D, scene: THREE.Scene, camera: THREE.Camera) {
-    // Check if the player is on the ground (collisions with the ground surface)
     this.isGrounded = this.checkIfGrounded(playerObj, scene, camera);
-
-    // Gravity: only apply gravity if the player is not grounded
     if (!this.isGrounded) {
-      this.velocity.y -= this.gravity * delta;  // Apply gravity when not grounded
+      this.velocity.y -= this.gravity * delta;
     } else {
-      // Reset Y velocity when grounded
       this.velocity.y = 0;
     }
 
-    // Jump logic (triggered by spacebar or other controls)
     if (this.isJumping && this.isGrounded) {
-      this.velocity.y = this.jumpStrength;  // Apply jump strength (positive Y velocity)
-      this.isJumping = false;  // Reset jumping flag after jump
+      this.velocity.y = this.jumpStrength;
+      this.isJumping = false;
     }
 
-
-// Update movement direction based on keys
 this.direction.set(0, 0, 0);
 
-/* ---------- FIX ---------- */
-if (this.keysPressed.forward)  this.direction.z -= 1;  // forward = -Z
-if (this.keysPressed.backward) this.direction.z += 1;  // backward = +Z
-/* ------------------------- */
+// Need to update the directional movement later!
 
+if (this.keysPressed.forward)  this.direction.z -= 1;
+if (this.keysPressed.backward) this.direction.z += 1;
 if (this.keysPressed.left)     this.direction.x -= 1;
 if (this.keysPressed.right)    this.direction.x += 1;
 this.direction.normalize();
@@ -72,13 +64,9 @@ this.direction.normalize();
 
   private checkIfGrounded(playerObj: THREE.Object3D, scene: THREE.Scene, camera: THREE.Camera): boolean {
     const raycaster = new THREE.Raycaster(playerObj.position, new THREE.Vector3(0, -1, 0));
-    raycaster.camera = camera; // **IMPORTANT: Set camera on raycaster before intersecting sprites!**
-
-    // You may want to intersect with specific ground objects rather than whole scene,
-    // but keeping your original logic here:
+    raycaster.camera = camera;
     const intersects = raycaster.intersectObject(scene);
-
-    return intersects.length > 0 && intersects[0].distance < this.cameraHeight + 1; // Consider player as grounded if distance is small
+    return intersects.length > 0 && intersects[0].distance < this.cameraHeight + 1;
   }
 
   applyCombinedMovement(
@@ -92,7 +80,7 @@ this.direction.normalize();
   ) {
     const inputVelocity = new THREE.Vector3();
 
-    // 🎮 VR joystick input (if VR is enabled)
+    // VR joystick input (VR enabled)
     if (vrVector.lengthSq() > 0.001) {
       const DEADZONE = 0.15;
       const filteredVR = vrVector.clone();
@@ -101,13 +89,13 @@ this.direction.normalize();
       if (Math.abs(filteredVR.z) < DEADZONE) filteredVR.z = 0;
 
       const moveDir = filteredVR.applyQuaternion(cameraQuat);
-      moveDir.y = 0;  // Keep the movement along the XZ plane
+      moveDir.y = 0;
       moveDir.normalize();
 
       inputVelocity.add(moveDir.multiplyScalar(this.moveSpeed));
     }
 
-    // ⌨️ Keyboard input
+    // Keyboard input
     const direction = new THREE.Vector3();
     if (keyboardInput.forward) direction.z -= 1;
     if (keyboardInput.backward) direction.z += 1;
@@ -121,10 +109,10 @@ this.direction.normalize();
       inputVelocity.add(rotated.multiplyScalar(this.moveSpeed));
     }
 
-    // ➕ Add blended velocity
+    // Add blended velocity
     this.velocity.addScaledVector(inputVelocity, delta);
 
-    // 🧼 Apply friction after velocity update
+    // Apply friction after velocity update
     this.velocity.x *= Math.max(0, 1 - this.friction * delta);
     this.velocity.z *= Math.max(0, 1 - this.friction * delta);
 
@@ -135,20 +123,17 @@ this.direction.normalize();
 
 
 
-// 🚶 Move with collision checks
-const moveX = this.velocity.x * delta;
-const moveZ = this.velocity.z * delta;
-const oldPos = playerObj.position.clone();
+    // Move with collision checks
+    const moveX = this.velocity.x * delta;
+    const moveZ = this.velocity.z * delta;
+    const oldPos = playerObj.position.clone();
 
-controls.moveRight( moveX );              // X‑axis is fine
-if ( isColliding( playerObj.position ) ) playerObj.position.x = oldPos.x;
+    controls.moveRight( moveX );
+    if ( isColliding( playerObj.position ) ) playerObj.position.x = oldPos.x;
 
-/* ✨ flip Z so “forward” becomes positive for PointerLockControls */
-controls.moveForward( -moveZ );           // <-- negate here
-if ( isColliding( playerObj.position ) ) playerObj.position.z = oldPos.z;
+    controls.moveForward( -moveZ );
+    if ( isColliding( playerObj.position ) ) playerObj.position.z = oldPos.z;
 
-
-    // Apply gravity and Y-axis movement
     playerObj.position.y += this.velocity.y * delta;
   }
 
@@ -182,7 +167,6 @@ if ( isColliding( playerObj.position ) ) playerObj.position.z = oldPos.z;
         if (this.canJump) {
           this.velocity.y = this.jumpStrength;
           this.canJump = false;
-          //this.isJumping = true;
         }
         break;
     }

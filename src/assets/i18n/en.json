@@ -128,7 +128,8 @@
     "GRID_HIDDEN": "Grid hidden",
     "SCENE_CLEARED_CONFIRM": "Are you sure you want to remove all models?",
     "SCENE_CLEARED": "Scene cleared!",
-    "SCENE_EXPORT_COMPLETE": "Scene export complete."
+    "SCENE_EXPORT_COMPLETE": "Scene export complete.",
+    "REPLACE_MODEL_CONFIRM": "You already have a model loaded. Would you like to replace it?"
   },
 
   "VIEWER": {

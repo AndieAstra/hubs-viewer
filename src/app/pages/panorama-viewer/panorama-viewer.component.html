@@ -1,12 +1,12 @@
 <div class="toolbar">
   <label class="upload-label">
-    🖼 Upload Panorama
+     Upload Panorama
     <input type="file" accept="image/*" (change)="onFileSelected($event)" hidden />
   </label>
 
   <div class="controls">
-    <button (click)="prepareNotePlacement()">🎯 Generate Note</button>
-    <span class="note-count">📝 Notes in Scene: {{ panoNotes.length }}</span>
+    <button (click)="prepareNotePlacement()"> Generate Note</button>
+    <span class="note-count"> Notes in Scene: {{ panoNotes.length }}</span>
   </div>
 </div>
 
