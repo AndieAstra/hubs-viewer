@@ -49,16 +49,12 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 
 ---
 
-## Updates as of 7/7/25:
+## Updates as of 7/17/25:
 
-- Load JSON scenes w/lighting
-- Save JSON scenes w/lighting
-- Upload GLTF/GLB/JSON models and scenes
-- Modals notifications as you change models/scenes
-- Modal notification when the model fails to load/scene is empty
-- Capability to use WSAD keys to move around the scene
+- Upload GLTF/GLB models
+- Capability to use WSAD + arrow keys to move around the scene
 - Capability to change light color, intensity, and camera height
-- VR split screen added
+- Stereoscopic split screen added
 - Language selection added
 - Docker container added
 - User Tutorial added
@@ -70,12 +66,8 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 
 - Allow users to modify the size and height (y-axis) of the model
 - Update UI to match National 4-H brand
-- Fix sunlight slider max and min
-- Fix acceleration, min too slow
 - Expand language selection
 - Add screen reader capability for text
-- Remove "auto VR mode" capability in landscape mobile mode
-- Fix fullscreen on mobile so "exit VR" button fits to upper corner landscape or portrait
 - Connect bug report to database
 - Connect contact form to database
 - Make a mobile VR viewer for the Panorama screen for mobile and tablet
@@ -92,7 +84,11 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 ---
 
 ## Bug List:
-- Need to reinstate console log
+- Stereoscope button sticks, need to press multiple times for it to work
+- Fullscreen button sticks, need to press multiple times for it to work
+- WASD + arrow keys are tied to the axis, need to allow user to turn
+- Stereoscopic view, left side dark
+- Error loading saved JSON scenes
 - Pano Notes: When user clicks to generate a note they keep going back to the center of the sphere. Take a look at the complete script to see why it is not generating a note where the user places it.
 
 ---
