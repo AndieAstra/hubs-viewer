@@ -18,6 +18,7 @@ export interface ProjectData {
   modelBase64?: string;
 }
 
+
 @Injectable({
   providedIn: 'root',
 })
@@ -65,7 +66,7 @@ export class StorageService {
         }
 
         if (ext === 'json') {
-          this._pendingJsonFile = file;                        // cache until we get scene handles
+          this._pendingJsonFile = file;
           return true;
         }
 
@@ -223,17 +224,35 @@ export class StorageService {
     const loader = new GLTFLoader();
 
     loader.parse(arrayBuffer, '', (gltf: GLTF) => {
-      const root = gltf.scene;
-      root.userData['isLoadedModel'] = true;
 
-      const scene = this.viewerRef?.scene;
-      if (scene) {
-        scene.add(root);
-        this.viewerRef.uploadedModel = root; // <-- Key assignment for slider control
-        console.log('GLTF loaded and added to scene:', root);
-      } else {
-        console.error('Viewer scene is not available.');
-      }
+
+  const root = gltf.scene;
+
+  // 🔧 Tag root
+  root.userData['isLoadedModel'] = true;
+  root.userData['fileName'] = file.name;
+
+  // ✅ Also optionally tag its children (if you want finer-grain filtering)
+  root.traverse((child) => {
+    if ((child as THREE.Mesh).isMesh) {
+      child.userData['isLoadedModel'] = true;
+      child.userData['fileName'] = file.name;
+    }
+  });
+
+  const scene = this.viewerRef?.scene;
+  if (scene) {
+    scene.add(root);
+    this.viewerRef.uploadedModel = root;
+    console.log('GLTF loaded and added to scene:', root);
+  } else {
+    console.error('Viewer scene is not available.');
+  }
+
+
+
+
+
     },
     (error) => {
       console.error('Error loading GLB file:', error.message);
@@ -250,15 +269,20 @@ export class StorageService {
     localStorage.removeItem(STORAGE_KEY);
   }
 
-// what does this connect to?
-// Make sure it's when you re-upload a file!
-  clearSceneAndLoadFile(file: File): void {
-    this.clearScene(this.viewerRef.scene, () => true, (msg) => {
-      this.logToConsole(msg);
-    });
+clearSceneAndLoadFile(file: File): void {
+  this.clearScene(this.viewerRef.scene, () => true, (msg) => {
+    this.logToConsole(msg);
+  });
+
+  const ext = file.name.split('.').pop()?.toLowerCase();
+  if (ext === 'glb' || ext === 'gltf') {
     this.loadGLB(file);
+  } else if (ext === 'json') {
+    this._pendingJsonFile = file;
+  } else {
+    console.warn('Unsupported file type:', ext);
   }
-//
+}
 
   clearScene(scene: THREE.Scene, confirmFn: () => boolean = () => true, logFn: (msg: string) => void = () => {}): void {
     if (!confirmFn()) return;
@@ -307,15 +331,6 @@ export class StorageService {
 
 // ---- Console ----
 
-  // logToConsole(key: string, params?: any): void {
-  //   const timeStamp = new Date().toLocaleTimeString();
-  //   const message = this.translate.instant(key, params);
-  //   this.consoleMessages.push(`[${timeStamp}] ${message}`);
-  //   if (this.consoleMessages.length > 50) {
-  //     this.consoleMessages.shift();
-  //   }
-  // }
-
   registerChangeDetector(cd: ChangeDetectorRef) {  // call once from the page
     this.cdRef = cd;
   }
@@ -324,66 +339,93 @@ export class StorageService {
     const time = new Date().toLocaleTimeString();
     const text = this.translate.instant(key, params);
     this.consoleMessages.push(`[${time}] ${text}`);
-
-    // trim
     if (this.consoleMessages.length > 50) this.consoleMessages.shift();
-
-    // wake Angular (only needed with OnPush)
     this.cdRef?.markForCheck();
   }
 
 // ---- Save and Features ----
 
- saveSceneAsJson(viewerRef: any, logToConsole?: (msgKey: string) => void): void {
-    try {
-      const filename = prompt('Enter filename to save your scene:', 'scene.json');
-      if (!filename) return;
+async saveSceneAsJson(viewerRef: any, logToConsole?: (msgKey: string) => void): Promise<void> {
+  try {
+    const filename = prompt('Enter filename to save your scene:', 'scene.json');
+    if (!filename) return;
 
-      const safeFilename = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`;
-      const exported = this.exportScene(viewerRef.scene, viewerRef.camera, viewerRef.ambientLight, viewerRef.dirLight, viewerRef.objects);
+    const safeFilename = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`;
+    const exported = this.exportScene(
+      viewerRef.scene,
+      viewerRef.camera,
+      viewerRef.ambientLight,
+      viewerRef.dirLight,
+      viewerRef.objects
+    );
 
-      const exporter = new GLTFExporter();
-      const modelsToExport = viewerRef.scene.children.filter((obj: THREE.Object3D) => obj.userData?.['isLoadedModel']);
-      const collectedModels: SceneData['models'] = [];
+    const exporter = new GLTFExporter();
+    console.log('saveSceneAsJson() called');
 
-      const processModel = (index: number) => {
-        if (index >= modelsToExport.length) {
-          const fullData: SceneData = { ...exported, models: collectedModels };
-          this.downloadJson(JSON.stringify(fullData), safeFilename);
-          logToConsole?.('VIEWER.SAVE_SCENE');
-          return;
-        }
+    const modelsToExport: THREE.Object3D[] = [];
+    viewerRef.scene.traverse((obj: THREE.Object3D) => {
+      if (obj.userData?.['isLoadedModel']) {
+        modelsToExport.push(obj);
+      }
+    });
 
-        const model = modelsToExport[index];
-        exporter.parse(model, (gltf) => {
-          const blob = new Blob([gltf as ArrayBuffer], { type: 'model/gltf-binary' });
-          const reader = new FileReader();
-          reader.onload = () => {
-            const bin = new Uint8Array(reader.result as ArrayBuffer);
-            const base64 = btoa(String.fromCharCode(...bin));
-            collectedModels.push({
-              name: model.name,
-              position: model.position.clone(),
-              rotation: model.rotation,
-              scale: model.scale.clone(),
-              fileName: model.userData['fileName'] || 'unknown.glb',
-              glbBase64: base64,
-            });
-            processModel(index + 1);
-          };
-          reader.readAsArrayBuffer(blob);
-        }, () => {}, { binary: true });
-      };
+    console.log('Models to export:', modelsToExport);
 
-      processModel(0);
-    } catch (err) {
-      console.error('Error saving scene:', err);
+    const collectedModels: SceneData['models'] = [];
+
+    // helper to convert ArrayBuffer to Base64
+    const arrayBufferToBase64 = (buffer: ArrayBuffer) => {
+      const binary = new Uint8Array(buffer);
+      let binaryString = '';
+      for (let i = 0; i < binary.byteLength; i++) {
+        binaryString += String.fromCharCode(binary[i]);
+      }
+      return btoa(binaryString);
+    };
+
+    for (const model of modelsToExport) {
+      // Wrap GLTFExporter.parse in a Promise to await it
+      const gltfBuffer: ArrayBuffer = await new Promise((resolve, reject) => {
+        exporter.parse(
+          model,
+          (gltf) => {
+            resolve(gltf as ArrayBuffer);
+          },
+          (error) => {
+            reject(error);
+          },
+          { binary: true }
+        );
+      });
+
+      const base64 = arrayBufferToBase64(gltfBuffer);
+
+      collectedModels.push({
+        name: model.name,
+        position: model.position.clone(),
+        rotation: model.rotation.clone(),
+        scale: model.scale.clone(),
+        fileName:
+          model.userData['fileName']?.endsWith('.glb') ||
+          model.userData['fileName']?.endsWith('.gltf')
+            ? model.userData['fileName']
+            : 'unknown.glb',
+        glbBase64: base64,
+      });
     }
-  }
 
-// This export scene is a duplicate I think of the
-// sceneData.ts file....
-  exportScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ambientLight: THREE.AmbientLight, dirLight: THREE.DirectionalLight, models: THREE.Object3D[]): SceneData {
+    const fullData: SceneData = { ...exported, models: collectedModels };
+    console.log('Final scene data collected:', fullData);
+    this.downloadJson(JSON.stringify(fullData), safeFilename);
+    logToConsole?.('VIEWER.SAVE_SCENE');
+
+  } catch (err) {
+    console.error('Error saving scene:', err);
+  }
+}
+
+
+exportScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ambientLight: THREE.AmbientLight, dirLight: THREE.DirectionalLight, models: THREE.Object3D[] = []): SceneData {
   const sceneData = {
     lighting: {
       ambient: { color: ambientLight.color.getHex(), intensity: ambientLight.intensity },
@@ -393,28 +435,40 @@ export class StorageService {
         position: [dirLight.position.x, dirLight.position.y, dirLight.position.z] as [number, number, number],
       },
     },
-    camera: { position: camera.position.clone(), rotation: new THREE.Euler().copy(camera.rotation) },
+    camera: {
+      position: camera.position.clone(),
+      rotation: new THREE.Euler().copy(camera.rotation),
+    },
     models: [],
     lights: {
       ambientLightVisible: ambientLight.visible,
       dirLightVisible: dirLight.visible,
     },
     wireframe: models.map(model => model.userData?.['wireframe'] || false),
-
   };
+
   return sceneData;
 }
-//
-//
 
-private downloadJson(json: string, filename: string): void {
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
+// private downloadJson(json: string, filename: string): void {
+//     const blob = new Blob([json], { type: 'application/json' });
+//     const url = URL.createObjectURL(blob);
+//     const a = document.createElement('a');
+//     a.href = url;
+//     a.download = filename;
+//     a.click();
+//     URL.revokeObjectURL(url);
+//   }
+
+downloadJson(jsonString: string, filename: string) {
+  const blob = new Blob([jsonString], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
 }

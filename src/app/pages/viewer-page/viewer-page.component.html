@@ -43,14 +43,20 @@
             <span>{{ 'BUTTONS.LOAD_SCENE' | translate }}</span>
           </button>
 
+<!-- --------------------------------------------- -->
+
           <!-- Save Scene -->
           <button class="kid-button green" (click)="saveScene()">
             <img src="assets/icons/save.jpg" alt="Save" />
             <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
           </button>
 
+
           <!-- Hidden File Input -->
           <input type="file" #fileInput style="display: none" (change)="onFileChange($event)" accept=".glb,.gltf,.json" />
+
+<!-- --------------------------------------------- -->
+
         </div>
       </section>
 

@@ -4,6 +4,7 @@ import {
   ElementRef,
   HostListener,
   AfterViewInit,
+  OnDestroy,
 } from '@angular/core';
 import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { FormsModule } from '@angular/forms';
@@ -23,7 +24,7 @@ import { FullscreenHelper } from '../../helpers/fullscreen.helper';
   templateUrl: './viewer-page.component.html',
   styleUrls: ['./viewer-page.component.scss'],
 })
-export class ViewerPageComponent implements AfterViewInit {
+export class ViewerPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('viewerCanvas', { static: false }) viewerCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
@@ -71,6 +72,11 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
+  // @HostListener('window:resize')
+  // onWindowResize(): void {
+  //   this.resizeCanvas();
+  // }
+
   @HostListener('document:fullscreenchange')
   onFullscreenChange(): void {
     const container = this.viewer?.sceneContainerRef?.nativeElement;
@@ -81,36 +87,22 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-  @HostListener('window:resize')
-  onWindowResize(): void {
-    this.resizeCanvas();
-  }
-
   ngAfterViewInit(): void {
-
     this.consoleMessages = this.storageService.consoleMessages;
 
     if (!this.viewer) {
       console.error('Viewer reference is missing.');
       return;
     }
-
-    // Resize canvas inside the viewer component or its container
+    //
+    this._fs = new FullscreenHelper(this.viewer.sceneContainerRef.nativeElement);
+    //
     this.resizeCanvas();
-
-    // Provide viewer ref to sceneControls service
     this.sceneControls.viewerRef = this.viewer;
-
-    // Sync storage service references
     this.storageService.viewerRef = this.viewer;
-
-    // Just in case trigger a window resize event
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 100);
-
-    //this.fs = new FullscreenHelper(this.shell.nativeElement);
-    this._fs = new FullscreenHelper(this.viewer!.sceneContainerRef.nativeElement);
   }
 
   ngOnDestroy() {
@@ -147,23 +139,53 @@ export class ViewerPageComponent implements AfterViewInit {
     this.fileInput?.nativeElement.click();
   }
 
-  saveScene(): void {
-    if (!this.viewer) {
-      console.error('Viewer reference is missing.');
-      return;
-    }
-    this.storageService.saveSceneAsJson(this.viewer);
+async saveScene(): Promise<void> {
+  console.log('saveScene() triggered');
+  if (!this.viewer) {
+    console.error('Viewer reference is missing.');
+    return;
   }
 
-  onFileChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file || !this.viewer) return;
+  try {
+    await this.storageService.saveSceneAsJson(this.viewer);
+    this.storageService.logToConsole('Scene saved successfully.');
+  } catch (error) {
+    console.error('Failed to save scene:', error);
+    this.storageService.logToConsole('Error saving scene.');
+  }
+}
 
-  /* was: storageService.clearSceneAndLoadFile(file) */
-    this.viewer.loadFile(file);                 // 👈 hand it straight to the viewer
+  // onFileChange(event: Event): void {
+  //   const input = event.target as HTMLInputElement;
+  //   const file = input.files?.[0];
+  //   if (!file || !this.viewer) return;
+  //   this.viewer.loadFile(file);
+  //   this.storageService.logToConsole(`Loaded file: ${file.name}`);
+  //   //
+  //   if (this.fileInput?.nativeElement) {
+  //     this.fileInput.nativeElement.value = '';
+  //   }
+  //   //
+  // }
+
+  async onFileChange(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file || !this.viewer) return;
+
+  try {
+    await this.viewer.loadFile(file);  // Await if loadFile returns a Promise
     this.storageService.logToConsole(`Loaded file: ${file.name}`);
+  } catch (error) {
+    console.error('Failed to load file:', error);
+    this.storageService.logToConsole('Error loading file.');
   }
+
+  // Reset input so user can upload same file again
+  if (this.fileInput?.nativeElement) {
+    this.fileInput.nativeElement.value = '';
+  }
+}
 
   // ----- Model & Viewer controls -----
 
@@ -179,7 +201,7 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   onSpeedInput(evt: Event): void {
-    const value = +(evt.target as HTMLInputElement).value;   // to number
+    const value = +(evt.target as HTMLInputElement).value;
     this.viewer?.setWalkSpeed(value);
   }
 
@@ -189,7 +211,6 @@ export class ViewerPageComponent implements AfterViewInit {
 
   resetView(): void {
     if (!this.viewer) return;
-
     const { camera, controls } = this.viewer;
     this.sceneControls.resetCameraView(camera, controls);
     this.storageService.logToConsole('VIEWER.RESET_VIEW');
@@ -253,14 +274,14 @@ export class ViewerPageComponent implements AfterViewInit {
       }
     });
 
-    /* 1 ─ Welcome (floating, no target) */
+    /* 1 ─ Welcome */
     tour.addStep({
       id: 'welcome',
       text: t('START_TUTORIAL'),
       buttons: [next]
     });
 
-    /* 2 ─ Scene controls (left sidebar) */
+    /* 2 ─ Scene controls */
     tour.addStep({
       id: 'scene-controls',
       attachTo: { element: '.sidebar-left', on: 'right' },
@@ -268,9 +289,7 @@ export class ViewerPageComponent implements AfterViewInit {
       buttons: [back, next]
     });
 
-    /* 3 ─ 3‑D viewer (canvas area) – anchor on **left** so card isn’t
-          hidden by fullscreen canvas; the modal overlay still surrounds
-          the viewer to draw attention. */
+    /* 3 ─ 3‑D viewer */
     tour.addStep({
       id: 'canvas',
       attachTo: { element: '#canvas-tour-target', on: 'right' },
@@ -285,7 +304,7 @@ export class ViewerPageComponent implements AfterViewInit {
   }
     });
 
-    /* 4 ─ Console (bottom bar) */
+    /* 4 ─ Console */
     tour.addStep({
       id: 'console',
       attachTo: { element: '.bottom-bar', on: 'top' },
@@ -293,8 +312,7 @@ export class ViewerPageComponent implements AfterViewInit {
       buttons: [back, next]
     });
 
-    /* 5 ─ Finish – point to the ☰ toggle so users know how to reopen
-          the sidebar when it’s collapsed on mobile. */
+    /* 5 ─ Finish */
     tour.addStep({
       id: 'finish',
       text: t('FINISH_TUTORIAL'),
@@ -307,11 +325,7 @@ export class ViewerPageComponent implements AfterViewInit {
     const markSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
     tour.on('complete', markSeen);
     tour.on('cancel',   markSeen);
-
-    /* Highlight target element while its step is visible -------------- */
     tour.on('show', () => {
-      // Shepherd adds `is-active` class to the current step element, so
-      // we can query the attachTo target via API:
       const el = tour.getCurrentStep()?.options.attachTo?.element as string | undefined;
       if (el) document.querySelector(el)?.classList.add('shepherd-highlight');
     });

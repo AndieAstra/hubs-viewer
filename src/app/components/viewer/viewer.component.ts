@@ -13,7 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { TranslateService } from '@ngx-translate/core';
 
 import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
-import { StorageService } from '../../services/storage.service';
+import { ProjectData, StorageService } from '../../services/storage.service';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { VrControllerHelper } from '../../helpers/vr-controller.helper';
 import { SceneManagerComponent } from '../scene-manager/scene-manager.component';
@@ -395,11 +395,45 @@ exitVR(): void {
     }
   };
 
-  onFileChange(evt: Event): void {
-    const file = (evt.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-    this.storageService.loadProject(file);
+  // onFileChange(evt: Event): void {
+  //   const file = (evt.target as HTMLInputElement).files?.[0];
+  //   if (!file) return;
+  //   this.storageService.loadProject(file);
+  // }
+
+  async onFileChange(evt: Event): Promise<void> {
+  const file = (evt.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  try {
+    await this.loadFile(file);  // calls the new loadFile
+    this.storageService.logToConsole(`Loaded file: ${file.name}`);
+  } catch (error) {
+    console.error('Failed to load scene:', error);
+    this.storageService.logToConsole('ERROR_LOADING_SCENE');
   }
+
+  // Reset file input
+  (evt.target as HTMLInputElement).value = '';
+
+  if (!file.name.endsWith('.json')) {
+  this.snackBar.open('Invalid file type. Please upload a JSON file.', 'OK', { duration: 3000 });
+  return;
+}
+}
+
+disposeObject(obj: THREE.Object3D): void {
+  obj.traverse((child) => {
+    if ((child as any).geometry) {
+      (child as any).geometry.dispose?.();
+    }
+    if ((child as any).material) {
+      const mat = (child as any).material;
+      if (Array.isArray(mat)) mat.forEach(m => m.dispose?.());
+      else mat.dispose?.();
+    }
+  });
+}
 
   handleLocalFile(file: File): void {
     const loader = new GLTFLoader();
@@ -423,9 +457,168 @@ exitVR(): void {
     );
   }
 
-  loadFile(file: File): void {
-    this.handleLocalFile(file);
+  // loadFile(file: File): void {
+  //   this.handleLocalFile(file);
+  // }
+
+// async loadFile(file: File): Promise<void> {
+//   const reader = new FileReader();
+
+//   reader.onload = async () => {
+//     try {
+//       const jsonText = reader.result as string;
+//       const projectData = JSON.parse(jsonText) as ProjectData;
+
+//       const sceneData = projectData.scene;
+//       if (!sceneData) throw new Error('No scene data found in file.');
+
+//       this.clearScene();
+//       this.restoreScene(sceneData);
+
+//       if (!this.scene) {
+//         throw new Error('Scene not initialized. Cannot load model.');
+//       }
+
+//       for (const modelData of sceneData.models) {
+
+
+//         const binary = Uint8Array.from(
+//           atob(modelData.glbBase64),
+//           (c) => c.charCodeAt(0)
+//         );
+//         const blob = new Blob([binary], { type: 'model/gltf-binary' });
+//         const url = URL.createObjectURL(blob);
+
+//         const loader = new GLTFLoader();
+//         const gltf = await loader.loadAsync(url);
+//         URL.revokeObjectURL(url);
+
+//         const model = gltf.scene;
+//         model.name = modelData.name;
+//         model.position.set(
+//           modelData.position.x,
+//           modelData.position.y,
+//           modelData.position.z
+//         );
+//         model.rotation.set(
+//           modelData.rotation.x,
+//           modelData.rotation.y,
+//           modelData.rotation.z
+//         );
+//         model.scale.set(
+//           modelData.scale.x,
+//           modelData.scale.y,
+//           modelData.scale.z
+//         );
+//         model.userData['isLoadedModel'] = true;
+//         model.userData['fileName'] = modelData.fileName;
+
+//         this.scene.add(model);
+//       }
+
+//       this.sceneLoaded = true;
+
+//     } catch (e) {
+//       console.error('Failed to load file:', e);
+//       this.storageService.logToConsole('ERROR_LOADING_SCENE');
+//     }
+//   };
+
+//   reader.onerror = () => {
+//     this.storageService.logToConsole('ERROR_READING_FILE');
+//   };
+
+//   reader.readAsText(file);
+// }
+
+async loadFile(file: File): Promise<void> {
+  const fileName = file.name.toLowerCase();
+
+  if (fileName.endsWith('.json')) {
+    await this.loadJsonScene(file); // handles JSON scene loading
+  } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
+    await this.handleLocalModelFile(file); // handles single model loading
+  } else {
+    console.error('Unsupported file type:', file.name);
+    this.storageService.logToConsole('ERROR.UNSUPPORTED_FILE_TYPE');
   }
+}
+
+async loadJsonScene(file: File): Promise<void> {
+  const reader = new FileReader();
+
+  reader.onload = async () => {
+    try {
+      const jsonText = reader.result as string;
+      const projectData = JSON.parse(jsonText) as ProjectData;
+
+      const sceneData = projectData.scene;
+      if (!sceneData) throw new Error('No scene data found in file.');
+
+      this.clearScene(); // make sure you implement this
+      this.restoreScene(sceneData); // make sure you implement this
+
+      if (!this.scene) throw new Error('Scene not initialized.');
+
+      for (const modelData of sceneData.models) {
+        const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
+        const blob = new Blob([binary], { type: 'model/gltf-binary' });
+        const url = URL.createObjectURL(blob);
+
+        const loader = new GLTFLoader();
+        const gltf = await loader.loadAsync(url);
+        URL.revokeObjectURL(url);
+
+        const model = gltf.scene;
+        model.name = modelData.name;
+        model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
+        model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+        model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+        model.userData['isLoadedModel'] = true;
+        model.userData['fileName'] = modelData.fileName;
+
+        this.scene.add(model);
+      }
+
+      this.sceneLoaded = true;
+      this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
+    } catch (e) {
+      console.error('Failed to load JSON scene:', e);
+      this.storageService.logToConsole('ERROR_LOADING_SCENE');
+    }
+  };
+
+  reader.onerror = () => {
+    this.storageService.logToConsole('ERROR_READING_FILE');
+  };
+
+  reader.readAsText(file);
+}
+
+async handleLocalModelFile(file: File): Promise<void> {
+  const url = URL.createObjectURL(file);
+  const loader = new GLTFLoader();
+
+  try {
+    const gltf = await loader.loadAsync(url);
+    URL.revokeObjectURL(url);
+
+    const model = gltf.scene;
+    model.name = file.name;
+    model.userData['isLoadedModel'] = true;
+    model.userData['fileName'] = file.name;
+
+    this.scene.add(model);
+    this.sceneLoaded = true;
+
+    this.storageService.logToConsole(`Loaded model: ${file.name}`);
+  } catch (error) {
+    console.error('Failed to load model:', error);
+    this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
+  }
+}
+
+
 
   async onToggleFullscreen(): Promise<void> {
   const container = this.sceneContainerRef?.nativeElement
@@ -434,5 +627,62 @@ exitVR(): void {
     await toggleFullscreen(container);
   }
 }
+
+clearScene(): void {
+  const toRemove: THREE.Object3D[] = [];
+
+  this.scene.traverse((obj) => {
+    if (obj.userData?.['isLoadedModel']) {
+      toRemove.push(obj);
+    }
+  });
+
+  for (const obj of toRemove) {
+    this.scene.remove(obj);
+    this.disposeObject(obj);
+    obj.traverse(child => {
+      if ((child as any).geometry) {
+        (child as any).geometry.dispose?.();
+      }
+      if ((child as any).material) {
+        const mat = (child as any).material;
+        if (Array.isArray(mat)) {
+          mat.forEach(m => m.dispose?.());
+        } else {
+          mat.dispose?.();
+        }
+      }
+    });
+  }
+}
+
+
+restoreScene(sceneData: SceneData): void {
+  // Restore camera
+  this.camera.position.set(
+    sceneData.camera.position.x,
+    sceneData.camera.position.y,
+    sceneData.camera.position.z
+  );
+  this.camera.rotation.set(
+    sceneData.camera.rotation.x,
+    sceneData.camera.rotation.y,
+    sceneData.camera.rotation.z
+  );
+
+  // Restore ambient light
+  this.ambientLight.color.setHex(sceneData.lighting.ambient.color);
+  this.ambientLight.intensity = sceneData.lighting.ambient.intensity;
+
+  // Restore directional light
+  this.dirLight.color.setHex(sceneData.lighting.directional.color);
+  this.dirLight.intensity = sceneData.lighting.directional.intensity;
+  this.dirLight.position.set(
+    sceneData.lighting.directional.position[0],
+    sceneData.lighting.directional.position[1],
+    sceneData.lighting.directional.position[2]
+  );
+}
+
 
 }
