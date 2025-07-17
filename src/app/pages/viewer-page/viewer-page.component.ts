@@ -28,7 +28,11 @@ export class ViewerPageComponent implements AfterViewInit, OnDestroy {
   @ViewChild('viewerCanvas', { static: false }) viewerCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+
   @ViewChild('viewerShell', { static: true }) shell!: ElementRef<HTMLElement>;
+
+  @ViewChild('fileInputGLTF') fileInputGLTF?: ElementRef<HTMLInputElement>;
+  @ViewChild('fileInputJSON') fileInputJSON?: ElementRef<HTMLInputElement>;
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -135,9 +139,9 @@ export class ViewerPageComponent implements AfterViewInit, OnDestroy {
     this.viewer?.renderer?.setSize(width, height);
   }
 
-  onUploadClick(): void {
-    this.fileInput?.nativeElement.click();
-  }
+  // onUploadClick(): void {
+  //   this.fileInput?.nativeElement.click();
+  // }
 
 async saveScene(): Promise<void> {
   console.log('saveScene() triggered');
@@ -155,18 +159,6 @@ async saveScene(): Promise<void> {
   }
 }
 
-  // onFileChange(event: Event): void {
-  //   const input = event.target as HTMLInputElement;
-  //   const file = input.files?.[0];
-  //   if (!file || !this.viewer) return;
-  //   this.viewer.loadFile(file);
-  //   this.storageService.logToConsole(`Loaded file: ${file.name}`);
-  //   //
-  //   if (this.fileInput?.nativeElement) {
-  //     this.fileInput.nativeElement.value = '';
-  //   }
-  //   //
-  // }
 
   async onFileChange(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement;
@@ -186,6 +178,62 @@ async saveScene(): Promise<void> {
     this.fileInput.nativeElement.value = '';
   }
 }
+
+// -------------------------------------------------------*
+
+ onUploadClick(): void {
+    this.fileInput?.nativeElement.click();
+  }
+
+  // Handle the GLTF/GLB file change
+  async onGLTFFileChange(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.viewer) return;
+
+    try {
+      await this.viewer.loadGLTF(file);  // Handle GLTF/GLB loading
+      console.log(`Loaded GLTF/GLB file: ${file.name}`);
+    } catch (error) {
+      console.error('Failed to load GLTF/GLB file:', error);
+    }
+
+    // Reset input for repeated uploads
+    if (this.fileInputGLTF?.nativeElement) {
+      this.fileInputGLTF.nativeElement.value = '';
+    }
+  }
+
+  // Handle the JSON file change
+  async onJSONFileChange(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.viewer) return;
+
+    try {
+      await this.viewer.loadJSON(file);  // Handle JSON file loading
+      console.log(`Loaded JSON file: ${file.name}`);
+    } catch (error) {
+      console.error('Failed to load JSON file:', error);
+    }
+
+    // Reset file input after selection
+    if (this.fileInputJSON?.nativeElement) {
+      this.fileInputJSON.nativeElement.value = '';
+    }
+  }
+
+  // Method to trigger GLTF/GLB file selection
+  onLoadGLTFClick(): void {
+    this.fileInputGLTF?.nativeElement.click();
+  }
+
+  // Method to trigger JSON file selection
+  onLoadJSONClick(): void {
+    this.fileInputJSON?.nativeElement.click();
+  }
+
+
 
   // ----- Model & Viewer controls -----
 

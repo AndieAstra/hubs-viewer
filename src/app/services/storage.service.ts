@@ -115,7 +115,7 @@ export class StorageService {
     log?.(`File loaded: ${file.name}`);
   }
 
-  private _loadJsonScene(
+private _loadJsonScene(
     file: File,
     scene: THREE.Scene,
     camera: THREE.Camera,
@@ -128,6 +128,10 @@ export class StorageService {
     reader.onload = () => {
       try {
         const sceneData = JSON.parse(reader.result as string);
+
+        // Log the parsed JSON data to inspect its structure
+        console.log('Loaded JSON:', sceneData);
+
         this._loadSceneFromJson(sceneData, scene, camera, ambientLight, dirLight, onModelsLoaded, onError);
       } catch (err) {
         console.error('Invalid JSON file:', err);
@@ -137,7 +141,8 @@ export class StorageService {
     reader.readAsText(file);
   }
 
-  private _loadSceneFromJson(
+
+private _loadSceneFromJson(
     sceneData: any,
     scene: THREE.Scene,
     camera: THREE.Camera,
@@ -147,17 +152,21 @@ export class StorageService {
     onError?: (err: any) => void
   ): void {
     try {
-      // ------- VALIDATE DATA
-      if (!sceneData.camera) throw new Error("Scene data is missing 'camera' property.");
+      if (!sceneData || !sceneData.camera) throw new Error("Scene data is missing 'camera' property.");
+
+      // Check if the loaded data has a valid 'type' property for the scene
+      if (!sceneData.type || sceneData.type !== "Scene") {
+        throw new Error("Invalid scene data: Missing or incorrect 'type' property.");
+      }
+
       this.clearScene(scene);
 
-      // ------- RESTORE CAMERA
+      // Load camera data
       const { position, rotation } = sceneData.camera;
-      if (!position || !rotation) throw new Error("Camera position or rotation is missing in scene data.");
       camera.position.set(position.x, position.y, position.z);
       camera.rotation.set(rotation.x, rotation.y, rotation.z);
 
-      // ------- RESTORE LIGHTING
+      // Load lighting data
       const { ambient, directional } = sceneData.lighting;
       ambientLight.color.setHex(ambient.color);
       ambientLight.intensity = ambient.intensity;
@@ -165,8 +174,8 @@ export class StorageService {
       dirLight.intensity = directional.intensity;
       dirLight.position.set(...(directional.position as [number, number, number]));
 
-      // ------- LOAD MODELS (unchanged logic)
-      const loader  = new GLTFLoader();
+      // Load models
+      const loader = new GLTFLoader();
       const loaded: THREE.Object3D[] = [];
       const modelsArr = sceneData.models || [];
       let done = 0;
@@ -183,38 +192,37 @@ export class StorageService {
           return;
         }
 
-        const binStr  = atob(md.glbBase64);
-        const buffer  = new Uint8Array(binStr.length);
+        const binStr = atob(md.glbBase64);
+        const buffer = new Uint8Array(binStr.length);
         for (let i = 0; i < binStr.length; i++) buffer[i] = binStr.charCodeAt(i);
 
         loader.parse(buffer.buffer, '', (gltf) => {
           const model = gltf.scene;
-          model.name  = md.name || 'Model';
+          model.name = md.name || 'Model';
           model.position.copy(md.position);
           model.rotation.set(md.rotation.x, md.rotation.y, md.rotation.z);
           model.scale.copy(md.scale);
           model.userData['isLoadedModel'] = true;
-          model.userData['fileName']      = md.fileName || 'unknown.glb';
+          model.userData['fileName'] = md.fileName || 'unknown.glb';
 
           scene.add(model);
           loaded.push(model);
 
           done++;
           if (done === modelsArr.length) onModelsLoaded(loaded);
-        },
-        (e) => {                                   // onError
+        }, (e) => {
           console.error('Parse error', e);
           done++;
           if (done === modelsArr.length) onModelsLoaded(loaded);
           onError?.(e);
         });
       });
-
     } catch (e) {
       console.error('Error loading scene:', e);
       onError?.(e);
     }
   }
+
 
  loadGLB(file: File): void {
   const reader = new FileReader();
@@ -424,6 +432,7 @@ async saveSceneAsJson(viewerRef: any, logToConsole?: (msgKey: string) => void): 
 
 exportScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ambientLight: THREE.AmbientLight, dirLight: THREE.DirectionalLight, models: THREE.Object3D[] = []): SceneData {
   const sceneData = {
+    type: "Scene", // Ensure type is set
     lighting: {
       ambient: { color: ambientLight.color.getHex(), intensity: ambientLight.intensity },
       directional: {
@@ -446,6 +455,7 @@ exportScene(scene: THREE.Scene, camera: THREE.PerspectiveCamera, ambientLight: T
 
   return sceneData;
 }
+
 
 // private downloadJson(json: string, filename: string): void {
 //     const blob = new Blob([json], { type: 'application/json' });

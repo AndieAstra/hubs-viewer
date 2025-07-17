@@ -8,6 +8,8 @@ import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
 import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
 import { FullscreenHelper } from '../../helpers/fullscreen.helper';
 
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+
 @Component({
   selector   : 'app-scene-manager',
   standalone : true,
@@ -20,6 +22,8 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
 
   @Input() container!: HTMLElement;
   @Input() cameraHeight: number = 1.6;
+
+  uploadedModel?: THREE.Object3D;
 
   public isStereoscopeEnabled = false;
 
@@ -49,6 +53,12 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
 
   private boundKeyDown!: (e: KeyboardEvent) => void;
   private boundKeyUp!  : (e: KeyboardEvent) => void;
+
+  gltfLoader: GLTFLoader;
+
+   constructor() {
+    this.gltfLoader = new GLTFLoader(); // Initialize the loader
+  }
 
   private lockHandler = () => {
     this.controls.lock();
@@ -341,5 +351,90 @@ enterVR(): void {
   public setEscHintVisible(visible: boolean) {
     this.escHintSprite.visible = visible;
   }
+
+// Method to load a GLTF model from JSON
+loadGLTFModel(modelJson: any): void {
+  this.gltfLoader.parse(JSON.stringify(modelJson), '', (gltf) => {
+    // Add loaded model to scene
+    this.scene.add(gltf.scene);
+    this.uploadedModel = gltf.scene; // Optionally track the model
+  }, (error) => {
+    console.error('Error loading GLTF model:', error);
+  });
+}
+
+// Method to load a model from a JSON file (GLTF or generic Object)
+async loadJSON(file: File): Promise<void> {
+  const loader = new THREE.ObjectLoader(); // For general 3D objects
+  const gltfLoader = new GLTFLoader(); // For loading GLTF models directly
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const json = event.target?.result;
+
+        // Check if the file was read correctly
+        if (!json) {
+          reject(new Error('Failed to read file contents.'));
+          return;
+        }
+
+        console.log('File content:', json); // Log the content to check
+
+        // Parse and load the object from JSON
+        const parsedObject = JSON.parse(json as string);
+
+        // Check if it's a GLTF/GLB model in JSON format (e.g., GLTF's scene object)
+        if (parsedObject?.asset) {
+          gltfLoader.parse(json as string, '', (gltf: THREE.GLTF) => {
+            if (gltf.scene) {
+              this.uploadedModel = gltf.scene;  // Track the model
+              this.scene.add(gltf.scene);  // Add the GLTF model to the scene
+              resolve();  // Resolve the promise when done
+            } else {
+              reject(new Error('GLTF file does not contain a scene.'));
+            }
+          }, (error: ErrorEvent) => {  // Handle error
+            reject(new Error('Error loading GLTF JSON: ' + error.message));
+          });
+        } else if (parsedObject?.type) {
+          // It’s a general 3D object (ObjectLoader can handle it)
+          try {
+            const object = loader.parse(parsedObject);  // Parse and load the object
+            this.scene.add(object);  // Add to scene
+            this.uploadedModel = object;  // Track the model
+            resolve();  // Resolve when done
+          } catch (error: unknown) {
+            if (error instanceof Error) {
+              reject(new Error('Error loading Object: ' + error.message));
+            } else {
+              reject(new Error('Unknown error occurred when loading object.'));
+            }
+          }
+        } else {
+          reject(new Error('The parsed JSON is not valid GLTF or Object format.'));
+        }
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error('Error while loading JSON:', error.message);
+          reject(error);
+        } else {
+          console.error('Unknown error while loading JSON:', error);
+          reject(new Error('Unknown error occurred while loading JSON.'));
+        }
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
+      reject(error);
+    };
+
+    reader.readAsText(file);  // Read the file as text
+  });
+}
+
 
 }

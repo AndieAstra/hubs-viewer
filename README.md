@@ -14,6 +14,12 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 * **User Interface**: Mobile-first design with responsive support for tablets and desktops
 * **VR Mode**: Cardboard-style split screen with `deviceorientation`, fullscreen, and stereo rendering
 
+#### Helpful tools:
+
+[JSON Validator](https://codebeautify.org/jsonvalidator)
+[GLTF Validator](https://github.khronos.org/glTF-Validator/)
+[GLB Validator](https://gltf-viewer.donmccurdy.com)
+
 ---
 
 ## Features

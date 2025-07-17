@@ -170,6 +170,20 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
    /* 👉  give the service access to the sun light */
   this.sceneControlsService.setDirectionalLight(this.sceneManager.dirLight);
+
+    const modelJson = this.getModelJson(); // Replace with actual model JSON
+    this.sceneManager.loadGLTFModel(modelJson);
+  }
+
+  getModelJson() {
+    return {
+      "asset": { "version": "2.0", "generator": "glTF-Exporter" },
+      "scene": 0,
+      "scenes": [{ "nodes": [0] }],
+      "nodes": [{ "mesh": 0 }],
+      "meshes": [{ "primitives": [{ "attributes": { "POSITION": 0 }, "indices": 1 }] }],
+      "buffers": [{ "byteLength": 0 }]
+    };
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -258,12 +272,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     const target = this.uploadedModel ?? this.model;
     this.sceneControlsService.updateModelHeight(target, y);
   }
-
-  //
-  // Are these two the same thing???
-  // onCameraSpeedChange(event: any): void {
-  //   this.sceneControlsService.updateCameraSpeed(this.controls, event.target.value);
-  // }
 
   public setWalkSpeed(speed: number): void {
     this.sceneControlsService.updateMovementSpeed(speed);
@@ -362,7 +370,6 @@ exitVR(): void {
     console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
   }
 
-  // Restore camera aspect ratio and renderer size
   if (this.renderer && this.camera && this.originalSize) {
     this.camera.aspect = this.originalCameraAspect ?? window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();
@@ -382,7 +389,6 @@ exitVR(): void {
 
   this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
 
-  // Go back in history if VR state was pushed
   if (history.state?.vr) history.back();
   window.onpopstate = null;
 }
@@ -404,32 +410,29 @@ exitVR(): void {
     }
   };
 
-  // onFileChange(evt: Event): void {
-  //   const file = (evt.target as HTMLInputElement).files?.[0];
-  //   if (!file) return;
-  //   this.storageService.loadProject(file);
-  // }
+ async onFileChange(evt: Event): Promise<void> {
+    const file = (evt.target as HTMLInputElement).files?.[0];
+    if (!file) return;
 
-  async onFileChange(evt: Event): Promise<void> {
-  const file = (evt.target as HTMLInputElement).files?.[0];
-  if (!file) return;
+    try {
+      // Check the file extension first (to determine which method to use)
+      if (file.name.endsWith('.json')) {
+        // Use the `loadJSON` method from SceneManagerComponent
+        await this.sceneManager.loadJSON(file);
+        this.storageService.logToConsole(`Loaded file: ${file.name}`);
+      } else {
+        this.snackBar.open('Invalid file type. Please upload a JSON file.', 'OK', { duration: 3000 });
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to load scene:', error);
+      this.storageService.logToConsole('ERROR_LOADING_SCENE');
+    }
 
-  try {
-    await this.loadFile(file);  // calls the new loadFile
-    this.storageService.logToConsole(`Loaded file: ${file.name}`);
-  } catch (error) {
-    console.error('Failed to load scene:', error);
-    this.storageService.logToConsole('ERROR_LOADING_SCENE');
+    // Clear file input value
+    (evt.target as HTMLInputElement).value = '';
   }
 
-  // Reset file input
-  (evt.target as HTMLInputElement).value = '';
-
-  if (!file.name.endsWith('.json')) {
-  this.snackBar.open('Invalid file type. Please upload a JSON file.', 'OK', { duration: 3000 });
-  return;
-}
-}
 
 disposeObject(obj: THREE.Object3D): void {
   obj.traverse((child) => {
@@ -466,253 +469,125 @@ disposeObject(obj: THREE.Object3D): void {
     );
   }
 
-  // loadFile(file: File): void {
-  //   this.handleLocalFile(file);
-  // }
-
-// async loadFile(file: File): Promise<void> {
-//   const reader = new FileReader();
-
-//   reader.onload = async () => {
-//     try {
-//       const jsonText = reader.result as string;
-//       const projectData = JSON.parse(jsonText) as ProjectData;
-
-//       const sceneData = projectData.scene;
-//       if (!sceneData) throw new Error('No scene data found in file.');
-
-//       this.clearScene();
-//       this.restoreScene(sceneData);
-
-//       if (!this.scene) {
-//         throw new Error('Scene not initialized. Cannot load model.');
-//       }
-
-//       for (const modelData of sceneData.models) {
-
-
-//         const binary = Uint8Array.from(
-//           atob(modelData.glbBase64),
-//           (c) => c.charCodeAt(0)
-//         );
-//         const blob = new Blob([binary], { type: 'model/gltf-binary' });
-//         const url = URL.createObjectURL(blob);
-
-//         const loader = new GLTFLoader();
-//         const gltf = await loader.loadAsync(url);
-//         URL.revokeObjectURL(url);
-
-//         const model = gltf.scene;
-//         model.name = modelData.name;
-//         model.position.set(
-//           modelData.position.x,
-//           modelData.position.y,
-//           modelData.position.z
-//         );
-//         model.rotation.set(
-//           modelData.rotation.x,
-//           modelData.rotation.y,
-//           modelData.rotation.z
-//         );
-//         model.scale.set(
-//           modelData.scale.x,
-//           modelData.scale.y,
-//           modelData.scale.z
-//         );
-//         model.userData['isLoadedModel'] = true;
-//         model.userData['fileName'] = modelData.fileName;
-
-//         this.scene.add(model);
-//       }
-
-//       this.sceneLoaded = true;
-
-//     } catch (e) {
-//       console.error('Failed to load file:', e);
-//       this.storageService.logToConsole('ERROR_LOADING_SCENE');
-//     }
-//   };
-
-//   reader.onerror = () => {
-//     this.storageService.logToConsole('ERROR_READING_FILE');
-//   };
-
-//   reader.readAsText(file);
-// }
 
 async loadFile(file: File): Promise<void> {
   const fileName = file.name.toLowerCase();
 
+  // Check file extension and call respective handler
   if (fileName.endsWith('.json')) {
     try {
-      await this.loadJsonScene(file); // Handles JSON scene loading
-    } catch (err) {
-      console.error('Failed to load JSON scene:', err);
+      await this.loadJsonScene(file);  // calls the new loadJsonScene method
+      this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
+    } catch (error) {
+      console.error('Failed to load JSON scene:', error);
       this.storageService.logToConsole('ERROR_LOADING_JSON_SCENE');
     }
   } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
-    await this.handleLocalModelFile(file); // Handles single model loading
+    try {
+      await this.handleLocalModelFile(file);  // handles GLTF/GLB models
+    } catch (error) {
+      console.error('Failed to load model:', error);
+      this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
+    }
   } else {
     console.error('Unsupported file type:', file.name);
     this.storageService.logToConsole('ERROR.UNSUPPORTED_FILE_TYPE');
   }
+
+  // Reset the file input
+  (document.querySelector('input[type="file"]') as HTMLInputElement).value = '';
 }
 
 async loadJsonScene(file: File): Promise<void> {
-  // Create a FileReader instance to read the file content
   const reader = new FileReader();
-
-  // This function is triggered when the file is successfully loaded
   reader.onload = async () => {
     try {
-      // Convert the file content to a string (JSON)
       const jsonText = reader.result as string;
-
-      // Parse the JSON string into a 'SceneData' object
-      const sceneData = JSON.parse(jsonText) as SceneData;
-
-      // If the scene data is empty, throw an error
+      const sceneData: SceneData = JSON.parse(jsonText);
       if (!sceneData) {
         throw new Error('No scene data found in file.');
       }
 
-      // Clear any existing scene before adding new models or objects
-      this.clearScene();
+      this.clearScene();  // Clear any existing objects in the scene
+      this.restoreScene(sceneData);  // Restore camera, lighting, and models
 
-      // Restore the scene based on the data provided in the 'sceneData' object
-      this.restoreScene(sceneData);
+      // Restore the camera from the scene data
+      this.camera.position.set(
+        sceneData.camera.position.x,
+        sceneData.camera.position.y,
+        sceneData.camera.position.z
+      );
+      this.camera.rotation.set(
+        sceneData.camera.rotation.x,
+        sceneData.camera.rotation.y,
+        sceneData.camera.rotation.z
+      );
 
-      // Add Ambient Light if it doesn't already exist in the scene
-      if (!this.scene.getObjectByName('ambientLight')) {
-        const ambientLight = new THREE.AmbientLight(0x404040, 2); // Set the ambient light color and intensity
-        ambientLight.name = 'ambientLight';  // Name the light object for future reference
-        this.scene.add(ambientLight);  // Add the light to the scene
-        console.log('Added ambient light');  // Log success
-      }
+      // Adjust camera position based on the scene's bounding box
+      this.adjustCameraPosition();
 
-      // Add Directional Light if it doesn't already exist in the scene
-      if (!this.scene.getObjectByName('directionalLight')) {
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 3); // Set the light color (white) and intensity
-        directionalLight.position.set(5, 10, 7);  // Set the position of the light in the scene
-        directionalLight.name = 'directionalLight';  // Name the directional light for future reference
-        this.scene.add(directionalLight);  // Add the directional light to the scene
-        console.log('Added directional light');  // Log success
-      }
+      this.camera.near = 0.1;
+      this.camera.updateProjectionMatrix(); // Update after modifying the near plane
 
-      // Debugging: Traverse through all objects in the scene and log information for any lights found
-      this.scene.traverse((child) => {
-        if (child instanceof THREE.Light) {
-          console.log('Light found:', child.name);  // Log each light found in the scene
-        }
-      });
-
-      // Check if a camera is already set, if not, throw an error
-      if (!this.camera) {
-        throw new Error('Camera not found');
-      }
-
-      // Set the camera's position in the scene and ensure it's looking at the origin (0, 0, 0)
-      this.camera.position.set(0, 1, 3); // Set default camera position
-      this.camera.lookAt(0, 0, 0); // Make sure the camera looks at the origin
-
-      // Initialize an array to hold loaded models
-      const models = [];
-
-      // Iterate through all models in 'sceneData'
+      // Load models from scene data
       for (const modelData of sceneData.models) {
-        // Convert the base64-encoded string for the model into a binary format (Uint8Array)
-        const binary = Uint8Array.from(atob(modelData.glbBase64), (c) => c.charCodeAt(0));
-
-        // Create a Blob from the binary data and define the MIME type as 'model/gltf-binary'
-        const blob = new Blob([binary], { type: 'model/gltf-binary' });
-
-        // Create a URL for the Blob to be used as the source for the GLTFLoader
-        const url = URL.createObjectURL(blob);
-
-        // Load the model using GLTFLoader asynchronously
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync(url);
-
-        // Revoke the object URL after loading the model (to release memory)
-        URL.revokeObjectURL(url);
-
-        // Get the loaded model's scene
-        const model = gltf.scene;
-
-        // Set model name, position, rotation, and scale based on the data in 'modelData'
-        model.name = modelData.name;
-        model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-        model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-        model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
-
-        // Add some custom user data for the model (can be used for other purposes later)
-        model.userData['isLoadedModel'] = true;
-        model.userData['fileName'] = modelData.fileName;
-
-        // Traverse through the model and set its materials' colors to a neutral gray (0x888888)
-        model.traverse((child: THREE.Object3D) => {
-          if ((child as THREE.Mesh).isMesh) {
-            const mesh = child as THREE.Mesh;
-
-            // If the material is an array (multiple materials), loop through them
-            if (Array.isArray(mesh.material)) {
-              mesh.material.forEach((material) => {
-                // Ensure that the material is of a type that has a 'color' property
-                if (material instanceof THREE.MeshStandardMaterial || material instanceof THREE.MeshBasicMaterial) {
-                  material.color.set(0x888888); // Set the material's color to neutral gray
-                }
-              });
-            } else {
-              // If it's a single material, just set its color
-              if (mesh.material instanceof THREE.MeshStandardMaterial || mesh.material instanceof THREE.MeshBasicMaterial) {
-                mesh.material.color.set(0x888888); // Set the material's color to neutral gray
-              }
-            }
-          }
-        });
-
-        // Log the details of the loaded model (name, position, rotation, scale)
-        console.log('Loaded model:', modelData.name);
-        console.log('Position:', model.position, 'Rotation:', model.rotation, 'Scale:', model.scale);
-
-        // Add the loaded model to the scene and store it in the models array
+        const model = await this.loadModelFromBase64(modelData);
         this.scene.add(model);
-        models.push(model);
       }
 
-      // After all models are added, calculate the bounding box that encompasses all objects in the scene
-      const boundingBox = new THREE.Box3().setFromObject(this.scene);
-
-      // Get the center and size of the bounding box
-      const center = boundingBox.getCenter(new THREE.Vector3());
-      const size = boundingBox.getSize(new THREE.Vector3());
-
-      // Get the largest dimension of the bounding box
-      const maxDim = Math.max(size.x, size.y, size.z);
-
-      // Adjust the camera position to ensure the entire scene fits in view
-      this.camera.position.set(center.x, center.y, center.z + maxDim * 1.5);  // Move the camera back to view the entire scene
-      this.camera.lookAt(center);  // Make sure the camera is looking at the center of the scene
-
-      // Log that the scene has been successfully loaded
       console.log('Scene loaded successfully');
-      this.sceneLoaded = true;  // Set a flag to indicate that the scene has been loaded
-      this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);  // Log the file load event
-
     } catch (e) {
-      // Catch any errors during the process and log them
       console.error('Failed to load JSON scene:', e);
-      this.storageService.logToConsole('ERROR_LOADING_SCENE');  // Log the error event
+      this.storageService.logToConsole('ERROR_LOADING_SCENE');
     }
   };
-
-  // This function is triggered if there's an error reading the file
   reader.onerror = () => {
-    this.storageService.logToConsole('ERROR_READING_FILE');  // Log the read error event
+    this.storageService.logToConsole('ERROR_READING_FILE');
   };
-
-  // Start reading the file content as text
   reader.readAsText(file);
+}
+
+// Helper function to load a model from base64 encoded string
+async loadModelFromBase64(modelData: SavedModel): Promise<THREE.Object3D> {
+  const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
+  const blob = new Blob([binary], { type: 'model/gltf-binary' });
+  const url = URL.createObjectURL(blob);
+  const loader = new GLTFLoader();
+  const gltf = await loader.loadAsync(url);
+  URL.revokeObjectURL(url);
+
+  const model = gltf.scene;
+  model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
+  model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+  model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+
+  return model;
+}
+
+// Adjust camera position based on scene size and model position
+adjustCameraPosition(): void {
+  // Get the bounding box of the scene to determine the size and center
+  const boundingBox = new THREE.Box3().setFromObject(this.scene);
+  const center = boundingBox.getCenter(new THREE.Vector3());
+  const size = boundingBox.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+
+  // Adjust the camera height calculation to prevent extreme positioning
+  const cameraHeight = Math.max(maxDim * 1.5, 10);  // Lower multiplier to prevent extreme heights
+
+  // Position the camera above the scene's center (adjusted on y-axis)
+  this.camera.position.set(center.x, center.y + cameraHeight, center.z + maxDim * 1.5);
+
+  // Ensure the camera is looking at the center of the scene
+  this.camera.lookAt(center);
+
+  // Update the near plane and projection matrix for the camera
+  this.camera.near = 0.1; // Keep near plane small to avoid clipping issues
+  this.camera.updateProjectionMatrix();  // Apply the updated near plane
+
+  // Log camera position and scene center for debugging
+  console.log('Camera position:', this.camera.position);
+  console.log('Scene center:', center);
 }
 
 
@@ -733,6 +608,78 @@ loadNewModel(file: File) {
       this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
     }
   );
+}
+
+ // Load GLTF/GLB model
+  async loadGLTF(file: File): Promise<void> {
+    const loader = new GLTFLoader();
+    return new Promise((resolve, reject) => {
+      loader.load(URL.createObjectURL(file), (gltf) => {
+        if (gltf.scene) {
+          this.scene.add(gltf.scene);
+          this.uploadedModel = gltf.scene;
+          resolve();
+        }
+      }, undefined, reject);
+    });
+  }
+
+// Load JSON file using FileReader
+async loadJSON(file: File): Promise<void> {
+  const loader = new THREE.ObjectLoader(); // For general 3D objects
+  const gltfLoader = new GLTFLoader(); // For loading GLTF models directly
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+      try {
+        const json = event.target?.result;
+
+        // Check if the file was read correctly
+        if (!json) {
+          reject(new Error('Failed to read file contents.'));
+          return;
+        }
+
+        console.log('File content:', json); // Log the content to check
+
+        // Parse and load the object from JSON
+        const parsedObject = JSON.parse(json as string);
+
+        // Check if it's a GLTF/GLB model in JSON format (e.g., GLTF's scene object)
+        if (parsedObject?.asset) {
+          // It’s likely a GLTF model - load it with GLTFLoader
+          gltfLoader.parse(json as string, '', (gltf: THREE.Group) => {  // Type explicit
+            const object = gltf.scene; // This is the model's scene group
+            this.scene.add(object); // Add the model to the scene
+            this.uploadedModel = object;
+            resolve();  // Resolve the promise when done
+          }, (error: Error) => {  // Error type
+            reject(new Error('Error loading GLTF JSON: ' + error.message));
+          });
+        } else if (parsedObject?.type) {
+          // It’s a general 3D object (ObjectLoader can handle it)
+          const object = loader.parse(parsedObject);  // Parse and load the object
+          this.scene.add(object);
+          this.uploadedModel = object;
+          resolve();  // Resolve when done
+        } else {
+          reject(new Error('The parsed JSON is not valid GLTF or Object format.'));
+        }
+      } catch (error) {
+        console.error('Error while loading JSON:', error);
+        reject(error);
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
+      reject(error);
+    };
+
+    reader.readAsText(file);  // Read the file as text
+  });
 }
 
 
@@ -759,8 +706,6 @@ private restoreSceneLighting(lightingData: any): void {
   }
 }
 
-
-
 async handleLocalModelFile(file: File): Promise<void> {
   const url = URL.createObjectURL(file);
   const loader = new GLTFLoader();
@@ -783,11 +728,6 @@ async handleLocalModelFile(file: File): Promise<void> {
     this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
   }
 }
-
-
-
-
-
 
   async onToggleFullscreen(): Promise<void> {
   const container = this.sceneContainerRef?.nativeElement
