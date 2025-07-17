@@ -549,93 +549,53 @@ async loadFile(file: File): Promise<void> {
   }
 }
 
-
-// async loadJsonScene(file: File): Promise<void> {
-//   const reader = new FileReader();
-
-//   reader.onload = async () => {
-//     try {
-//       const jsonText = reader.result as string;
-//       const projectData = JSON.parse(jsonText) as ProjectData;
-
-//       const sceneData = projectData.scene;
-//       if (!sceneData) throw new Error('No scene data found in file.');
-
-
-
-
-
-//       this.clearScene(); // make sure you implement this
-//       this.restoreScene(sceneData); // make sure you implement this
-
-//       if (!this.scene) throw new Error('Scene not initialized.');
-
-//       for (const modelData of sceneData.models) {
-//         const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
-//         const blob = new Blob([binary], { type: 'model/gltf-binary' });
-//         const url = URL.createObjectURL(blob);
-
-//         const loader = new GLTFLoader();
-//         const gltf = await loader.loadAsync(url);
-//         URL.revokeObjectURL(url);
-
-//         const model = gltf.scene;
-//         model.name = modelData.name;
-//         model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-//         model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-//         model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
-//         model.userData['isLoadedModel'] = true;
-//         model.userData['fileName'] = modelData.fileName;
-
-//         this.scene.add(model);
-//       }
-
-//       this.sceneLoaded = true;
-//       this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
-//     } catch (e) {
-//       console.error('Failed to load JSON scene:', e);
-//       this.storageService.logToConsole('ERROR_LOADING_SCENE');
-//     }
-//   };
-
-//   reader.onerror = () => {
-//     this.storageService.logToConsole('ERROR_READING_FILE');
-//   };
-
-//   reader.readAsText(file);
-// }
-
-
-
 async loadJsonScene(file: File): Promise<void> {
   const reader = new FileReader();
 
   reader.onload = async () => {
     try {
       const jsonText = reader.result as string;
-      const sceneData = JSON.parse(jsonText) as SceneData;  // Directly parse as SceneData
+      const sceneData = JSON.parse(jsonText) as SceneData;
 
       if (!sceneData) {
         throw new Error('No scene data found in file.');
       }
 
-      // Clear any existing objects in the scene before loading new ones
+      // Clear and restore the scene
       this.clearScene();
-
-      // Restore the scene with the loaded data
       this.restoreScene(sceneData);
 
-      // Ensure the scene is initialized properly
-      if (!this.scene) {
-        throw new Error('Scene not initialized.');
+      // Add Ambient Light with higher intensity if not already present
+      if (!this.scene.getObjectByName('ambientLight')) {
+        const ambientLight = new THREE.AmbientLight(0x404040, 2); // Increase intensity to 2
+        ambientLight.name = 'ambientLight'; // Add a name to track
+        this.scene.add(ambientLight);
       }
+
+      // Add Directional Light with proper target if not already present
+      if (!this.scene.getObjectByName('directionalLight')) {
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White light
+        directionalLight.position.set(5, 10, 7); // Adjust the position
+        directionalLight.name = 'directionalLight'; // Add a name to track
+        this.scene.add(directionalLight);
+
+        // Create a target object for directional light
+        const target = new THREE.Object3D();
+        target.position.set(0, 0, 0); // Make it point to the origin
+        directionalLight.target = target;
+      }
+
+      // Ensure the camera is facing the scene
+      if (!this.camera) {
+        throw new Error('Camera not found');
+      }
+
+      this.camera.position.set(0, 1, 3); // Position the camera slightly above and looking at the origin
+      this.camera.lookAt(0, 0, 0); // Make sure camera faces the origin of the scene
 
       // Load models from the scene data
       for (const modelData of sceneData.models) {
-        const binary = Uint8Array.from(
-          atob(modelData.glbBase64),
-          (c) => c.charCodeAt(0)
-        );
+        const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
         const blob = new Blob([binary], { type: 'model/gltf-binary' });
         const url = URL.createObjectURL(blob);
 
@@ -645,28 +605,34 @@ async loadJsonScene(file: File): Promise<void> {
 
         const model = gltf.scene;
         model.name = modelData.name;
-        model.position.set(
-          modelData.position.x,
-          modelData.position.y,
-          modelData.position.z
-        );
-        model.rotation.set(
-          modelData.rotation.x,
-          modelData.rotation.y,
-          modelData.rotation.z
-        );
-        model.scale.set(
-          modelData.scale.x,
-          modelData.scale.y,
-          modelData.scale.z
-        );
+        model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
+        model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+        model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
         model.userData['isLoadedModel'] = true;
         model.userData['fileName'] = modelData.fileName;
+
+        // Debug: Check model material type
+        model.traverse((child) => {
+          // TypeScript requires type assertion here for meshes
+          if ((child as THREE.Mesh).isMesh) {
+            const mesh = child as THREE.Mesh;
+            console.log('Model Material Type:', mesh.material);
+
+            // Ensure materials are standard materials that require lighting
+            if (!(mesh.material instanceof THREE.MeshStandardMaterial)) {
+              console.warn('Non-Standard material found, switching to MeshStandardMaterial');
+              mesh.material = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.5,
+              });
+            }
+          }
+        });
 
         this.scene.add(model);
       }
 
-      // Set the scene as loaded and log the success
       this.sceneLoaded = true;
       this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
 
@@ -682,8 +648,6 @@ async loadJsonScene(file: File): Promise<void> {
 
   reader.readAsText(file);
 }
-
-
 
 
 async handleLocalModelFile(file: File): Promise<void> {
