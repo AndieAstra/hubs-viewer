@@ -363,7 +363,6 @@ loadGLTFModel(modelJson: any): void {
   });
 }
 
-// Method to load a model from a JSON file (GLTF or generic Object)
 async loadJSON(file: File): Promise<void> {
   const loader = new THREE.ObjectLoader(); // For general 3D objects
   const gltfLoader = new GLTFLoader(); // For loading GLTF models directly
@@ -388,42 +387,31 @@ async loadJSON(file: File): Promise<void> {
 
         // Check if it's a GLTF/GLB model in JSON format (e.g., GLTF's scene object)
         if (parsedObject?.asset) {
-          gltfLoader.parse(json as string, '', (gltf: THREE.GLTF) => {
-            if (gltf.scene) {
-              this.uploadedModel = gltf.scene;  // Track the model
-              this.scene.add(gltf.scene);  // Add the GLTF model to the scene
-              resolve();  // Resolve the promise when done
+          // It's likely a GLTF model - load it with GLTFLoader
+          gltfLoader.parse(json as string, '', (gltf) => {
+            // `gltf` here is of type GLTF, not Group
+            if (gltf && gltf.scene) {
+              this.uploadedModel = gltf.scene; // Track the model
+              this.scene.add(gltf.scene); // Add the GLTF model to the scene
+              resolve(); // Resolve the promise when done
             } else {
-              reject(new Error('GLTF file does not contain a scene.'));
+              reject(new Error('GLTF file does not contain a valid scene.'));
             }
-          }, (error: ErrorEvent) => {  // Handle error
+          }, (error) => {
             reject(new Error('Error loading GLTF JSON: ' + error.message));
           });
         } else if (parsedObject?.type) {
-          // It’s a general 3D object (ObjectLoader can handle it)
-          try {
-            const object = loader.parse(parsedObject);  // Parse and load the object
-            this.scene.add(object);  // Add to scene
-            this.uploadedModel = object;  // Track the model
-            resolve();  // Resolve when done
-          } catch (error: unknown) {
-            if (error instanceof Error) {
-              reject(new Error('Error loading Object: ' + error.message));
-            } else {
-              reject(new Error('Unknown error occurred when loading object.'));
-            }
-          }
+          // It's a general 3D object (ObjectLoader can handle it)
+          const object = loader.parse(parsedObject); // Parse and load the object
+          this.scene.add(object); // Add to scene
+          this.uploadedModel = object; // Optionally track the model
+          resolve(); // Resolve when done
         } else {
-          reject(new Error('The parsed JSON is not valid GLTF or Object format.'));
+          reject(new Error('The parsed JSON is not a valid GLTF or Object format.'));
         }
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error('Error while loading JSON:', error.message);
-          reject(error);
-        } else {
-          console.error('Unknown error while loading JSON:', error);
-          reject(new Error('Unknown error occurred while loading JSON.'));
-        }
+      } catch (error) {
+        console.error('Error while loading JSON:', error);
+        reject(error);
       }
     };
 
@@ -432,7 +420,7 @@ async loadJSON(file: File): Promise<void> {
       reject(error);
     };
 
-    reader.readAsText(file);  // Read the file as text
+    reader.readAsText(file); // Read the file as text
   });
 }
 
