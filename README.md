@@ -178,28 +178,27 @@ Open your browser and go to http://localhost:4200/ to see the app running.
 
 ## Folder Structure
 The folder structure of the app is organized as follows:
-
 /app
-  /components      - Angular components for UI and functionality
-    /lighting      - Controls and settings related to lighting
-    /notes         - Component for creating and managing notes
-    /scene-manager - Manages scene loading and customization
-    /viewer        - Core 3D model viewer component
-  /helpers         - Helper utilities for specific functions
+  /components
+    /lighting            - Controls and settings related to lighting
+    /notes               - Component for creating and managing notes
+    /scene-manager       - Manages scene loading and customization
+    /viewer              - Core 3D model viewer component
+  /helpers
     /fullscreen.helper.ts - Fullscreen functionality
     /player-movement.helper.ts - Movement helper for WASD/arrow keys
     /stereoscope.helper.ts - Helper for stereoscopic view (VR)
     /vr-controller.helper.ts - VR controller functionality
-  /pages           - Angular pages for different views
-    /bug-report    - Page for users to report bugs
-    /contact       - Contact page
-    /panorama-viewer - Displays 360° panorama view
-    /viewer-page   - Page for the main 3D viewer
-  /services        - Angular services to handle business logic
+  /pages
+    /bug-report          - Page for users to report bugs
+    /contact             - Contact page
+    /panorama-viewer     - Displays 360° panorama view
+    /viewer-page         - Page for the main 3D viewer
+  /services
     /scene-controls.service.ts - Service to control scene actions
     /storage.service.ts - Service for managing scene storage
 
 /assets
-  /i18n            - Language JSON files for localization
-  /icons           - Icons used in the app
-  /sounds          - Sound assets used in the app
+  /i18n                - Language JSON files for localization
+  /icons               - Icons used in the app
+  /sounds              - Sound assets used in the app
