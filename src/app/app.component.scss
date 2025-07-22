@@ -218,3 +218,23 @@ body {
 :fullscreen {
   overflow: hidden;
 }
+
+// --------------------------------------
+
+.test-dropdown,
+.test-dropdown-mobile {
+  margin-top: 0.5rem;
+}
+
+.test-dropdown-content,
+.language-dropdown-content {
+  position: absolute;
+  display: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  z-index: 1000;
+}
+
+.test-dropdown-content.show {
+  display: block;
+}

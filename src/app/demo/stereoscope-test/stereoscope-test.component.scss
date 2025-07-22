@@ -1,0 +1,148 @@
+body, html {
+  margin: 0;
+  height: 100%;
+  background-color: #04d800; /* dark gray or any color you want */
+  overflow: hidden;
+}
+
+.stereo-wrapper {
+  background-color: #e00a0a;
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+.stereo-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  display: block;
+  object-fit: cover;
+  outline: 5px solid #666; /* subtle border to simulate viewfinder frame */
+  box-sizing: border-box;
+}
+
+/* Left eye viewfinder mask */
+.viewfinder-mask-left {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 50vw;
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+  background: black;
+
+  clip-path: polygon(
+    0% 0%, 0% 100%, 80% 100%, 80% 50%, 85% 45%, 90% 40%, 95% 37%, 100% 35%,
+    100% 0%
+  );
+
+  /* fallback for browsers without clip-path */
+  mask-image:
+    radial-gradient(circle at 75% center, transparent 30%, black 31%);
+  mask-composite: exclude;
+}
+
+/* Right eye viewfinder mask */
+.viewfinder-mask-right {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 50vw;
+  height: 100vh;
+  z-index: 2;
+  pointer-events: none;
+  background: black;
+
+  clip-path: polygon(
+    20% 0%, 20% 50%, 25% 55%, 30% 60%, 35% 63%, 40% 65%, 100% 65%, 100% 100%,
+    0% 100%, 0% 0%
+  );
+
+  /* fallback for browsers without clip-path */
+  mask-image:
+    radial-gradient(circle at 25% center, transparent 30%, black 31%);
+  mask-composite: exclude;
+}
+
+/* Vertical center divider line */
+.center-divider {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.2);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Buttons common styles */
+.fullscreen-btn,
+.debug-btn {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 0.3rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 10;
+  font-family: inherit;
+}
+
+.fullscreen-btn {
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  padding: 0.4rem 0.6rem;
+}
+
+.fullscreen-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.debug-btn {
+  top: 1rem;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.debug-btn.bottom {
+  top: auto;
+  bottom: 1rem;
+}
+
+button {
+  position: fixed;
+  z-index: 10; /* Higher than canvas (1) and viewfinder-mask (2) */
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 0.3rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Position buttons somewhere visible */
+button:nth-of-type(1) {
+  top: 1rem;
+  right: 1rem;
+}
+
+button:nth-of-type(2) {
+  top: 1rem;
+  left: 1rem;
+}
+
+button:nth-of-type(3) {
+  bottom: 1rem;
+  left: 1rem;
+}

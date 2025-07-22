@@ -17,9 +17,9 @@ export class AppComponent implements OnInit {
   @HostListener('window:resize')
   onResize() { this.isMobile = window.innerWidth <= 768; }
 
-  dropdownOpen     = false;
-  secondaryOpen    = false;
+  dropdownOpen = false;
   langDropdownOpen = false;
+  testDropdownOpen = false;
 
 
   constructor(
@@ -51,12 +51,12 @@ export class AppComponent implements OnInit {
   /* ─────── menu helpers ─────── */
   toggleLangDropdown() { this.langDropdownOpen = !this.langDropdownOpen; }
   toggleDropdown()      { this.dropdownOpen   = !this.dropdownOpen; }
-  toggleSecondary()     { this.secondaryOpen  = !this.secondaryOpen; }
+  toggleTestDropdown() {this.testDropdownOpen = !this.testDropdownOpen;}
 
   goto(path: string) {
     this.router.navigate([path]);
     this.dropdownOpen   = false;
-    this.secondaryOpen  = false;
+    this.testDropdownOpen  = false;
     this.langDropdownOpen = false;
   }
 

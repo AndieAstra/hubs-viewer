@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NotesComponent } from './notes.component';
+import { StereoscopeTestComponent } from './stereoscope-test.component';
 
-describe('NotesComponent', () => {
-  let component: NotesComponent;
-  let fixture: ComponentFixture<NotesComponent>;
+describe('StereoscopeTestComponent', () => {
+  let component: StereoscopeTestComponent;
+  let fixture: ComponentFixture<StereoscopeTestComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NotesComponent]
+      imports: [StereoscopeTestComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(NotesComponent);
+    fixture = TestBed.createComponent(StereoscopeTestComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

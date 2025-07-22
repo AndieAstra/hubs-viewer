@@ -14,6 +14,13 @@
         <button (click)="goto('/panorama')">   {{ 'NAV.PANORAMA' | translate }}</button>
         <button (click)="goto('/contact')">    {{ 'NAV.CONTACT'  | translate }}</button>
         <button (click)="goto('/bug-report')"> {{ 'NAV.BUG'      | translate }}</button>
+
+        <!-- Test Features Section -->
+        <div class="test-dropdown-mobile">
+          <hr />
+          <strong>TEST FEATURES</strong>
+          <button (click)="goto('/demo/stereoscope')">Stereo Viewer</button>
+        </div>
       </div>
     </div>
 
@@ -23,24 +30,17 @@
         {{ 'NAV.LANGUAGE' | translate }}
       </button>
 
-<div class="language-dropdown-content" [class.show]="langDropdownOpen">
-  <button (click)="useLanguage('en')">
-    <img src="assets/icons/en.svg" alt="English" width="20" height="20" />
-    English
-  </button>
-  <button (click)="useLanguage('es')">
-    <img src="assets/icons/es.svg" alt="Español" width="20" height="20" />
-    Español
-  </button>
-
-<!-- Need to ask for tribal permission, in meantime placeholder -->
-  <!-- <button (click)="useLanguage('yq')">
-    <img src="assets/icons/yq.svg" alt="Yoem Noki" width="20" height="20" />
-    Yoem Noki
-  </button> -->
-<!-- ----------------------------------------------- -->
-
-</div>
+      <div class="language-dropdown-content" [class.show]="langDropdownOpen">
+        <button (click)="useLanguage('en')">
+          <img src="assets/icons/en.svg" alt="English" width="20" height="20" />
+          English
+        </button>
+        <button (click)="useLanguage('es')">
+          <img src="assets/icons/es.svg" alt="Español" width="20" height="20" />
+          Español
+        </button>
+        <!-- <button (click)="useLanguage('yq')"> ... </button> -->
+      </div>
     </div>
   }
 
@@ -52,23 +52,15 @@
       <button class="language-dropdown-toggle" (click)="toggleLangDropdown()">
         {{ 'NAV.LANGUAGE' | translate }}
       </button>
-
       <div class="language-dropdown-content" [class.show]="langDropdownOpen">
-          <button (click)="useLanguage('en')">
-            <img src="assets/icons/en.svg" alt="English" width="20" height="20" />
-            English
-          </button>
-          <button (click)="useLanguage('es')">
-            <img src="assets/icons/es.svg" alt="Español" width="20" height="20" />
-            Español
-          </button>
-
-<!-- Need to ask for tribal permission, in meantime placeholder -->
-          <!-- <button (click)="useLanguage('yq')">
-            <img src="assets/icons/yq.svg" alt="Yoem Noki" width="20" height="20" />
-            Yoem Noki
-          </button> -->
-<!-- ----------------------------------------------- -->
+        <button (click)="useLanguage('en')">
+          <img src="assets/icons/en.svg" alt="English" width="20" height="20" />
+          English
+        </button>
+        <button (click)="useLanguage('es')">
+          <img src="assets/icons/es.svg" alt="Español" width="20" height="20" />
+          Español
+        </button>
       </div>
     </div>
 
@@ -78,6 +70,16 @@
       <button (click)="goto('/panorama')">   {{ 'NAV.PANORAMA' | translate }}</button>
       <button (click)="goto('/contact')">    {{ 'NAV.CONTACT'  | translate }}</button>
       <button (click)="goto('/bug-report')"> {{ 'NAV.BUG'      | translate }}</button>
+
+      <!-- Test Features dropdown -->
+      <div class="test-dropdown desktop-only">
+        <button class="test-dropdown-toggle" (click)="toggleTestDropdown()">
+          🧪 Test Features
+        </button>
+        <div class="test-dropdown-content" [class.show]="testDropdownOpen">
+          <button (click)="goto('/demo/stereoscope')">Stereoscope</button>
+        </div>
+      </div>
     </div>
   }
 

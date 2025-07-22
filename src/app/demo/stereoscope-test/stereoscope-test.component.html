@@ -1,0 +1,18 @@
+<canvas #stereoCanvas class="stereo-canvas"></canvas>
+
+@if(useStereo){
+<div class="viewfinder-mask"></div>
+<div class="center-divider"></div>
+}
+
+<button (click)="toggleStereo()">
+  {{ useStereo ? 'Mono View' : 'Stereo View' }}
+</button>
+
+<button (click)="recenter()">
+  Tap to Recenter
+</button>
+
+<button (click)="toggleFullscreen()">
+  ⛶
+</button>
