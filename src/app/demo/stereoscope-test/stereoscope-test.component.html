@@ -1,3 +1,7 @@
+<!-- Need to update and add menu top -->
+
+<div class="container" (click)="canvasRef.nativeElement.requestPointerLock()">
+
 <canvas #stereoCanvas class="stereo-canvas"></canvas>
 
 @if(useStereo){
@@ -16,3 +20,5 @@
 <button (click)="toggleFullscreen()">
   ⛶
 </button>
+
+</div>

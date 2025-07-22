@@ -1,0 +1,88 @@
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #e00a0a; // bright red background
+
+  .stereo-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    outline: 5px solid #666;
+    box-sizing: border-box;
+    z-index: 1;
+  }
+
+  /* Left eye viewfinder mask */
+  .viewfinder-mask-left {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 50vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9); // strong black shade outside window
+    pointer-events: none;
+    z-index: 2;
+
+    /*
+      Use inset ellipse to *cut out* the viewfinder window area,
+      leaving black mask outside that ellipse
+    */
+    clip-path: ellipse(30% 45% at 65% 50%);
+  }
+
+  /* Right eye viewfinder mask */
+  .viewfinder-mask-right {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 50vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    pointer-events: none;
+    z-index: 2;
+    clip-path: ellipse(30% 45% at 35% 50%);
+  }
+
+  /* Center divider line */
+  .center-divider {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: 4px;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  /* Controls */
+  .controls {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+
+    button {
+      background: rgba(0, 0, 0, 0.6);
+      border: none;
+      border-radius: 0.3rem;
+      padding: 0.4rem 0.8rem;
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+}
