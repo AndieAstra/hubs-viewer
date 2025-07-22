@@ -23,10 +23,24 @@
         {{ 'NAV.LANGUAGE' | translate }}
       </button>
 
-      <div class="language-dropdown-content" [class.show]="langDropdownOpen">
-        <button (click)="useLanguage('en')">🇺🇸 English</button>
-        <button (click)="useLanguage('es')">🇪🇸 Español</button>
-      </div>
+<div class="language-dropdown-content" [class.show]="langDropdownOpen">
+  <button (click)="useLanguage('en')">
+    <img src="assets/icons/en.svg" alt="English" width="20" height="20" />
+    English
+  </button>
+  <button (click)="useLanguage('es')">
+    <img src="assets/icons/es.svg" alt="Español" width="20" height="20" />
+    Español
+  </button>
+
+<!-- Need to ask for tribal permission, in meantime placeholder -->
+  <!-- <button (click)="useLanguage('yq')">
+    <img src="assets/icons/yq.svg" alt="Yoem Noki" width="20" height="20" />
+    Yoem Noki
+  </button> -->
+<!-- ----------------------------------------------- -->
+
+</div>
     </div>
   }
 
@@ -40,15 +54,21 @@
       </button>
 
       <div class="language-dropdown-content" [class.show]="langDropdownOpen">
-        <button (click)="useLanguage('en')">
-          <img src="assets/flags/us.svg" alt="English" width="20" style="margin-right: 6px;">
-          English
-        </button>
+          <button (click)="useLanguage('en')">
+            <img src="assets/icons/en.svg" alt="English" width="20" height="20" />
+            English
+          </button>
+          <button (click)="useLanguage('es')">
+            <img src="assets/icons/es.svg" alt="Español" width="20" height="20" />
+            Español
+          </button>
 
-        <button (click)="useLanguage('es')">
-          <img src="assets/flags/es.svg" alt="Español" width="20" style="margin-right: 6px;">
-          Español
-        </button>
+<!-- Need to ask for tribal permission, in meantime placeholder -->
+          <!-- <button (click)="useLanguage('yq')">
+            <img src="assets/icons/yq.svg" alt="Yoem Noki" width="20" height="20" />
+            Yoem Noki
+          </button> -->
+<!-- ----------------------------------------------- -->
       </div>
     </div>
 

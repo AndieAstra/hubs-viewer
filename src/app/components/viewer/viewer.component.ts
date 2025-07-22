@@ -6,6 +6,7 @@ import {
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
 
@@ -159,19 +160,13 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
       this.sceneManager?.setEscHintVisible(isFullscreen);
     });
 
- // Create and add ambient light (room light)
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // color, intensity
+    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     this.scene.add(this.ambientLight);
-
-    // Create and add directional light (sunlight)
     this.dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
     this.dirLight.position.set(5, 10, 7.5);
     this.scene.add(this.dirLight);
-
-   /* 👉  give the service access to the sun light */
-  this.sceneControlsService.setDirectionalLight(this.sceneManager.dirLight);
-
-    const modelJson = this.getModelJson(); // Replace with actual model JSON
+    this.sceneControlsService.setDirectionalLight(this.sceneManager.dirLight);
+    const modelJson = this.getModelJson();
     this.sceneManager.loadGLTFModel(modelJson);
   }
 
@@ -193,7 +188,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
           if (this.sceneLoaded) {
         this.snackBar.open(this.translate.instant('MESSAGES.REPLACE_MODEL_CONFIRM'), 'OK', { duration: 5000 });
-        // Wait for user response before replacing the model
         setTimeout(() => {
           this.loadNewModel(file);
         }, 5000);
@@ -276,8 +270,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public setWalkSpeed(speed: number): void {
     this.sceneControlsService.updateMovementSpeed(speed);
   }
-  //
-  //
 
   onSunlightIntensityChange(event: any): void {
     this.sceneControlsService.updateSunlightIntensity(this.sceneLight, event.target.value);
@@ -302,13 +294,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   }
 
   if (!confirm(this.translate.instant('MESSAGES.ENTER_VR_CONFIRM'))) return;
-
   this.isVRMode = true;
   document.body.classList.add('vr-mode');
-
   const container = this.sceneContainerRef.nativeElement;
-
-  // Request fullscreen on the container element
   const requestFullscreen = container.requestFullscreen
     || (container as any).webkitRequestFullscreen
     || (container as any).msRequestFullscreen;
@@ -316,8 +304,6 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   requestFullscreen?.call(container).catch((err: any) =>
     console.warn(this.translate.instant('ERRORS.FULLSCREEN_FAILED'), err)
   );
-
-  // Try to lock screen orientation to landscape
   try {
     (screen.orientation as any)?.lock?.('landscape').catch((err: any) =>
       console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err)
@@ -326,23 +312,16 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
   }
 
-  // Save original container size and camera aspect
   this.originalSize = {
     width: container.clientWidth,
     height: container.clientHeight,
   };
   this.originalCameraAspect = this.camera?.aspect;
-
-  // Initialize and set size for stereoEffect
   if (!this.stereoEffect) {
     this.stereoEffect = new StereoEffect(this.renderer);
   }
   this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
-
-  // Start VR rendering loop using stereoEffect
   this.renderer.setAnimationLoop(() => this.renderVR());
-
-  // Push VR state to history to handle back button exit
   history.pushState({ vr: true }, '');
   window.onpopstate = () => {
     if (this.isVRMode) this.exitVR();
@@ -352,19 +331,13 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 exitVR(): void {
   this.isVRMode = false;
   document.body.classList.remove('vr-mode');
-
-  // Stop VR animation loop
   this.renderer?.setAnimationLoop(null);
-
-  // Exit fullscreen if active
   try {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch((err: any) =>
         console.warn(this.translate.instant('ERRORS.EXIT_FULLSCREEN_FAILED'), err)
       );
     }
-
-    // Unlock screen orientation
     (screen.orientation as any)?.unlock?.();
   } catch (e) {
     console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
@@ -375,8 +348,6 @@ exitVR(): void {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(this.originalSize.width, this.originalSize.height);
   }
-
-  // Reset container styles (in case you changed them on enter VR)
   const container = this.sceneContainerRef.nativeElement;
   Object.assign(container.style, {
     width: '',
@@ -415,9 +386,7 @@ exitVR(): void {
     if (!file) return;
 
     try {
-      // Check the file extension first (to determine which method to use)
       if (file.name.endsWith('.json')) {
-        // Use the `loadJSON` method from SceneManagerComponent
         await this.sceneManager.loadJSON(file);
         this.storageService.logToConsole(`Loaded file: ${file.name}`);
       } else {
@@ -428,8 +397,6 @@ exitVR(): void {
       console.error('Failed to load scene:', error);
       this.storageService.logToConsole('ERROR_LOADING_SCENE');
     }
-
-    // Clear file input value
     (evt.target as HTMLInputElement).value = '';
   }
 
@@ -472,11 +439,9 @@ disposeObject(obj: THREE.Object3D): void {
 
 async loadFile(file: File): Promise<void> {
   const fileName = file.name.toLowerCase();
-
-  // Check file extension and call respective handler
   if (fileName.endsWith('.json')) {
     try {
-      await this.loadJsonScene(file);  // calls the new loadJsonScene method
+      await this.loadJsonScene(file);
       this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
     } catch (error) {
       console.error('Failed to load JSON scene:', error);
@@ -484,7 +449,7 @@ async loadFile(file: File): Promise<void> {
     }
   } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
     try {
-      await this.handleLocalModelFile(file);  // handles GLTF/GLB models
+      await this.handleLocalModelFile(file);
     } catch (error) {
       console.error('Failed to load model:', error);
       this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
@@ -494,103 +459,92 @@ async loadFile(file: File): Promise<void> {
     this.storageService.logToConsole('ERROR.UNSUPPORTED_FILE_TYPE');
   }
 
-  // Reset the file input
   (document.querySelector('input[type="file"]') as HTMLInputElement).value = '';
 }
 
 async loadJsonScene(file: File): Promise<void> {
   const reader = new FileReader();
+
   reader.onload = async () => {
     try {
-      const jsonText = reader.result as string;
-      const sceneData: SceneData = JSON.parse(jsonText);
-      if (!sceneData) {
-        throw new Error('No scene data found in file.');
+      const json = JSON.parse(reader.result as string);
+
+      // Case 1: Native Three.js scene (from scene.toJSON())
+      if (json.object && json.metadata?.type === 'Object') {
+        this.clearScene();
+
+        const loader = new THREE.ObjectLoader();
+        const parsedScene = loader.parse(json.object);
+        this.scene.add(parsedScene);
+
+        this.storageService.logToConsole('Loaded native Three.js scene.');
+        this.renderer.render(this.scene, this.camera);
+        return;
       }
 
-      this.clearScene();  // Clear any existing objects in the scene
-      this.restoreScene(sceneData);  // Restore camera, lighting, and models
+      // Case 2: Custom scene format (with "models" array)
+      if (json.models && Array.isArray(json.models)) {
+        this.clearScene();
+        this.restoreScene(json); // Setup camera, lighting, etc.
 
-      // Restore the camera from the scene data
-      this.camera.position.set(
-        sceneData.camera.position.x,
-        sceneData.camera.position.y,
-        sceneData.camera.position.z
-      );
-      this.camera.rotation.set(
-        sceneData.camera.rotation.x,
-        sceneData.camera.rotation.y,
-        sceneData.camera.rotation.z
-      );
+        for (const model of json.models) {
+          const modelObj = await this.loadModelFromBase64(model);
+          this.scene.add(modelObj);
+        }
 
-      // Adjust camera position based on the scene's bounding box
-      this.adjustCameraPosition();
-
-      this.camera.near = 0.1;
-      this.camera.updateProjectionMatrix(); // Update after modifying the near plane
-
-      // Load models from scene data
-      for (const modelData of sceneData.models) {
-        const model = await this.loadModelFromBase64(modelData);
-        this.scene.add(model);
+        this.storageService.logToConsole('Loaded custom JSON scene.');
+        this.renderer.render(this.scene, this.camera);
+        return;
       }
 
-      console.log('Scene loaded successfully');
-    } catch (e) {
-      console.error('Failed to load JSON scene:', e);
-      this.storageService.logToConsole('ERROR_LOADING_SCENE');
+      // Invalid structure
+      throw new Error('Unrecognized scene format');
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Error while loading JSON:', err);
+      this.snackBar.open('Error loading scene JSON: ' + message, 'OK', { duration: 4000 });
     }
   };
-  reader.onerror = () => {
-    this.storageService.logToConsole('ERROR_READING_FILE');
-  };
+
   reader.readAsText(file);
 }
 
-// Helper function to load a model from base64 encoded string
-async loadModelFromBase64(modelData: SavedModel): Promise<THREE.Object3D> {
-  const binary = Uint8Array.from(atob(modelData.glbBase64), c => c.charCodeAt(0));
+
+async loadModelFromBase64(data: SavedModel): Promise<THREE.Object3D> {
+  const binary = Uint8Array.from(atob(data.glbBase64), c => c.charCodeAt(0));
   const blob = new Blob([binary], { type: 'model/gltf-binary' });
   const url = URL.createObjectURL(blob);
-  const loader = new GLTFLoader();
-  const gltf = await loader.loadAsync(url);
-  URL.revokeObjectURL(url);
 
-  const model = gltf.scene;
-  model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
-  model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
-  model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+  try {
+    const gltf = await new GLTFLoader().loadAsync(url);
+    URL.revokeObjectURL(url);
 
-  return model;
+    const model = gltf.scene;
+    model.position.set(data.position.x, data.position.y, data.position.z);
+    model.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
+    model.scale.set(data.scale.x, data.scale.y, data.scale.z);
+    return model;
+  } catch (err) {
+    console.error('Failed to load model from base64:', err);
+    throw err;
+  }
 }
 
-// Adjust camera position based on scene size and model position
+
 adjustCameraPosition(): void {
-  // Get the bounding box of the scene to determine the size and center
   const boundingBox = new THREE.Box3().setFromObject(this.scene);
   const center = boundingBox.getCenter(new THREE.Vector3());
   const size = boundingBox.getSize(new THREE.Vector3());
   const maxDim = Math.max(size.x, size.y, size.z);
-
-  // Adjust the camera height calculation to prevent extreme positioning
-  const cameraHeight = Math.max(maxDim * 1.5, 10);  // Lower multiplier to prevent extreme heights
-
-  // Position the camera above the scene's center (adjusted on y-axis)
+  const cameraHeight = Math.max(maxDim * 1.5, 10);
   this.camera.position.set(center.x, center.y + cameraHeight, center.z + maxDim * 1.5);
-
-  // Ensure the camera is looking at the center of the scene
   this.camera.lookAt(center);
-
-  // Update the near plane and projection matrix for the camera
-  this.camera.near = 0.1; // Keep near plane small to avoid clipping issues
-  this.camera.updateProjectionMatrix();  // Apply the updated near plane
-
-  // Log camera position and scene center for debugging
+  this.camera.near = 0.1;
+  this.camera.updateProjectionMatrix();
   console.log('Camera position:', this.camera.position);
   console.log('Scene center:', center);
 }
-
-
 
 loadNewModel(file: File) {
   const loader = new GLTFLoader();
@@ -609,8 +563,6 @@ loadNewModel(file: File) {
     }
   );
 }
-
- // Load GLTF/GLB model
   async loadGLTF(file: File): Promise<void> {
     const loader = new GLTFLoader();
     return new Promise((resolve, reject) => {
@@ -623,11 +575,9 @@ loadNewModel(file: File) {
       }, undefined, reject);
     });
   }
-
-// Load JSON file using FileReader
 async loadJSON(file: File): Promise<void> {
-  const loader = new THREE.ObjectLoader(); // For general 3D objects
-  const gltfLoader = new GLTFLoader(); // For loading GLTF models directly
+  const loader = new THREE.ObjectLoader();
+  const gltfLoader = new GLTFLoader();
 
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -635,35 +585,30 @@ async loadJSON(file: File): Promise<void> {
     reader.onload = async (event) => {
       try {
         const json = event.target?.result;
-
-        // Check if the file was read correctly
         if (!json) {
           reject(new Error('Failed to read file contents.'));
           return;
         }
-
-        console.log('File content:', json); // Log the content to check
-
-        // Parse and load the object from JSON
+        console.log('File content:', json);
         const parsedObject = JSON.parse(json as string);
-
-        // Check if it's a GLTF/GLB model in JSON format (e.g., GLTF's scene object)
         if (parsedObject?.asset) {
-          // It’s likely a GLTF model - load it with GLTFLoader
-          gltfLoader.parse(json as string, '', (gltf: THREE.Group) => {  // Type explicit
-            const object = gltf.scene; // This is the model's scene group
-            this.scene.add(object); // Add the model to the scene
-            this.uploadedModel = object;
-            resolve();  // Resolve the promise when done
-          }, (error: Error) => {  // Error type
-            reject(new Error('Error loading GLTF JSON: ' + error.message));
-          });
-        } else if (parsedObject?.type) {
-          // It’s a general 3D object (ObjectLoader can handle it)
-          const object = loader.parse(parsedObject);  // Parse and load the object
+
+        gltfLoader.parse(json as string, '', (gltf: GLTF) => {
+          const object = gltf.scene;
           this.scene.add(object);
           this.uploadedModel = object;
-          resolve();  // Resolve when done
+          resolve();
+        }, (event: ErrorEvent) => {
+          const error = event.error ?? new Error(event.message);
+          reject(new Error('Error loading GLTF JSON: ' + error.message));
+        });
+
+
+        } else if (parsedObject?.type) {
+          const object = loader.parse(parsedObject);
+          this.scene.add(object);
+          this.uploadedModel = object;
+          resolve();
         } else {
           reject(new Error('The parsed JSON is not valid GLTF or Object format.'));
         }
@@ -672,21 +617,17 @@ async loadJSON(file: File): Promise<void> {
         reject(error);
       }
     };
-
     reader.onerror = (error) => {
       console.error('FileReader error:', error);
       reject(error);
     };
-
-    reader.readAsText(file);  // Read the file as text
+    reader.readAsText(file);
   });
 }
 
 
 private restoreSceneLighting(lightingData: any): void {
   if (!lightingData) return;
-
-  // Restore ambient light
   if (lightingData.ambient) {
     if (!this.scene.getObjectByName('ambientLight')) {
       const ambientLight = new THREE.AmbientLight(lightingData.ambient.color, lightingData.ambient.intensity);
@@ -694,8 +635,6 @@ private restoreSceneLighting(lightingData: any): void {
       this.scene.add(ambientLight);
     }
   }
-
-  // Restore directional light
   if (lightingData.directional) {
     if (!this.scene.getObjectByName('directionalLight')) {
       const directionalLight = new THREE.DirectionalLight(lightingData.directional.color, lightingData.directional.intensity);
@@ -705,23 +644,18 @@ private restoreSceneLighting(lightingData: any): void {
     }
   }
 }
-
 async handleLocalModelFile(file: File): Promise<void> {
   const url = URL.createObjectURL(file);
   const loader = new GLTFLoader();
-
   try {
     const gltf = await loader.loadAsync(url);
     URL.revokeObjectURL(url);
-
     const model = gltf.scene;
     model.name = file.name;
     model.userData['isLoadedModel'] = true;
     model.userData['fileName'] = file.name;
-
     this.scene.add(model);
     this.sceneLoaded = true;
-
     this.storageService.logToConsole(`Loaded model: ${file.name}`);
   } catch (error) {
     console.error('Failed to load model:', error);
@@ -749,6 +683,7 @@ clearScene(): void {
   for (const obj of toRemove) {
     this.scene.remove(obj);
     this.disposeObject(obj);
+
     obj.traverse(child => {
       if ((child as any).geometry) {
         (child as any).geometry.dispose?.();
@@ -763,11 +698,21 @@ clearScene(): void {
       }
     });
   }
+  this.createDefaultCamera();
 }
 
+private createDefaultCamera(): void {
+  const container = this.sceneContainerRef?.nativeElement;
+  const aspectRatio = container
+    ? container.clientWidth / container.clientHeight
+    : window.innerWidth / window.innerHeight;
+
+  this.sceneManager.camera = new THREE.PerspectiveCamera(60, aspectRatio, 0.1, 1000);
+  this.camera.position.set(0, this.cameraHeight || 2, 5);
+  this.camera.lookAt(new THREE.Vector3(0, this.cameraHeight || 0, 0));
+}
 
 restoreScene(sceneData: SceneData): void {
-  // Restore camera
   this.camera.position.set(
     sceneData.camera.position.x,
     sceneData.camera.position.y,
@@ -779,11 +724,8 @@ restoreScene(sceneData: SceneData): void {
     sceneData.camera.rotation.z
   );
 
-  // Restore ambient light
   this.ambientLight.color.setHex(sceneData.lighting.ambient.color);
   this.ambientLight.intensity = sceneData.lighting.ambient.intensity;
-
-  // Restore directional light
   this.dirLight.color.setHex(sceneData.lighting.directional.color);
   this.dirLight.intensity = sceneData.lighting.directional.intensity;
   this.dirLight.position.set(
@@ -791,7 +733,4 @@ restoreScene(sceneData: SceneData): void {
     sceneData.lighting.directional.position[1],
     sceneData.lighting.directional.position[2]
   );
-}
-
-
-}
+}}

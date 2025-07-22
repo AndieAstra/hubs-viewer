@@ -424,5 +424,14 @@ async loadJSON(file: File): Promise<void> {
   });
 }
 
+public createDefaultCamera(): void {
+  this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  this.camera.position.set(0, this.cameraHeight, 5);
+  this.camera.lookAt(new THREE.Vector3(0, this.cameraHeight, 0));
+}
+
+public resetCamera(): void {
+  this.createDefaultCamera(); // your internal method
+}
 
 }

@@ -1,115 +1,121 @@
 {
-  "hash": "4d40a773",
-  "configHash": "80add397",
+  "hash": "ea6e675b",
+  "configHash": "9b033096",
   "lockfileHash": "a879c4e0",
-  "browserHash": "048e5c54",
+  "browserHash": "23ca7809",
   "optimized": {
     "@angular/common": {
       "src": "../../../../../node_modules/@angular/common/fesm2022/common.mjs",
       "file": "@angular_common.js",
-      "fileHash": "ba3a567c",
+      "fileHash": "18e96438",
       "needsInterop": false
     },
     "@angular/common/http": {
       "src": "../../../../../node_modules/@angular/common/fesm2022/http.mjs",
       "file": "@angular_common_http.js",
-      "fileHash": "93439f6f",
+      "fileHash": "dea56e79",
       "needsInterop": false
     },
     "@angular/core": {
       "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
       "file": "@angular_core.js",
-      "fileHash": "be4177d8",
+      "fileHash": "af3d4808",
       "needsInterop": false
     },
     "@angular/forms": {
       "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
       "file": "@angular_forms.js",
-      "fileHash": "c218c155",
+      "fileHash": "16c16210",
       "needsInterop": false
     },
     "@angular/material/snack-bar": {
       "src": "../../../../../node_modules/@angular/material/fesm2022/snack-bar.mjs",
       "file": "@angular_material_snack-bar.js",
-      "fileHash": "8992b596",
+      "fileHash": "604a4ca6",
       "needsInterop": false
     },
     "@angular/platform-browser": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
       "file": "@angular_platform-browser.js",
-      "fileHash": "bbb4f558",
+      "fileHash": "53b3a7d5",
       "needsInterop": false
     },
     "@angular/platform-browser/animations/async": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/animations/async.mjs",
       "file": "@angular_platform-browser_animations_async.js",
-      "fileHash": "2c0d525e",
+      "fileHash": "e5f20bf7",
       "needsInterop": false
     },
     "@angular/router": {
       "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
       "file": "@angular_router.js",
-      "fileHash": "960173c3",
+      "fileHash": "bfc7c744",
       "needsInterop": false
     },
     "@ngx-translate/core": {
       "src": "../../../../../node_modules/@ngx-translate/core/fesm2022/ngx-translate-core.mjs",
       "file": "@ngx-translate_core.js",
-      "fileHash": "da656a47",
+      "fileHash": "1ba95b88",
       "needsInterop": false
     },
     "@ngx-translate/http-loader": {
       "src": "../../../../../node_modules/@ngx-translate/http-loader/fesm2022/ngx-translate-http-loader.mjs",
       "file": "@ngx-translate_http-loader.js",
-      "fileHash": "cc77b5ff",
+      "fileHash": "dac9801f",
       "needsInterop": false
     },
     "rxjs/operators": {
       "src": "../../../../../node_modules/rxjs/dist/esm5/operators/index.js",
       "file": "rxjs_operators.js",
-      "fileHash": "8e28411f",
+      "fileHash": "5b10fa20",
       "needsInterop": false
     },
     "shepherd.js": {
       "src": "../../../../../node_modules/shepherd.js/dist/esm/shepherd.mjs",
       "file": "shepherd__js.js",
-      "fileHash": "e6d4d6e5",
+      "fileHash": "cd8bbf80",
       "needsInterop": false
     },
     "three": {
       "src": "../../../../../node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "cc7848eb",
+      "fileHash": "52f49f16",
       "needsInterop": false
     },
     "three/examples/jsm/controls/PointerLockControls": {
       "src": "../../../../../node_modules/three/examples/jsm/controls/PointerLockControls.js",
       "file": "three_examples_jsm_controls_PointerLockControls.js",
-      "fileHash": "1cf328d0",
+      "fileHash": "bee6424c",
       "needsInterop": false
     },
     "three/examples/jsm/effects/StereoEffect": {
       "src": "../../../../../node_modules/three/examples/jsm/effects/StereoEffect.js",
       "file": "three_examples_jsm_effects_StereoEffect.js",
-      "fileHash": "719971d2",
+      "fileHash": "aaa8bcc1",
       "needsInterop": false
     },
     "three/examples/jsm/effects/StereoEffect.js": {
       "src": "../../../../../node_modules/three/examples/jsm/effects/StereoEffect.js",
       "file": "three_examples_jsm_effects_StereoEffect__js.js",
-      "fileHash": "66d9b326",
+      "fileHash": "8bb40222",
       "needsInterop": false
     },
     "three/examples/jsm/exporters/GLTFExporter.js": {
       "src": "../../../../../node_modules/three/examples/jsm/exporters/GLTFExporter.js",
       "file": "three_examples_jsm_exporters_GLTFExporter__js.js",
-      "fileHash": "cfa54d18",
+      "fileHash": "ff40d86b",
+      "needsInterop": false
+    },
+    "three/examples/jsm/loaders/GLTFLoader": {
+      "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
+      "file": "three_examples_jsm_loaders_GLTFLoader.js",
+      "fileHash": "df06fd39",
       "needsInterop": false
     },
     "three/examples/jsm/loaders/GLTFLoader.js": {
       "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
       "file": "three_examples_jsm_loaders_GLTFLoader__js.js",
-      "fileHash": "b8e2957a",
+      "fileHash": "9e512921",
       "needsInterop": false
     }
   },
@@ -119,6 +125,9 @@
     },
     "chunk-5XMUEEXY": {
       "file": "chunk-5XMUEEXY.js"
+    },
+    "chunk-7VK7IFQQ": {
+      "file": "chunk-7VK7IFQQ.js"
     },
     "chunk-KHSIX47S": {
       "file": "chunk-KHSIX47S.js"

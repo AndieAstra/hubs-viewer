@@ -27,14 +27,14 @@ export class AppComponent implements OnInit {
     private translate: TranslateService
   ) {
     /* ─────── i18n set‑up ─────── */
-    translate.addLangs(['en', 'es']);
+    translate.addLangs(['en', 'es', 'yq']);
     translate.setDefaultLang('en');
 
     const saved   = localStorage.getItem('preferredLang');
     const browser = translate.getBrowserLang();
 
-    if (saved && ['en', 'es'].includes(saved))       translate.use(saved);
-    else if (browser && ['en', 'es'].includes(browser)) translate.use(browser);
+    if (saved && ['en', 'es', 'yq'].includes(saved))       translate.use(saved);
+    else if (browser && ['en', 'es', 'yq'].includes(browser)) translate.use(browser);
     else                                             translate.use('en');
 
     /* Collapse the menu after every successful navigation */
@@ -61,7 +61,7 @@ export class AppComponent implements OnInit {
   }
 
   /* ─────── language switcher (optional) ─────── */
-  useLanguage(lang: 'en' | 'es'): void {
+  useLanguage(lang: 'en' | 'es' | 'yq'): void {
       this.translate.use(lang);
       localStorage.setItem('preferredLang', lang);
       this.langDropdownOpen = false;

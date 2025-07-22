@@ -21,10 +21,12 @@
     "ENTER_VR": "🕶 Entrar en VR",
     "EXIT_VR": "🚪 Salir de VR",
     "RESET_CAMERA": "Restablecer Cámara",
-    "SAVE_SCENE": "Guardar",
+    "SAVE_SCENE": "Guardar JSON",
     "LOAD_SCENE": "Cargar",
     "SUNLIGHT_COLOR": "Color del Sol",
-    "ROOM_LIGHT": "Luz de la Habitación"
+    "ROOM_LIGHT": "Luz de la Habitación",
+    "LOAD_GLB":"Cargar GLB",
+    "LOAD_JSON":"Cargar JSON"
   },
 
   "SECTIONS": {

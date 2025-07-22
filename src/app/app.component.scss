@@ -161,7 +161,7 @@ nav {
   .language-dropdown-content {
     display: none;
     flex-direction: column;
-    background: #e3f2fd;
+    background: #023050;
     padding: 0.5rem;
     border-radius: 6px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -171,13 +171,13 @@ nav {
     z-index: 999;
 
     button {
-      background: transparent;
-      color: #333;
-      padding: 0.4rem 0.8rem;
-      margin: 0.2rem 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
       border: none;
+      background: none;
       cursor: pointer;
-      text-align: left;
 
       &:hover {
         background: #bbdefb;
