@@ -1,5 +1,3 @@
-<!-- Need to update and fix weird streoscope round issue -->
-
 <div class="container" (click)="canvasRef.nativeElement.requestPointerLock()">
 
   <canvas #forestCanvas class="stereo-canvas"></canvas>
@@ -14,7 +12,11 @@
 
   <div class="controls">
     <button (click)="toggleStereo()">
-      {{ useStereo ? 'Switch to Mono View' : 'Switch to Stereo View' }}
+      {{ useStereo ? '[space] Switch to Mono View' : '[space]  Switch to Stereo View' }}
     </button>
   </div>
+
+<div class="hint">
+  💡 Hint: Press <kbd>ESC</kbd> to release the mouse
+</div>
 </div>

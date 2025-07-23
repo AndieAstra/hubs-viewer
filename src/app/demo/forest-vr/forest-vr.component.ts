@@ -1,5 +1,6 @@
 import { Component, ElementRef, AfterViewInit, OnDestroy, ViewChild } from '@angular/core';
 import * as THREE from 'three';
+import { VrControllerHelper } from '../../helpers/vr-controller.helper';
 
 @Component({
   selector: 'app-forest-vr',
@@ -16,30 +17,40 @@ export class ForestVRComponent implements AfterViewInit, OnDestroy {
   private cameraRight!: THREE.PerspectiveCamera;
 
   private keysPressed: { [key: string]: boolean } = {};
-  public isPointerLocked = false;
-
-  private yaw = 0;
   private moveSpeed = 0.1;
-  private lookSpeed = 0.002;
+
+  private lastMouseX: number | null = null;
+  private yaw = 0;
 
   public useStereo: boolean = true;
+
+  private vrHelper = new VrControllerHelper();
 
   ngAfterViewInit(): void {
     this.initThree();
     this.animate();
 
     window.addEventListener('resize', this.onWindowResize);
-    document.addEventListener('pointerlockchange', this.onPointerLockChange);
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
+
+    const canvas = this.canvasRef.nativeElement;
+    canvas.addEventListener('mousemove', this.onMouseMove);
+    canvas.addEventListener('mouseleave', () => (this.lastMouseX = null));
+
+    // Start gyroscope support
+    this.vrHelper.enableInteractions();
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.onWindowResize);
-    document.removeEventListener('pointerlockchange', this.onPointerLockChange);
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
-    document.removeEventListener('mousemove', this.onMouseMove);
+
+    const canvas = this.canvasRef.nativeElement;
+    canvas.removeEventListener('mousemove', this.onMouseMove);
+
+    this.vrHelper.stop();
   }
 
   private initThree(): void {
@@ -48,7 +59,7 @@ export class ForestVRComponent implements AfterViewInit, OnDestroy {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.renderer.setPixelRatio(window.devicePixelRatio);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setClearColor(0x88c98f); // Forest green
+    this.renderer.setClearColor(0x88c98f);
 
     this.scene = new THREE.Scene();
 
@@ -58,8 +69,10 @@ export class ForestVRComponent implements AfterViewInit, OnDestroy {
     this.cameraLeft = this.camera.clone();
     this.cameraRight = this.camera.clone();
 
-    const groundMat = new THREE.MeshStandardMaterial({ color: 0x557755 });
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), groundMat);
+    const ground = new THREE.Mesh(
+      new THREE.PlaneGeometry(200, 200),
+      new THREE.MeshStandardMaterial({ color: 0x557755 })
+    );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
     this.scene.add(ground);
@@ -85,6 +98,9 @@ export class ForestVRComponent implements AfterViewInit, OnDestroy {
   private animate = (): void => {
     requestAnimationFrame(this.animate);
 
+    this.vrHelper.update();
+
+    // Movement (keyboard or controller)
     const direction = new THREE.Vector3();
     const forward = new THREE.Vector3();
     const right = new THREE.Vector3();
@@ -100,38 +116,39 @@ export class ForestVRComponent implements AfterViewInit, OnDestroy {
     if (this.keysPressed['a'] || this.keysPressed['arrowleft']) direction.add(right);
     if (this.keysPressed['d'] || this.keysPressed['arrowright']) direction.sub(right);
 
+    direction.add(this.vrHelper.movementVector);
     direction.normalize().multiplyScalar(this.moveSpeed);
     this.camera.position.add(direction);
 
-    // Yaw-only rotation
+    // Desktop mouse rotation (affects yaw)
     this.camera.rotation.set(0, this.yaw, 0);
+
+    // Gyroscope orientation (slerped)
+    this.vrHelper.applyRotation(this.camera);
 
     const width = window.innerWidth;
     const height = window.innerHeight;
 
     if (this.useStereo) {
       this.renderer.setScissorTest(true);
-
       const eyeOffset = 0.03;
 
-      // Left Eye
       this.cameraLeft.position.copy(this.camera.position).add(new THREE.Vector3(-eyeOffset, 0, 0));
-      this.cameraLeft.rotation.copy(this.camera.rotation);
+      this.cameraLeft.quaternion.copy(this.camera.quaternion);
       this.renderer.setViewport(0, 0, width / 2, height);
       this.renderer.setScissor(0, 0, width / 2, height);
       this.renderer.render(this.scene, this.cameraLeft);
 
-      // Right Eye
       this.cameraRight.position.copy(this.camera.position).add(new THREE.Vector3(eyeOffset, 0, 0));
-      this.cameraRight.rotation.copy(this.camera.rotation);
+      this.cameraRight.quaternion.copy(this.camera.quaternion);
       this.renderer.setViewport(width / 2, 0, width / 2, height);
       this.renderer.setScissor(width / 2, 0, width / 2, height);
       this.renderer.render(this.scene, this.cameraRight);
 
       this.renderer.setScissorTest(false);
     } else {
-      this.renderer.setScissorTest(false);
       this.renderer.setViewport(0, 0, width, height);
+      this.renderer.setScissorTest(false);
       this.renderer.render(this.scene, this.camera);
     }
   };
@@ -165,18 +182,12 @@ export class ForestVRComponent implements AfterViewInit, OnDestroy {
     this.camera.updateProjectionMatrix();
   };
 
-  private onPointerLockChange = (): void => {
-    this.isPointerLocked = document.pointerLockElement === this.canvasRef.nativeElement;
-    if (this.isPointerLocked) {
-      document.addEventListener('mousemove', this.onMouseMove);
-    } else {
-      document.removeEventListener('mousemove', this.onMouseMove);
-    }
-  };
-
   private onMouseMove = (event: MouseEvent): void => {
-    if (!this.isPointerLocked) return;
-    this.yaw -= event.movementX * this.lookSpeed;
+    if (this.lastMouseX !== null) {
+      const deltaX = event.clientX - this.lastMouseX;
+      this.yaw -= deltaX * 0.002; // mouse look speed
+    }
+    this.lastMouseX = event.clientX;
   };
 
   private onKeyDown = (event: KeyboardEvent): void => {

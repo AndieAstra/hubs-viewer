@@ -21,11 +21,11 @@ export class StereoscopeTestComponent implements AfterViewInit, OnDestroy {
 
   private suzanne!: THREE.Mesh;
 
-  ngAfterViewInit(): void {
-    this.initThree();
-    this.animate();
-    window.addEventListener('resize', this.onWindowResize);
-  }
+ngAfterViewInit(): void {
+  this.initThree();
+  this.animate();
+  window.addEventListener('resize', this.onWindowResize);
+}
 
   ngOnDestroy(): void {
     window.removeEventListener('resize', this.onWindowResize);
@@ -152,24 +152,7 @@ animate = (): void => {
     this.monoCamera.updateProjectionMatrix();
   };
 
-  toggleFullscreen(): void {
-    const elem = document.documentElement;
-
-    if (!document.fullscreenElement) {
-      elem.requestFullscreen().catch(err => {
-        console.error(`Error attempting fullscreen: ${err.message}`);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  }
-
   toggleStereo(): void {
     this.useStereo = !this.useStereo;
-  }
-
-  recenter(): void {
-    this.monoCamera.position.set(0, 0, 5);
-    this.monoCamera.lookAt(0, 0, -5);
   }
 }

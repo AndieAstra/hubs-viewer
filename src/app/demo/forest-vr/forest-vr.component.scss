@@ -3,7 +3,7 @@
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  background-color: #e00a0a; // bright red background
+  background-color: #e00a0a;
 
   .stereo-canvas {
     position: absolute;
@@ -17,51 +17,46 @@
     z-index: 1;
   }
 
-  /* Left eye viewfinder mask */
-  .viewfinder-mask-left {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 50vw;
-    height: 100vh;
-    background: rgba(0, 0, 0, 0.9); // strong black shade outside window
-    pointer-events: none;
-    z-index: 2;
-
-    /*
-      Use inset ellipse to *cut out* the viewfinder window area,
-      leaving black mask outside that ellipse
-    */
-    clip-path: ellipse(30% 45% at 65% 50%);
-  }
-
-  /* Right eye viewfinder mask */
+  // Left and right eye viewfinder masks
+  .viewfinder-mask-left,
   .viewfinder-mask-right {
     position: fixed;
     top: 0;
-    right: 0;
     width: 50vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.9);
     pointer-events: none;
     z-index: 2;
-    clip-path: ellipse(30% 45% at 35% 50%);
+    background: black;
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
   }
 
-  /* Center divider line */
+  .viewfinder-mask-left {
+    left: 0;
+    mask-image: radial-gradient(circle at 65% 50%, transparent 40%, black 41%);
+    -webkit-mask-image: radial-gradient(circle at 65% 50%, transparent 40%, black 41%);
+  }
+
+  .viewfinder-mask-right {
+    right: 0;
+    mask-image: radial-gradient(circle at 35% 50%, transparent 40%, black 41%);
+    -webkit-mask-image: radial-gradient(circle at 35% 50%, transparent 40%, black 41%);
+  }
+
   .center-divider {
     position: fixed;
     top: 0;
     left: 50%;
     width: 4px;
     height: 100vh;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.3);
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
     pointer-events: none;
     z-index: 3;
   }
 
-  /* Controls */
   .controls {
     position: fixed;
     bottom: 1rem;
@@ -69,6 +64,7 @@
     z-index: 10;
     display: flex;
     gap: 10px;
+    flex-direction: column;
 
     button {
       background: rgba(0, 0, 0, 0.6);
@@ -83,6 +79,25 @@
       &:hover {
         background: rgba(255, 255, 255, 0.2);
       }
+    }
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ddd;
+    padding: 0.6rem 1rem;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+
+    kbd {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
     }
   }
 }

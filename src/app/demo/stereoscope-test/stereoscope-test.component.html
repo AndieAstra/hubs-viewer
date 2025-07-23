@@ -1,6 +1,6 @@
 <!-- Need to update and add menu top -->
 
-<div class="container" (click)="canvasRef.nativeElement.requestPointerLock()">
+<div class="container">
 
 <canvas #stereoCanvas class="stereo-canvas"></canvas>
 
@@ -9,16 +9,9 @@
 <div class="center-divider"></div>
 }
 
-<button (click)="toggleStereo()">
+<button class="toggle-stereo-btn" (click)="toggleStereo()">
   {{ useStereo ? 'Mono View' : 'Stereo View' }}
 </button>
 
-<button (click)="recenter()">
-  Tap to Recenter
-</button>
-
-<button (click)="toggleFullscreen()">
-  ⛶
-</button>
 
 </div>
