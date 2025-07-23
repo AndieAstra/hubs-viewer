@@ -19,4 +19,8 @@
 <div class="hint">
   💡 Hint: Press <kbd>ESC</kbd> to release the mouse
 </div>
+
+@if (!gyroEnabled) {
+<button (click)="enableGyro()" class="enable-gyro-button">Enable Gyroscope</button>
+}
 </div>

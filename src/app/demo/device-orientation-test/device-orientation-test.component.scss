@@ -1,0 +1,25 @@
+.info {
+      font-size: 20px;
+      margin: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 5px;
+      display: inline-block;
+      min-width: 120px;
+    }
+    .unsupported {
+      color: #dc3545;
+      font-weight: bold;
+      margin-top: 1rem;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      margin: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      background: #007bff;
+    }
+    button:hover { background: #0056b3; }

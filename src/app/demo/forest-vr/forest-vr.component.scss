@@ -33,29 +33,30 @@
     -webkit-mask-size: 100% 100%;
   }
 
-  .viewfinder-mask-left {
-    left: 0;
-    mask-image: radial-gradient(circle at 65% 50%, transparent 40%, black 41%);
-    -webkit-mask-image: radial-gradient(circle at 65% 50%, transparent 40%, black 41%);
-  }
+.viewfinder-mask-left {
+  left: 0;
+  mask-image: radial-gradient(circle at 60% 50%, transparent 50%, black 51%);
+  -webkit-mask-image: radial-gradient(circle at 60% 50%, transparent 50%, black 51%);
+}
 
-  .viewfinder-mask-right {
-    right: 0;
-    mask-image: radial-gradient(circle at 35% 50%, transparent 40%, black 41%);
-    -webkit-mask-image: radial-gradient(circle at 35% 50%, transparent 40%, black 41%);
-  }
+.viewfinder-mask-right {
+  right: 0;
+  mask-image: radial-gradient(circle at 40% 50%, transparent 50%, black 51%);
+  -webkit-mask-image: radial-gradient(circle at 40% 50%, transparent 50%, black 51%);
+}
 
-  .center-divider {
-    position: fixed;
-    top: 0;
-    left: 50%;
-    width: 4px;
-    height: 100vh;
-    background: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-    pointer-events: none;
-    z-index: 3;
-  }
+.center-divider {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100vh;
+  background: black; // full black to mask center
+  z-index: 4;
+  pointer-events: none;
+}
+
+
 
   .controls {
     position: fixed;
@@ -99,5 +100,26 @@
       border-radius: 4px;
       font-family: monospace;
     }
+  }
+}
+
+.enable-gyro-button {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 0.7rem 1.4rem;
+  font-size: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 0.4rem;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
   }
 }

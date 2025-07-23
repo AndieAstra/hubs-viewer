@@ -46,6 +46,7 @@ Virtual Farming System Viewer is an educational tool designed to help users uplo
 * [JSON Validator](https://codebeautify.org/jsonvalidator)
 * [GLTF Validator](https://github.khronos.org/glTF-Validator/)
 * [GLB Validator](https://gltf-viewer.donmccurdy.com/)
+* [Gyroscope Test](https://www.checkadevice.com/gyroscope_test.html)
 
 ---
 
