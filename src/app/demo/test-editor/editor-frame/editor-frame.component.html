@@ -1,0 +1,119 @@
+<div class="unity-layout">
+
+  <!-- 🔝 Top Toolbar -->
+  <header class="top-toolbar">
+    <div class="toggle-sidebar"></div>
+    <div class="toolbar-center">
+
+
+      <!-- <section class="upload-section">
+        <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+      </section> -->
+
+
+  <div class="upload-instructions">
+    <p>
+      <strong>Choose your 3D model (glb)</strong>, then use the WASD keys to move around, ESC to exit viewer, SPACE to jump.
+    </p>
+      <app-uploader (fileLoaded)="onFileLoaded($event)"></app-uploader>
+  </div>
+
+
+</div>
+
+  <div class="sidebar-button-row">
+  <button class="kid-button purple" (click)="startTutorial()">🎓 Tutorial</button>
+  <button class="kid-button danger small" (click)="openBugReport()">🐞 Something not working?</button>
+  </div>
+
+  </header>
+
+  <!-- 🧱 Main Layout -->
+  <div class="main-body">
+
+    <!-- 📁 Sidebar Left -->
+    <aside class="sidebar-left" [class.collapsed]="sidebarCollapsed">
+      <h4>Scene Settings</h4>
+      <button class="kid-button" (click)="resetView()">
+        <img src="assets/icons/new_rotate.png" alt="Reset" />
+        <span>Reset Camera</span>
+      </button>
+      <button class="kid-button turquoise" (click)="save()">
+        <img src="assets/icons/save.jpg" alt="Save" />
+        <span>Save Scene</span>
+      </button>
+      <button class="kid-button purple" (click)="load()">
+        <img src="assets/icons/upload.png" alt="Load" />
+        <span>Load Scene</span>
+      </button>
+
+      <h4>Lighting</h4>
+      <button class="kid-button green" (click)="toggleLightcolor()">
+        <img src="assets/icons/reset.png" alt="Light Color" />
+        <span>Sunlight Color</span>
+      </button>
+      <button class="kid-button orange" (click)="toggleRoomLight()">
+        <img src="assets/icons/wire.jpg" alt="Room Light" />
+        <span>Room Light</span>
+      </button>
+
+      <div class="kid-slider">
+        <label for="sunlight">☀️ Sunlight</label>
+        <input type="range" (input)="onSunlightInput($event)">
+      </div>
+    </aside>
+
+    <!-- 🖥 Canvas Center -->
+    <div class="canvas-container">
+      <canvas #viewerCanvas></canvas>
+      <app-test-editor [glbFile]="selectedFile"></app-test-editor>
+    </div>
+
+    <!-- 🛠 Sidebar Right -->
+    <aside class="sidebar-right">
+      <h4>Model Settings</h4>
+      <div class="kid-slider">
+        <label for="modelSize">📏 Size</label>
+        <input type="range" (input)="onModelSizeInput($event)">
+      </div>
+      <div class="kid-slider">
+        <label for="modelHeight">⬆️ Height</label>
+        <input type="range" (input)="onModelHeightInput($event)">
+      </div>
+
+      <h4>Camera Movement Settings</h4>
+      <div class="kid-slider">
+        <label for="speed">🏃 Speed</label>
+        <input type="range" (input)="onSpeedInput($event)">
+      </div>
+      <div class="kid-slider">
+        <label for="eyeLevel">👁️ Eye Level</label>
+        <input type="range" (input)="onEyeLevelInput($event)">
+      </div>
+    </aside>
+  </div>
+
+<!-- 📌 Bottom Panel -->
+<footer class="bottom-bar">
+  <div class="tabs">
+    <button (click)="toggleConsole()">
+      Console {{ showConsole ? '▼' : '▲' }}
+    </button>
+  </div>
+
+  @if (showConsole) {
+    <div class="assets-browser">
+      <div class="assets-tree">
+        <div class="error-bar">
+          <ul>
+            @for (message of consoleMessages; track message) {
+              <li>{{ message }}</li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
+</footer>
+
+</div>
