@@ -7,6 +7,7 @@ import { StereoscopeTestComponent } from './demo/stereoscope-test/stereoscope-te
 import { ForestVRComponent } from './demo/forest-vr/forest-vr.component';
 import { DeviceOrientationTestComponent } from './demo/device-orientation-test/device-orientation-test.component';
 import { EditorFrameComponent } from './demo/test-editor/editor-frame/editor-frame.component';
+import { ViewerComponent } from './components/viewer/viewer.component';
 
 export const routes: Routes = [
   { path: '', redirectTo: '3dviewer', pathMatch: 'full' },
@@ -18,4 +19,5 @@ export const routes: Routes = [
   { path: 'demo/forest-vr', component: ForestVRComponent },
   { path: 'demo/gyroscope-test', component: DeviceOrientationTestComponent },
   { path: 'demo/editor-frame', component: EditorFrameComponent },
+  { path: 'viewer', component: ViewerComponent },
 ];

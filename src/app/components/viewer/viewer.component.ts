@@ -19,6 +19,7 @@ import { SceneControlsService } from '../../services/scene-controls.service';
 import { VrControllerHelper } from '../../helpers/vr-controller.helper';
 import { SceneManagerComponent } from '../scene-manager/scene-manager.component';
 import { toggleFullscreen } from '../../helpers/fullscreen.helper';
+import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
 
 export interface SavedModel {
   name: string;
@@ -107,6 +108,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   modelHeight = 0;
   ambientIntensity = 0.5;
   cameraHeight = 2;
+
+  private stereoHelper!: StereoscopeHelper;
 
   get isInFullscreen(): boolean {
     return document.fullscreenElement === this.sceneContainerRef?.nativeElement;
@@ -287,7 +290,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     this.sceneManager?.setEyeLevel(val);
   }
 
- enterVR(): void {
+enterVR(): void {
   if (!/Mobi|Android/i.test(navigator.userAgent)) {
     this.snackBar.open(this.translate.instant('MESSAGES.VR_MOBILE_ONLY'), 'OK', { duration: 3000 });
     return;
@@ -317,10 +320,16 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     height: container.clientHeight,
   };
   this.originalCameraAspect = this.camera?.aspect;
-  if (!this.stereoEffect) {
-    this.stereoEffect = new StereoEffect(this.renderer);
-  }
-  this.stereoEffect.setSize(container.clientWidth, container.clientHeight);
+
+const renderer = new THREE.WebGLRenderer();
+
+  // Replace StereoEffect with StereoscopeHelper
+    if (!this.stereoHelper) {
+  this.stereoHelper = new StereoscopeHelper(this.renderer, this.scene, this.camera);
+    }
+    this.stereoHelper.setSize(this.sceneContainerRef.nativeElement.clientWidth, this.sceneContainerRef.nativeElement.clientHeight);
+    this.isVRMode = true;
+
   this.renderer.setAnimationLoop(() => this.renderVR());
   history.pushState({ vr: true }, '');
   window.onpopstate = () => {
@@ -332,6 +341,7 @@ exitVR(): void {
   this.isVRMode = false;
   document.body.classList.remove('vr-mode');
   this.renderer?.setAnimationLoop(null);
+
   try {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch((err: any) =>
@@ -358,28 +368,36 @@ exitVR(): void {
     display: '',
   });
 
+  // Clean up the stereo helper
+  if (this.stereoHelper) {
+    this.stereoHelper.dispose();
+  }
+
   this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
 
   if (history.state?.vr) history.back();
   window.onpopstate = null;
 }
 
-  private renderVR = () => {
-    if (this.vrHelper) {
-      this.vrHelper.update();
-      if (this.camera) {
-        this.vrHelper.applyRotation(this.camera);
-        const delta = this.clock.getDelta();
-        const move = this.vrHelper.movementVector.clone().multiplyScalar(delta * this.vrHelper.moveSpeed);
-        this.camera.position.add(move);
-        this.camera.position.y = this.cameraHeight;
-      }
-    }
 
-    if (this.stereoEffect && this.scene && this.camera) {
-      this.stereoEffect.render(this.scene, this.camera);
+private renderVR = () => {
+  if (this.vrHelper) {
+    this.vrHelper.update();
+    if (this.camera) {
+      this.vrHelper.applyRotation(this.camera);
+      const delta = this.clock.getDelta();
+      const move = this.vrHelper.movementVector.clone().multiplyScalar(delta * this.vrHelper.moveSpeed);
+      this.camera.position.add(move);
+      this.camera.position.y = this.cameraHeight;
     }
-  };
+  }
+
+  // Replace the old StereoEffect render call with StereoscopeHelper's render method
+  if (this.stereoHelper && this.scene && this.camera) {
+  this.stereoHelper.render();
+  }
+};
+
 
  async onFileChange(evt: Event): Promise<void> {
     const file = (evt.target as HTMLInputElement).files?.[0];

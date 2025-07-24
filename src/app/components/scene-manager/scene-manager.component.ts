@@ -223,33 +223,35 @@ export class SceneManagerComponent implements OnInit, OnDestroy {
     });
     this.container.appendChild(this.instructionsDiv);
 
-     // Stereoscope toggle button
-    this.stereoscopeToggleBtn = document.createElement('button');
-    this.stereoscopeToggleBtn.innerText = 'Toggle Stereoscope';
-    Object.assign(this.stereoscopeToggleBtn.style, {
-      position: 'absolute',
-      bottom: '20px',
-      left: '140px',
-      padding: '10px 16px',
-      background: '#008800',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '4px',
-      cursor: 'pointer',
-      zIndex: '999',
-    });
-    this.stereoscopeToggleBtn.onclick = () => {
-      if (this.isStereoscopeEnabled) {
-        this.stereoscopeHelper.disable();
-        this.isStereoscopeEnabled = false;
-        this.stereoscopeToggleBtn.style.background = '#008800';
-      } else {
-        this.stereoscopeHelper.enable();
-        this.isStereoscopeEnabled = true;
-        this.stereoscopeToggleBtn.style.background = '#004400';
-      }
-    };
-    this.container.appendChild(this.stereoscopeToggleBtn);
+// ********* DELETE/ OLD STEREOSCOPE BUTTON ***************
+
+    //  // Stereoscope toggle button
+    // this.stereoscopeToggleBtn = document.createElement('button');
+    // this.stereoscopeToggleBtn.innerText = 'Toggle Stereoscope';
+    // Object.assign(this.stereoscopeToggleBtn.style, {
+    //   position: 'absolute',
+    //   bottom: '20px',
+    //   left: '140px',
+    //   padding: '10px 16px',
+    //   background: '#008800',
+    //   color: '#fff',
+    //   border: 'none',
+    //   borderRadius: '4px',
+    //   cursor: 'pointer',
+    //   zIndex: '999',
+    // });
+    // this.stereoscopeToggleBtn.onclick = () => {
+    //   if (this.isStereoscopeEnabled) {
+    //     this.stereoscopeHelper.disable();
+    //     this.isStereoscopeEnabled = false;
+    //     this.stereoscopeToggleBtn.style.background = '#008800';
+    //   } else {
+    //     this.stereoscopeHelper.enable();
+    //     this.isStereoscopeEnabled = true;
+    //     this.stereoscopeToggleBtn.style.background = '#004400';
+    //   }
+    // };
+    // this.container.appendChild(this.stereoscopeToggleBtn);
   }
 
   private createEscHintSprite(): THREE.Sprite {
@@ -334,18 +336,35 @@ enterVR(): void {
     this.playerMovementHelper.cameraHeight = y;
   }
 
-  render(): void {
+  // render(): void {
+  //   this.renderer.render(this.scene, this.camera);
+  // }
+
+
+  // resize(width?: number, height?: number): void {
+  //   const w = width  ?? this.container.clientWidth;
+  //   const h = height ?? this.container.clientHeight;
+  //   this.camera.aspect = w / h;
+  //   this.camera.updateProjectionMatrix();
+  //   this.renderer.setSize(w, h);
+  // }
+
+render(): void {
+  if (this.isStereoscopeEnabled) {
+    this.stereoscopeHelper.getStereoEffect().render(this.scene, this.camera);
+  } else {
     this.renderer.render(this.scene, this.camera);
   }
+}
 
+resize(width?: number, height?: number): void {
+  const w = width ?? this.container.clientWidth;
+  const h = height ?? this.container.clientHeight;
 
-  resize(width?: number, height?: number): void {
-    const w = width  ?? this.container.clientWidth;
-    const h = height ?? this.container.clientHeight;
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(w, h);
-  }
+  // Access stereoEffect via getter
+  this.stereoscopeHelper.getStereoEffect().setSize(w, h);
+  this.renderer.setSize(w, h);
+}
 
 
   public setEscHintVisible(visible: boolean) {

@@ -1,12 +1,24 @@
 <div #sceneContainer class="viewer-container">
+  <!-- Scene Manager component with references to container and cameraHeight -->
   <app-scene-manager
-        [container]="sceneContainer"
-        [cameraHeight]="cameraHeight">
+    [container]="sceneContainer"
+    [cameraHeight]="cameraHeight">
   </app-scene-manager>
 
-  <button class="fullscreen-btn"
-          type="button"
-          (click)="onToggleFullscreen()">
+@if (!isVRMode) {
+  <!-- Enter/Exit VR button -->
+  <button class="vr-btn" type="button" (click)="enterVR()">
+    🎮 Enter VR Mode
+  </button>
+}
+@if (isVRMode) {
+  <button class="vr-btn" type="button" (click)="exitVR()">
+    🕶️ Exit VR Mode
+  </button>
+}
+
+  <!-- Fullscreen Toggle button -->
+  <button class="fullscreen-btn" type="button" (click)="onToggleFullscreen()">
     ⛶ Enter/Exit Fullscreen
   </button>
 </div>
