@@ -8,8 +8,6 @@ canvas {
   z-index: 0 !important;
 }
 
-// -------- VR Viewer ---------------------
-
 .viewer-container {
   position: relative;
   width: 100vw;
@@ -19,21 +17,20 @@ canvas {
   justify-content: center;
   background: black;
   overflow: hidden;
+
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 0;
+    touch-action: none;
+  }
 }
 
-.viewer-container canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  z-index: 0;
-  touch-action: none;
-}
-
-/* viewer-canvas.styles.scss */
-
+/* Canvas container */
 .canvas-container {
   position: relative;
   display: flex;
@@ -44,31 +41,31 @@ canvas {
   height: 100%;
   background: black;
   overflow: hidden;
+
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  app-viewer {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 }
 
-.canvas-container canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 0;
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.canvas-container app-viewer {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-:fullscreen,
-:-webkit-full-screen {
+/* Fullscreen styles */
+:fullscreen, :-webkit-full-screen {
   width: 100vw !important;
   height: 100vh !important;
   display: flex !important;
@@ -77,8 +74,7 @@ canvas {
   background: black !important;
 }
 
-canvas:fullscreen,
-canvas:-webkit-full-screen {
+canvas:fullscreen, canvas:-webkit-full-screen {
   width: 100vw !important;
   height: 100vh !important;
   position: absolute;
@@ -87,7 +83,37 @@ canvas:-webkit-full-screen {
   display: block;
 }
 
-.fullscreen-btn {
+.threejs-container {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+
+  canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    touch-action: none;
+    z-index: 0;
+    // Optional border for debugging
+    border: 2px solid lime;
+  }
+}
+
+/* Fullscreen adjustments for container */
+:fullscreen .viewer-container, :fullscreen .threejs-container {
+  height: 100dvh;
+}
+
+:-webkit-full-screen .viewer-container, :-webkit-full-screen .threejs-container {
+  height: 100vh;
+}
+
+/* Fullscreen and VR button styles */
+.fullscreen-btn, .vr-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -101,46 +127,32 @@ canvas:-webkit-full-screen {
   border-radius: 6px;
   transition: background-color 0.3s ease;
   position: fixed;
-  bottom: 20px;
-  right: 20px;
   z-index: 9999;
 
-  &:hover,
-  &:focus {
+  &:hover, &:focus {
     background-color: rgba(0, 0, 0, 0.9);
     outline: none;
   }
 
   @media (max-width: 768px) {
-    bottom: 12px;
-    right: 12px;
     font-size: 16px;
     padding: 12px 18px;
   }
 }
 
-/* Container that holds canvas and overlay */
-.threejs-container {
-  position: relative;
-  width: 100%;
-  height: 100vh;
-  overflow: hidden;
-  border: 2px dashed red;
+/* Position of Fullscreen button */
+.fullscreen-btn {
+  bottom: 20px;
+  right: 20px;
 }
 
-/* The WebGL canvas */
-.threejs-container canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
-  touch-action: none;
-  border: 2px solid lime; // optional for debug
-  z-index: 0;
+/* Position of VR button right above Fullscreen */
+.vr-btn {
+  bottom: 60px; /* Adjust this value to place it above the fullscreen button */
+  right: 20px; /* Align VR button to the right side like the fullscreen button */
 }
 
+/* Esc hint (hidden by default) */
 .esc-hint {
   position: absolute;
   bottom: 10px;
@@ -157,78 +169,16 @@ canvas:-webkit-full-screen {
   display: none;
 }
 
-/* ---------- FULLSCREEN STYLES ---------- */
-
-:fullscreen .viewer-container,
-:fullscreen .threejs-container {
-  width: 100vw;
-  height: 100dvh;
-}
-
-/* WebKit (iOS Safari 15‑) */
-:-webkit-full-screen .viewer-container,
-:-webkit-full-screen .threejs-container {
-  width: 100vw;
-  height: 100vh;
-}
-
-.viewer-container canvas {
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-}
-
+/* Rotation warning */
 .rotate-warning {
   position: fixed;
   bottom: 1rem;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(0, 0, 0, .7);
+  background: rgba(0, 0, 0, 0.7);
   color: #fff;
   padding: .4rem .8rem;
   border-radius: 8px;
   font-size: .85rem;
   z-index: 10000;
-}
-
-// ------------------------------
-
-.viewer-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-.vr-btn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.vr-btn:hover {
-  background-color: rgba(0, 0, 0, 0.8);
-}
-
-.fullscreen-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
-  background-color: rgba(0, 0, 0, 0.5);
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.fullscreen-btn:hover {
-  background-color: rgba(0, 0, 0, 0.8);
 }
