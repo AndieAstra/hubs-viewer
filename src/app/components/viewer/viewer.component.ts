@@ -733,4 +733,6 @@ restoreScene(sceneData: SceneData): void {
     sceneData.lighting.directional.position[1],
     sceneData.lighting.directional.position[2]
   );
-}}
+}
+
+}
