@@ -227,24 +227,24 @@ private initScene() {
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
   this.scene.add(this.controls.getObject());
 
-  // User must press key to start – more intuitive for kids
-  const instructions = document.createElement('div');
-  instructions.innerText = "Click to start walking!";
-  instructions.style.position = "absolute";
-  instructions.style.top = "50%";
-  instructions.style.left = "50%";
-  instructions.style.transform = "translate(-50%, -50%)";
-  instructions.style.color = "white";
-  instructions.style.fontSize = "24px";
-  instructions.style.padding = "10px";
-  instructions.style.background = "rgba(0,0,0,0.5)";
-  instructions.style.borderRadius = "8px";
-  container.appendChild(instructions);
+  // // User must press key to start – more intuitive for kids
+  // const instructions = document.createElement('div');
+  // instructions.innerText = "Click to start walking!";
+  // instructions.style.position = "absolute";
+  // instructions.style.top = "50%";
+  // instructions.style.left = "50%";
+  // instructions.style.transform = "translate(-50%, -50%)";
+  // instructions.style.color = "white";
+  // instructions.style.fontSize = "24px";
+  // instructions.style.padding = "10px";
+  // instructions.style.background = "rgba(0,0,0,0.5)";
+  // instructions.style.borderRadius = "8px";
+  // container.appendChild(instructions);
 
-  container.addEventListener('click', () => {
-    this.controls.lock();
-    container.removeChild(instructions);
-  });
+  // container.addEventListener('click', () => {
+  //   this.controls.lock();
+  //   container.removeChild(instructions);
+  // });
 
 //******************************************************** */
 
