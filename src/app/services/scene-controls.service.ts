@@ -107,12 +107,12 @@ export class SceneControlsService {
   }
 
   updateMovementSpeed(speed: number): void {
-    if (!this.viewerRef?.sceneManager) return;
+    if (!this.viewerRef) return;
 
     // the value SceneManager uses each frame
-    this.viewerRef.sceneManager.speed = speed;
+    this.viewerRef.speed = speed;
 
     // keep helper in sync so keyboard movement feels the same
-    this.viewerRef.sceneManager.playerMovementHelper.moveSpeed = speed;
+    this.viewerRef.playerMovementHelper.moveSpeed = speed;
   }
 }

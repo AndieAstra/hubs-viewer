@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { SceneManagerComponent } from './scene-manager.component';
+import { FileuploaderComponent } from './fileuploader.component';
 
-describe('SceneManagerComponent', () => {
-  let component: SceneManagerComponent;
-  let fixture: ComponentFixture<SceneManagerComponent>;
+describe('FileuploaderComponent', () => {
+  let component: FileuploaderComponent;
+  let fixture: ComponentFixture<FileuploaderComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SceneManagerComponent]
+      imports: [FileuploaderComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(SceneManagerComponent);
+    fixture = TestBed.createComponent(FileuploaderComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

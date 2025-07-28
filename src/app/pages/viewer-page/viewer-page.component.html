@@ -2,7 +2,7 @@
 <div class="unity-layout">
 
   <!-- Sidebar Toggle Button -->
-  <button class="sidebar-toggle" (click)="toggleSidebar()">☰</button>
+  <!-- <button class="sidebar-toggle" (click)="toggleSidebar()">☰</button> -->
 
   <!-- Main Body -->
   <div class="main-body">
@@ -19,11 +19,11 @@
       <!-- Mobile VR -->
       <div class="mobile-only-buttons">
 
-        <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
+        <!-- <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
 
         @if (viewer.isVRMode) {
           <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
-        }
+        } -->
 
       </div>
 
@@ -41,24 +41,21 @@
 
           <!-- Load Scene -->
 <!-- Load GLTF/GLB -->
-<button class="kid-button purple" (click)="onLoadGLTFClick()">
+<button class="kid-button purple" (click)="fileInput.click()">
+  <input type="file" #fileInput style="display: none" (change)="onFileSelected($event)" />
   <img src="assets/icons/upload.png" alt="Load GLTF/GLB" />
   <span>{{ 'BUTTONS.LOAD_GLB' | translate }}</span>
 </button>
 
 <!-- Load JSON -->
-<button class="kid-button purple" (click)="onLoadJSONClick()">
+<button class="kid-button purple" (click)="load()">
   <img src="assets/icons/upload.png" alt="Load JSON" />
   <span>{{ 'BUTTONS.LOAD_JSON' | translate }}</span>
 </button>
 
-<!-- Hidden File Input -->
-<input type="file" #fileInputGLTF style="display: none" (change)="onGLTFFileChange($event)" accept=".glb,.gltf" />
-<input type="file" #fileInputJSON style="display: none" (change)="onJSONFileChange($event)" accept=".json" />
-
 
           <!-- Save Scene -->
-          <button class="kid-button green" (click)="saveScene()">
+          <button class="kid-button green" (click)="save()">
             <img src="assets/icons/save.jpg" alt="Save" />
             <span>{{ 'BUTTONS.SAVE_SCENE' | translate }}</span>
           </button>
@@ -75,7 +72,7 @@
         <h4>{{ 'SECTIONS.LIGHTING' | translate }}</h4>
         <div class="button-row">
 
-          <label class="kid-button green color-picker-label">
+          <!-- <label class="kid-button green color-picker-label">
             <input
               type="color"
               class="color-input"
@@ -83,7 +80,7 @@
             />
             <img src="assets/icons/reset.png" alt="Light Color" />
             <span>{{ 'BUTTONS.SUNLIGHT_COLOR' | translate }}</span>
-          </label>
+          </label> -->
 
 
           <button class="kid-button orange" (click)="toggleRoomLight()">
@@ -95,14 +92,18 @@
             <label>{{ 'SLIDERS.SUNLIGHT' | translate }}</label>
 
             <!-- bind to [value] so the knob shows the current value -->
-            <input  type="range"
+
+            <!-- <input  type="range"
                     min="0"
                     max="2"
                     step="0.05"
                     [value]="sunIntensity"
-                    (input)="onSunlightInput($event)">
+                    (input)="onSunlightInput($event)"> -->
+
           </div>
         </div>
+
+
       </section>
 
       <!-- Model Settings -->
@@ -182,18 +183,18 @@
       </div>
 
       <!-- 👓 Exit VR Button -->
-      @if(viewer.isVRMode) {
+      <!-- @if(viewer.isVRMode) {
         <button class="vr-exit-button" (click)="exitVRMode()">
           ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
         </button>
-      }
+      } -->
 
       <!-- Exit Fullscreen Button -->
-      @if(viewer.isInFullscreen && !viewer.isVRMode) {
+      <!-- @if(viewer.isInFullscreen && !viewer.isVRMode) {
         <button class="fullscreen-exit-button" (click)="exitFullscreen()">
           ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
         </button>
-      }
+      } -->
     </section>
 
   </div>
@@ -219,11 +220,11 @@
     }
   </footer>
 
-
+<!--
 @if (isPortrait) {
 <div class="rotate-device-warning">
   Please rotate your device for full experience.
 </div>
-}
+} -->
 
 </div>

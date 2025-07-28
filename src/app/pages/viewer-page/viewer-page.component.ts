@@ -1,433 +1,326 @@
-import {
+
+  import {
   Component,
   ViewChild,
   ElementRef,
   HostListener,
   AfterViewInit,
-  OnDestroy,
+  ApplicationModule
 } from '@angular/core';
-import { ViewerComponent } from '../../components/viewer/viewer.component';
+
 import { FormsModule } from '@angular/forms';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { Router } from '@angular/router';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
-import { SceneControlsService } from '../../services/scene-controls.service';
-import { StorageService } from '../../services/storage.service';
-import { FullscreenHelper } from '../../helpers/fullscreen.helper';
-
+import { ViewerComponent } from '../../components/viewer/viewer.component';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-viewer-page',
   standalone: true,
-  imports: [ViewerComponent, FormsModule, TranslateModule],
+  imports: [
+    FormsModule,
+    ApplicationModule,
+    ViewerComponent,
+    TranslateModule
+  ],
   templateUrl: './viewer-page.component.html',
   styleUrls: ['./viewer-page.component.scss'],
 })
-export class ViewerPageComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('viewerCanvas', { static: false }) viewerCanvas?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
-  @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
+export class ViewerPageComponent implements AfterViewInit {
 
-  @ViewChild('viewerShell', { static: true }) shell!: ElementRef<HTMLElement>;
+  constructor(private router: Router) {}
 
-  @ViewChild('fileInputGLTF') fileInputGLTF?: ElementRef<HTMLInputElement>;
-  @ViewChild('fileInputJSON') fileInputJSON?: ElementRef<HTMLInputElement>;
+  @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild(ViewerComponent) viewer!: ViewerComponent;
 
   selectedFile?: File;
   sidebarCollapsed = false;
   showConsole = true;
   consoleMessages: string[] = [];
-  currentLang: 'en' | 'es' = 'en';
-  sunIntensity = 1;
 
-  //fs!: FullscreenHelper;
-  showRotateWarning = false;
-
-  get fs(): FullscreenHelper | undefined { return this._fs; }
-  private _fs!: FullscreenHelper;
-
-  constructor(
-    private router: Router,
-    private translate: TranslateService,
-    private storageService: StorageService,
-    private sceneControls: SceneControlsService
-  ) {
-    const savedLang = (localStorage.getItem('preferredLang') as 'en' | 'es') || 'en';
-    this.currentLang = savedLang;
-    this.translate.setDefaultLang('en');
-    this.translate.use(this.currentLang);
-  }
-
-  get isPortrait(): boolean {
-    return window.matchMedia("(orientation: portrait)").matches;
-  }
-
- @HostListener('window:resize')
-  onResize(): void {
+  ngAfterViewInit() {
     this.resizeCanvas();
 
-    if (this.isPortrait) {
-      this.showRotateWarning = true;
-      if (this.fs?.isActive()) {
-      }
-    } else {
-      this.showRotateWarning = false;
-    }
-  }
-
-  // @HostListener('window:resize')
-  // onWindowResize(): void {
-  //   this.resizeCanvas();
-  // }
-
-  @HostListener('document:fullscreenchange')
-  onFullscreenChange(): void {
-    const container = this.viewer?.sceneContainerRef?.nativeElement;
-    if (container) {
-      const isFullscreen = !!document.fullscreenElement;
-      container.classList.toggle('fullscreen-enabled', isFullscreen);
-      this.resizeCanvas();
-    }
-  }
-
-  ngAfterViewInit(): void {
-    this.consoleMessages = this.storageService.consoleMessages;
-
-    if (!this.viewer) {
-      console.error('Viewer reference is missing.');
-      return;
-    }
-    //
-    this._fs = new FullscreenHelper(this.viewer.sceneContainerRef.nativeElement);
-    //
-    this.resizeCanvas();
-    this.sceneControls.viewerRef = this.viewer;
-    this.storageService.viewerRef = this.viewer;
     setTimeout(() => {
       window.dispatchEvent(new Event('resize'));
     }, 100);
+
+    if (!localStorage.getItem('hasSeenTutorial')) {
+      this.startTutorial();
+      localStorage.setItem('hasSeenTutorial', 'true');
+    }
   }
 
-  ngOnDestroy() {
-    this.fs?.dispose();
+  logToConsole(message: string): void {
+    this.consoleMessages.push(`[${new Date().toLocaleTimeString()}] ${message}`);
+    if (this.consoleMessages.length > 50) {
+      this.consoleMessages.shift();
+    }
   }
-
-  // ----- UI Console -----
 
   toggleConsole(): void {
     this.showConsole = !this.showConsole;
   }
 
-  toggleSidebar(): void {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.resizeCanvas();
   }
 
-  onToggleFullscreen() {
-  this._fs?.toggle();
-}
+  resizeCanvas() {
+    if (!this.canvasRef) return;
 
-  // ----- Canvas Sizing -----
+    const canvas = this.canvasRef.nativeElement;
+    const container = canvas.parentElement;
 
-  resizeCanvas(): void {
-    const container = this.viewer?.sceneContainerRef?.nativeElement;
-    if (!container) return;
+    if (container) {
+      const width = container.clientWidth;
+      const height = container.clientHeight;
 
-    const { width, height } = container.getBoundingClientRect();
-    console.log(`Resizing viewer canvas to: ${width}x${height}`);
-    this.viewer?.onResize?.(width, height);
-    this.viewer?.renderer?.setSize(width, height);
+      canvas.width = width;
+      canvas.height = height;
+
+      if (this.viewer?.onResize) {
+        this.viewer.onResize(width, height);
+      }
+    }
   }
 
-  // onUploadClick(): void {
-  //   this.fileInput?.nativeElement.click();
-  // }
-
-async saveScene(): Promise<void> {
-  console.log('saveScene() triggered');
-  if (!this.viewer) {
-    console.error('Viewer reference is missing.');
-    return;
+  // likes to be a specific button
+  onFileLoaded(file: File): void {
+    this.selectedFile = file;
+    this.logToConsole(`File loaded: ${file.name}`);
   }
 
-  try {
-    await this.storageService.saveSceneAsJson(this.viewer);
-    this.storageService.logToConsole('Scene saved successfully.');
-  } catch (error) {
-    console.error('Failed to save scene:', error);
-    this.storageService.logToConsole('Error saving scene.');
-  }
-}
-
-
-  async onFileChange(event: Event): Promise<void> {
+  // tech duplicate, but works button style
+  onFileSelected(event: Event): void {
   const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file || !this.viewer) return;
-
-  try {
-    await this.viewer.loadFile(file);  // Await if loadFile returns a Promise
-    this.storageService.logToConsole(`Loaded file: ${file.name}`);
-  } catch (error) {
-    console.error('Failed to load file:', error);
-    this.storageService.logToConsole('Error loading file.');
-  }
-
-  // Reset input so user can upload same file again
-  if (this.fileInput?.nativeElement) {
-    this.fileInput.nativeElement.value = '';
+  if (input.files && input.files.length > 0) {
+    const file = input.files[0];
+    this.onFileLoaded(file);
   }
 }
 
-// -------------------------------------------------------*
 
- onUploadClick(): void {
-    this.fileInput?.nativeElement.click();
-  }
-
-  // Handle the GLTF/GLB file change
-  async onGLTFFileChange(event: Event): Promise<void> {
+  handleFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    if (!file || !this.viewer) return;
-
-    try {
-      await this.viewer.loadGLTF(file);  // Handle GLTF/GLB loading
-      console.log(`Loaded GLTF/GLB file: ${file.name}`);
-    } catch (error) {
-      console.error('Failed to load GLTF/GLB file:', error);
+    if (file) {
+      this.onFileLoaded(file);
     }
-
-    // Reset input for repeated uploads
-    if (this.fileInputGLTF?.nativeElement) {
-      this.fileInputGLTF.nativeElement.value = '';
-    }
-  }
-
-  // Handle the JSON file change
-  async onJSONFileChange(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file || !this.viewer) return;
-
-    try {
-      await this.viewer.loadJSON(file);  // Handle JSON file loading
-      console.log(`Loaded JSON file: ${file.name}`);
-    } catch (error) {
-      console.error('Failed to load JSON file:', error);
-    }
-
-    // Reset file input after selection
-    if (this.fileInputJSON?.nativeElement) {
-      this.fileInputJSON.nativeElement.value = '';
-    }
-  }
-
-  // Method to trigger GLTF/GLB file selection
-  onLoadGLTFClick(): void {
-    this.fileInputGLTF?.nativeElement.click();
-  }
-
-  // Method to trigger JSON file selection
-  onLoadJSONClick(): void {
-    this.fileInputJSON?.nativeElement.click();
-  }
-
-
-
-  // ----- Model & Viewer controls -----
-
-  onModelSizeInput(event: Event): void {
-    this.viewer?.onModelSizeChange(event);
-  }
-
-  onModelHeightInput(event: Event): void {
-    const val = +(event.target as HTMLInputElement).value;
-    if (this.viewer?.uploadedModel) {
-      this.sceneControls.updateModelHeight(this.viewer.uploadedModel, val);
-    }
-  }
-
-  onSpeedInput(evt: Event): void {
-    const value = +(evt.target as HTMLInputElement).value;
-    this.viewer?.setWalkSpeed(value);
-  }
-
-  onEyeLevelInput(event: Event): void {
-    this.viewer?.onEyeLevelChange(event);
   }
 
   resetView(): void {
-    if (!this.viewer) return;
-    const { camera, controls } = this.viewer;
-    this.sceneControls.resetCameraView(camera, controls);
-    this.storageService.logToConsole('VIEWER.RESET_VIEW');
-  }
-
-  onSunlightInput(evt: Event): void {
-      const val = +(evt.target as HTMLInputElement).value;
-      this.sunIntensity = val;
-      if (this.viewer?.directional) {
-        this.sceneControls.updateSunlightIntensity(this.viewer.directional, val);
-      }
-    }
-
-  onLightColorChange(evt: Event): void {
-  const hex = (evt.target as HTMLInputElement).value;
-  this.sceneControls.changeSunlightColor(hex);
-  this.storageService.logToConsole(`Sunlight colour → ${hex}`);
-}
-
-  toggleRoomLight() {
-    const amb = this.viewer?.sceneManager?.ambientLight;
-    if (amb) this.sceneControls.toggleRoomLight(amb);
+    this.viewer?.resetView?.();
+    this.logToConsole('Reset camera view.');
   }
 
   toggleWireframe(): void {
-    const model = this.viewer?.uploadedModel;
-    if (!model) return;
-
-    this.sceneControls.toggleWireframe(model, (msgKey) => {
-      this.storageService.logToConsole(msgKey);
-    });
+    this.viewer?.toggleWireframe?.();
+    this.logToConsole('Toggled wireframe.');
   }
 
-  // ---- Bug Report Button -------
-
-  openBugReport(): void {
-    this.router.navigate(['/bug-report']);
+  clearModel(): void {
+    this.viewer?.clearModel?.();
+    this.logToConsole('Cleared model.');
   }
 
-  // ---- Tutorial -------
+  save(): void {
+    this.viewer?.save?.();
+    this.logToConsole('Saved scene.');
+  }
 
-  startTutorial(): void {
-    const t = (k: string) => this.translate.instant(k);
+  load(): void {
+    this.viewer?.load?.();
+    this.logToConsole('Loaded scene.');
+  }
 
-    /* Helper: reusable buttons ---------------------------------------- */
-    const next = { text: t('BUTTONS_NEXT') || 'Next', action: () => tour.next() };
-    const back = { text: t('BUTTONS_BACK') || 'Back', action: () => tour.back() };
+  toggleRoomLight(): void {
+    this.viewer?.toggleRoomLight?.();
+    this.logToConsole('Toggled room light.');
+  }
 
-    /* Shepherd tour ---------------------------------------------------- */
-    const tour = new Shepherd.Tour({
-      useModalOverlay: true,
-      defaultStepOptions: {
-        cancelIcon: { enabled: true },
-        scrollTo: { behavior: 'smooth', block: 'center' },
-        classes: 'shepherd-theme-default',
-        modalOverlayOpeningPadding: 8,
-        modalOverlayOpeningRadius: 8,
-        canClickTarget: false,
-        // highlight class we’ll toggle below
-        highlightClass: 'shepherd-highlight'
+  toggleLightcolor(): void {
+    this.viewer?.toggleLightcolor?.();
+    this.logToConsole('Toggled sunlight color.');
+  }
+
+  onSunlightInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.valueAsNumber;
+    this.updateSunlight(value);
+  }
+
+  updateSunlight(value: number): void {
+    this.viewer?.updateSunlight?.(value);
+    console.log('Updated sunlight value:', value);
+  }
+
+  onSpeedInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.updateSpeed(input.valueAsNumber);
+  }
+
+  updateSpeed(value: number): void {
+    this.viewer?.updateSpeed?.(value);
+    this.logToConsole(`Updated camera speed to ${value}`);
+  }
+
+  onEyeLevelInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.updateEyeLevel(input.valueAsNumber);
+  }
+
+  updateEyeLevel(value: number): void {
+    this.viewer?.updateEyeLevel?.(value);
+  }
+
+  onModelSizeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.updateModelSize(input.valueAsNumber);
+  }
+
+  updateModelSize(value: number): void {
+    this.viewer?.updateModelSize?.(value);
+    this.logToConsole(`Updated eye level to ${value}`);
+  }
+
+  onModelHeightInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.updateModelHeight(input.valueAsNumber);
+  }
+
+  updateModelHeight(value: number): void {
+    this.viewer?.updateModelHeight?.(value);
+    this.logToConsole(`Updated model height to ${value}`);
+  }
+
+
+// ************* Bug Report **********************
+
+openBugReport() {
+  // Navigate to the bug report page or open a modal
+  this.router.navigate(['/bug-report']); // Make sure route exists
+}
+
+// ============================
+// Shepherd Tutorial
+// ============================
+startTutorial(): void {
+  const tour = new Shepherd.Tour({
+    useModalOverlay: true,
+    defaultStepOptions: {
+      cancelIcon: {
+        enabled: true
+      },
+      scrollTo: { behavior: 'smooth', block: 'center' },
+      classes: 'shepherd-theme-default',
+      modalOverlayOpeningPadding: 8,
+      modalOverlayOpeningRadius: 8,
+      canClickTarget: false,
+      when: {
+        show() {
+          if (this.el) {
+            document.body.appendChild(this.el);
+          }
+        }
       }
-    });
-
-    /* 1 ─ Welcome */
-    tour.addStep({
-      id: 'welcome',
-      text: t('START_TUTORIAL'),
-      buttons: [next]
-    });
-
-    /* 2 ─ Scene controls */
-    tour.addStep({
-      id: 'scene-controls',
-      attachTo: { element: '.sidebar-left', on: 'right' },
-      text: t('SCENE_SETTINGS'),
-      buttons: [back, next]
-    });
-
-    /* 3 ─ 3‑D viewer */
-    tour.addStep({
-      id: 'canvas',
-      attachTo: { element: '#canvas-tour-target', on: 'right' },
-      text: t('MODEL_SETTINGS'),
-      buttons: [back, next],
-       when: {
-    show: () => {
-      setTimeout(() => {
-        document.querySelector('.shepherd-element')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
     }
-  }
-    });
+  });
 
-    /* 4 ─ Console */
-    tour.addStep({
-      id: 'console',
-      attachTo: { element: '.bottom-bar', on: 'top' },
-      text: t('CONSOLE_SHEPHARD'),
-      buttons: [back, next]
-    });
+  tour.addStep({
+    id: 'welcome',
+    text: 'Welcome! Let’s take a quick tour of this 3D playground.',
+    buttons: [{ text: 'Next', action: tour.next }]
+  });
 
-    /* 5 ─ Finish */
-    tour.addStep({
-      id: 'finish',
-      text: t('FINISH_TUTORIAL'),
-      buttons: [back,
+  tour.addStep({
+    id: 'upload',
+    attachTo: {
+      element: '.upload-instructions',
+      on: 'bottom'
+    },
+    text: 'Start by uploading a 3D model here.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-      { text: t('BUTTONS_DONE') || 'Done', action: () => tour.complete() }]
-    });
+  tour.addStep({
+    id: 'scene-controls',
+    attachTo: {
+      element: '.sidebar-left',
+      on: 'right'
+    },
+    text: 'Use these buttons to save, load, and reset your scene.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-    /* Mark tutorial as seen ------------------------------------------- */
-    const markSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
-    tour.on('complete', markSeen);
-    tour.on('cancel',   markSeen);
-    tour.on('show', () => {
-      const el = tour.getCurrentStep()?.options.attachTo?.element as string | undefined;
-      if (el) document.querySelector(el)?.classList.add('shepherd-highlight');
-    });
-    tour.on('hide', () =>
-      document
-        .querySelectorAll('.shepherd-highlight')
-        .forEach(el => el.classList.remove('shepherd-highlight'))
-    );
+  tour.addStep({
+    id: 'canvas',
+    attachTo: {
+      element: '.canvas-container',
+      on: 'top'
+    },
+    text: 'Here’s where your 3D model will appear.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-    tour.start();
-  }
+  tour.addStep({
+    id: 'console',
+    attachTo: {
+      element: '.bottom-bar',
+      on: 'top'
+    },
+    text: 'Console logs and messages appear here.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Next', action: tour.next }
+    ]
+  });
 
-  // ----- Language -----
+  tour.addStep({
+    id: 'model-camera-controls',
+    attachTo: {
+      element: '.sidebar-right',
+      on: 'left'
+    },
+    text: 'Change your model and camera settings here.',
+    buttons: [
+      { text: 'Back', action: tour.back },
+      { text: 'Done', action: tour.complete }
+    ]
+  });
 
-  switchLanguage(lang: 'en' | 'es'): void {
-    this.currentLang = lang;
-    this.translate.use(lang);
-    localStorage.setItem('preferredLang', lang);
-  }
+  // Set localStorage when the tour completes or is cancelled
+  const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
+  tour.on('complete', markTutorialSeen);
+  tour.on('cancel', markTutorialSeen);
 
-  // ----- VR Mode -----
-
-  enterVRMode(): void {
-    this.viewer?.enterVR();
-    this._fs?.enter();
-    const container = this.viewer?.sceneContainerRef?.nativeElement;
-    if (container) {
-      Object.assign(container.style, {
-        width: '100vw',
-        height: '100vh',
-        position: 'absolute',
-        top: '0',
-        left: '0',
-        display: 'block',
-      });
+  // Highlight the current step's target element
+  tour.on('show', () => {
+    const currentStep = tour.getCurrentStep();
+    const el = currentStep?.options.attachTo?.element;
+    if (typeof el === 'string') {
+      document.querySelector(el)?.classList.add('shepherd-highlight');
     }
+  });
 
-    setTimeout(() => this.resizeCanvas(), 200);
-  }
+  // Remove highlight from all elements
+  tour.on('hide', () => {
+    document.querySelectorAll('.shepherd-highlight')
+      .forEach(el => el.classList.remove('shepherd-highlight'));
+  });
 
-  exitVRMode(): void {
-    this.viewer?.exitVR();
-    this._fs?.exit();
-    setTimeout(() => this.resizeCanvas(), 200);
-  }
-
-  // ----- Fullscreen -----
-
-  enterFullscreen() {
-    this.fs?.enter();
-  }
-
-  exitFullscreen() {
-    this.fs?.exit();
-  }
+  tour.start();
+}
 
 }

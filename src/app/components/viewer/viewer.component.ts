@@ -1,25 +1,15 @@
-import {
-  Component, ElementRef, Input, OnInit, OnChanges, SimpleChanges,
-  AfterViewInit, OnDestroy, ViewChild, HostListener,
-  ChangeDetectorRef
-} from '@angular/core';
-
+import {Component,ElementRef,Input,OnInit,OnChanges,SimpleChanges,AfterViewInit,ViewChild,OnDestroy} from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
-import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
-
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import GUI from 'lil-gui';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { TranslateService } from '@ngx-translate/core';
-
-import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
-import { ProjectData, StorageService } from '../../services/storage.service';
-import { SceneControlsService } from '../../services/scene-controls.service';
-import { VrControllerHelper } from '../../helpers/vr-controller.helper';
-import { SceneManagerComponent } from '../scene-manager/scene-manager.component';
-import { toggleFullscreen } from '../../helpers/fullscreen.helper';
-import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 
 export interface SavedModel {
   name: string;
@@ -52,705 +42,938 @@ export interface SceneData {
 @Component({
   selector: 'app-viewer',
   standalone: true,
-  imports: [SceneManagerComponent],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatTooltipModule,
+    MatSnackBarModule
+  ],
   templateUrl: './viewer.component.html',
-  styleUrls: ['./viewer.component.scss']
+  styleUrls: ['./viewer.component.scss'],
 })
+
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
-  @ViewChild(SceneManagerComponent) sceneManager!: SceneManagerComponent;
+
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
-  @ViewChild('sceneContainer', { static: true }) sceneContainerRef!: ElementRef<HTMLElement>;
-
+  @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @Input() glbFile?: File;
-  @Input() vrHelper!: VrControllerHelper;
 
-  stereoEffect?: StereoEffect;
-  uploadedModel: THREE.Object3D | null = null;
-  sceneLoaded = false;
+  constructor(private snackBar: MatSnackBar) {}
 
-  public get scene() { return this.sceneManager?.scene; }
-  public get camera() { return this.sceneManager?.camera; }
-  public get ambient() { return this.sceneManager?.ambientLight; }
-  public get directional() { return this.sceneManager?.dirLight; }
-
-  renderer!: THREE.WebGLRenderer;
-  model: THREE.Object3D = new THREE.Object3D();
-  controls: any;
-  sceneManagerContainer!: HTMLElement;
-  transformControls!: TransformControls;
-
-  ambientLight = new THREE.AmbientLight(0xffffff, 1);
-  public dirLight!: THREE.DirectionalLight;
-
-  private sceneLight!: THREE.DirectionalLight;
-  movementHelper!: PlayerMovementHelper;
-  private playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
-
-  private clock = new THREE.Clock();
-  private animationId: number | null = null;
-
-  private originalSize?: { width: number; height: number };
-  private originalCameraAspect?: number;
-
-  private boundOnKeyDown!: (event: KeyboardEvent) => void;
-  private boundOnKeyUp!: (event: KeyboardEvent) => void;
-  private resizeListener = () => this.onResize();
-
-  public controllerSpeed = 3.0;
-  public isPlacingModel = false;
-  public isVRMode = false;
-
-  isLoading = false;
   sunlight = 1;
   movementSpeed = 50;
   modelSize = 30;
   modelScale = 1;
   modelHeight = 0;
+  uploadedModel: THREE.Object3D | null = null;
+
+  private velocity = new THREE.Vector3();
+  private direction = new THREE.Vector3();
+  private canJump = false;
+  private gravity = 9.8;
+  private jumpStrength = 5;
+
   ambientIntensity = 0.5;
+  speed = 50;
   cameraHeight = 2;
 
-  private stereoHelper!: StereoscopeHelper;
+  showGrid = true;
+  isPlacingModel = false;
 
-  get isInFullscreen(): boolean {
-    return document.fullscreenElement === this.sceneContainerRef?.nativeElement;
+  gridHelper!: THREE.GridHelper;
+
+  private scene!: THREE.Scene;
+  private camera!: THREE.PerspectiveCamera;
+  private renderer!: THREE.WebGLRenderer;
+  private controls!: PointerLockControls;
+  private clock = new THREE.Clock();
+  private objects: THREE.Object3D[] = [];
+  private ambientLight!: THREE.AmbientLight;
+  private dirLight!: THREE.DirectionalLight;
+  private gui!: GUI;
+  private sceneLoaded = false;
+  transformControls!: TransformControls;
+
+  selectedTool = '';
+
+  private keysPressed = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+  };
+
+ngOnInit() {
+    document.addEventListener('keydown', this.onKeyDown);
+    document.addEventListener('keyup', this.onKeyUp);
+    this.loadSceneFromLocalStorage();
+    this.canJump = true;
   }
 
-  constructor(
-    private snackBar: MatSnackBar,
-    private translate: TranslateService,
-    private storageService: StorageService,
-    private sceneControlsService: SceneControlsService,
-    private cdRef: ChangeDetectorRef
-  ) {}
-
-  ngOnInit() {
-    this.boundOnKeyDown = (event: KeyboardEvent) => this.playerMovementHelper.onKeyDown(event.code);
-    this.boundOnKeyUp = (event: KeyboardEvent) => this.playerMovementHelper.onKeyUp(event.code);
-    window.addEventListener('keydown', this.boundOnKeyDown);
-    window.addEventListener('keyup', this.boundOnKeyUp);
-
-    if (this.vrHelper) {
-      this.vrHelper.enableInteractions();
-    }
-
-    document.addEventListener('fullscreenchange', () => {
-    });
-
-    this.sceneControlsService.setAmbientLight(this.sceneManager.ambientLight);
-
-    this.storageService.registerChangeDetector(this.cdRef);
+ngOnDestroy() {
+    document.removeEventListener('keydown', this.onKeyDown);
+    document.removeEventListener('keyup', this.onKeyUp);
   }
 
-  ngAfterViewInit(): void {
-    const containerEl = this.sceneContainerRef?.nativeElement;
-
-    if (!containerEl) {
-      console.error('sceneContainerRef is undefined or not available in the DOM.');
+ngOnChanges(changes: SimpleChanges) {
+  if (changes['glbFile'] && changes['glbFile'].currentValue) {
+    if (changes['glbFile'].isFirstChange()) {
       return;
     }
+    if (this.sceneLoaded) {
+      const confirmReplace = confirm('A scene is already loaded. Do you want to replace it with a new model?');
+      if (!confirmReplace) return;
+      this.clearScene();
+    }
+    this.loadGLB(changes['glbFile'].currentValue);
+  }
 
-    this.sceneManagerContainer = containerEl;
+  else if (!this.glbFile && !this.sceneLoaded && !changes['glbFile']?.isFirstChange()) {
+    alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
+  }
+}
 
-    const animate = (time: number) => {
-      this.sceneManager?.render();
-      this.animationId = requestAnimationFrame(animate);
-    };
+ngAfterViewInit() {
+    this.initScene();
+    if (this.glbFile) this.loadGLB(this.glbFile);
+    this.animate();
 
-    this.animationId = requestAnimationFrame(animate);
-
-    document.addEventListener('fullscreenchange', () => {
-      const isFullscreen = document.fullscreenElement !== null;
-      this.sceneManager?.setEscHintVisible(isFullscreen);
+    this.renderer.domElement.addEventListener('dragover', (event) => {
+    event.preventDefault();
     });
 
-    this.ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
-    this.scene.add(this.ambientLight);
-    this.dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-    this.dirLight.position.set(5, 10, 7.5);
-    this.scene.add(this.dirLight);
-    this.sceneControlsService.setDirectionalLight(this.sceneManager.dirLight);
-    const modelJson = this.getModelJson();
-    this.sceneManager.loadGLTFModel(modelJson);
-  }
-
-  getModelJson() {
-    return {
-      "asset": { "version": "2.0", "generator": "glTF-Exporter" },
-      "scene": 0,
-      "scenes": [{ "nodes": [0] }],
-      "nodes": [{ "mesh": 0 }],
-      "meshes": [{ "primitives": [{ "attributes": { "POSITION": 0 }, "indices": 1 }] }],
-      "buffers": [{ "byteLength": 0 }]
-    };
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (changes['glbFile']?.currentValue && !changes['glbFile'].isFirstChange()) {
-      const file = changes['glbFile'].currentValue as File;
-
-
-          if (this.sceneLoaded) {
-        this.snackBar.open(this.translate.instant('MESSAGES.REPLACE_MODEL_CONFIRM'), 'OK', { duration: 5000 });
-        setTimeout(() => {
-          this.loadNewModel(file);
-        }, 5000);
-        return;
+    this.renderer.domElement.addEventListener('drop', (event) => {
+      event.preventDefault();
+      const file = event.dataTransfer?.files?.[0];
+      if (file && file.name.endsWith('.glb')) {
+        if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
+        this.clearScene();
+        this.loadGLB(file);
       }
-
-      const loader = new GLTFLoader();
-      loader.load(
-        URL.createObjectURL(file),
-        (gltf) => {
-          const model = gltf.scene;
-          this.uploadedModel = model;
-          this.sceneLoaded = true;
-          this.applyModelTransform();
-          this.logToConsole('MODEL_LOADED', { name: model.name });
-        },
-        undefined,
-        (error) => {
-          this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
-        }
-      );
-    }
-  }
-
-  ngOnDestroy() {
-    window.removeEventListener('keydown', this.boundOnKeyDown);
-    window.removeEventListener('keyup', this.boundOnKeyUp);
-    window.removeEventListener('resize', this.resizeListener);
-
-    this.vrHelper?.stop();
-    if (this.animationId) cancelAnimationFrame(this.animationId);
-    this.renderer?.dispose();
-
-    this.scene?.traverse((obj) => {
-      if ((obj as THREE.Mesh).geometry) (obj as THREE.Mesh).geometry.dispose();
-      const material = (obj as THREE.Mesh).material;
-      if (Array.isArray(material)) material.forEach((m) => m.dispose());
-      else material?.dispose();
     });
-  }
 
-  @HostListener('window:resize')
-  onWindowResize(): void {
-    this.sceneManager?.resize();
-  }
+    this.renderer.domElement.addEventListener('click', (event) => {
+      const mouse = new THREE.Vector2();
+      const rect = this.renderer.domElement.getBoundingClientRect();
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 
-  onResize(width?: number, height?: number): void {
-    this.sceneManager?.resize();
-  }
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, this.camera);
+      const intersects = raycaster.intersectObjects(this.scene.children, true);
 
-  applyModelTransform() {
-    if (this.uploadedModel) {
-      this.uploadedModel.scale.set(this.modelScale, this.modelScale, this.modelScale);
-      this.uploadedModel.position.set(this.modelSize * 0.5, this.modelHeight, 0);
-    }
-  }
-
-  enterModelPlacementMode(): void {
-    this.isPlacingModel = true;
-    this.snackBar.open(this.translate.instant('MESSAGES.MODEL_PLACEMENT_MODE_ACTIVE'), 'OK', { duration: 3000 });
-  }
-
-  logToConsole(message: string, details: any) {
-    console.log(message, details);
-  }
-
-  onModelSizeChange(event: Event): void {
-    const size = +(event.target as HTMLInputElement).value;
-    if (this.uploadedModel) {
-      this.sceneControlsService.updateModelSize(this.uploadedModel, size);
-    }
-  }
-
-  onModelHeightChange(evt: Event): void {
-    const y = parseFloat((evt.target as HTMLInputElement).value);
-    const target = this.uploadedModel ?? this.model;
-    this.sceneControlsService.updateModelHeight(target, y);
-  }
-
-  public setWalkSpeed(speed: number): void {
-    this.sceneControlsService.updateMovementSpeed(speed);
-  }
-
-  onSunlightIntensityChange(event: any): void {
-    this.sceneControlsService.updateSunlightIntensity(this.sceneLight, event.target.value);
-  }
-
-  onSunlightColorChange(event: Event): void {
-  const hexColor = (event.target as HTMLInputElement).value;
-  if (this.dirLight) {
-    this.dirLight.color = new THREE.Color(hexColor);
-  }
-}
-
-  onEyeLevelChange(evt: Event): void {
-    const val = +(evt.target as HTMLInputElement).value;
-    this.sceneManager?.setEyeLevel(val);
-  }
-
-enterVR(): void {
-  if (!/Mobi|Android/i.test(navigator.userAgent)) {
-    this.snackBar.open(this.translate.instant('MESSAGES.VR_MOBILE_ONLY'), 'OK', { duration: 3000 });
-    return;
-  }
-
-  if (!confirm(this.translate.instant('MESSAGES.ENTER_VR_CONFIRM'))) return;
-  this.isVRMode = true;
-  document.body.classList.add('vr-mode');
-  const container = this.sceneContainerRef.nativeElement;
-  const requestFullscreen = container.requestFullscreen
-    || (container as any).webkitRequestFullscreen
-    || (container as any).msRequestFullscreen;
-
-  requestFullscreen?.call(container).catch((err: any) =>
-    console.warn(this.translate.instant('ERRORS.FULLSCREEN_FAILED'), err)
-  );
-  try {
-    (screen.orientation as any)?.lock?.('landscape').catch((err: any) =>
-      console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_FAILED'), err)
-    );
-  } catch (err) {
-    console.warn(this.translate.instant('ERRORS.ORIENTATION_LOCK_UNAVAILABLE'), err);
-  }
-
-  this.originalSize = {
-    width: container.clientWidth,
-    height: container.clientHeight,
-  };
-  this.originalCameraAspect = this.camera?.aspect;
-
-const renderer = new THREE.WebGLRenderer();
-
-  // Replace StereoEffect with StereoscopeHelper
-    if (!this.stereoHelper) {
-  this.stereoHelper = new StereoscopeHelper(this.renderer, this.scene, this.camera);
-    }
-    this.stereoHelper.setSize(this.sceneContainerRef.nativeElement.clientWidth, this.sceneContainerRef.nativeElement.clientHeight);
-    this.isVRMode = true;
-
-  this.renderer.setAnimationLoop(() => this.renderVR());
-  history.pushState({ vr: true }, '');
-  window.onpopstate = () => {
-    if (this.isVRMode) this.exitVR();
-  };
-}
-
-exitVR(): void {
-  this.isVRMode = false;
-  document.body.classList.remove('vr-mode');
-  this.renderer?.setAnimationLoop(null);
-
-  try {
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch((err: any) =>
-        console.warn(this.translate.instant('ERRORS.EXIT_FULLSCREEN_FAILED'), err)
-      );
-    }
-    (screen.orientation as any)?.unlock?.();
-  } catch (e) {
-    console.warn(this.translate.instant('ERRORS.UNLOCK_ORIENTATION_FAILED'), e);
-  }
-
-  if (this.renderer && this.camera && this.originalSize) {
-    this.camera.aspect = this.originalCameraAspect ?? window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(this.originalSize.width, this.originalSize.height);
-  }
-  const container = this.sceneContainerRef.nativeElement;
-  Object.assign(container.style, {
-    width: '',
-    height: '',
-    position: '',
-    top: '',
-    left: '',
-    display: '',
-  });
-
-  // Clean up the stereo helper
-  if (this.stereoHelper) {
-    this.stereoHelper.dispose();
-  }
-
-  this.snackBar.open(this.translate.instant('MESSAGES.EXITED_VR_MODE'), 'OK', { duration: 2000 });
-
-  if (history.state?.vr) history.back();
-  window.onpopstate = null;
-}
-
-
-private renderVR = () => {
-  if (this.vrHelper) {
-    this.vrHelper.update();
-    if (this.camera) {
-      this.vrHelper.applyRotation(this.camera);
-      const delta = this.clock.getDelta();
-      const move = this.vrHelper.movementVector.clone().multiplyScalar(delta * this.vrHelper.moveSpeed);
-      this.camera.position.add(move);
-      this.camera.position.y = this.cameraHeight;
-    }
-  }
-
-  // Replace the old StereoEffect render call with StereoscopeHelper's render method
-  if (this.stereoHelper && this.scene && this.camera) {
-  this.stereoHelper.render();
-  }
-};
-
-
- async onFileChange(evt: Event): Promise<void> {
-    const file = (evt.target as HTMLInputElement).files?.[0];
-    if (!file) return;
-
-    try {
-      if (file.name.endsWith('.json')) {
-        await this.sceneManager.loadJSON(file);
-        this.storageService.logToConsole(`Loaded file: ${file.name}`);
-      } else {
-        this.snackBar.open('Invalid file type. Please upload a JSON file.', 'OK', { duration: 3000 });
-        return;
+      if (intersects.length > 0) {
+        const selected = intersects[0].object;
+        console.log('Selected object:', selected.name || selected.uuid);
       }
-    } catch (error) {
-      console.error('Failed to load scene:', error);
-      this.storageService.logToConsole('ERROR_LOADING_SCENE');
-    }
-    (evt.target as HTMLInputElement).value = '';
-  }
+    });
 
+    const canvas = this.renderer.domElement;
 
-disposeObject(obj: THREE.Object3D): void {
-  obj.traverse((child) => {
-    if ((child as any).geometry) {
-      (child as any).geometry.dispose?.();
+  const instructions = document.createElement('div');
+  this.containerRef.nativeElement.appendChild(instructions);
+
+  canvas.addEventListener('click', () => {
+    this.controls.lock();
+    if (instructions.parentNode) {
+      instructions.parentNode.removeChild(instructions);
     }
-    if ((child as any).material) {
-      const mat = (child as any).material;
-      if (Array.isArray(mat)) mat.forEach(m => m.dispose?.());
-      else mat.dispose?.();
+
+    setTimeout(() => {
+      if (this.controls.isLocked) {
+        this.controls.unlock();
+      }
+    }, 1000);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!canvas.contains(e.target as Node) && this.controls.isLocked) {
+      this.controls.unlock();
     }
   });
-}
 
-  handleLocalFile(file: File): void {
-    const loader = new GLTFLoader();
-    loader.load(URL.createObjectURL(file), (gltf) => {
-
-      const box = new THREE.Box3().setFromObject(gltf.scene);
-      const c   = new THREE.Vector3();
-      box.getCenter(c);
-      gltf.scene.position.sub(c);
-
-      const s = new THREE.Vector3();
-      box.getSize(s);
-      gltf.scene.position.y += s.y * 0.5;
-
-      this.uploadedModel = gltf.scene;
-      this.scene.add(gltf.scene);
-      this.applyModelTransform();
-      this.logToConsole('MODEL_LOADED', { name: gltf.scene.name });
-    }, undefined,
-      err => this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name })
-    );
+    this.gridHelper = new THREE.GridHelper(10, 10);
+    this.scene.add(this.gridHelper);
+    this.gridHelper.visible = this.showGrid;
   }
 
+  //********* UI Controls for the ThreeJS Scene *********/
 
-async loadFile(file: File): Promise<void> {
-  const fileName = file.name.toLowerCase();
-  if (fileName.endsWith('.json')) {
-    try {
-      await this.loadJsonScene(file);
-      this.storageService.logToConsole(`Loaded JSON scene: ${file.name}`);
-    } catch (error) {
-      console.error('Failed to load JSON scene:', error);
-      this.storageService.logToConsole('ERROR_LOADING_JSON_SCENE');
-    }
-  } else if (fileName.endsWith('.glb') || fileName.endsWith('.gltf')) {
-    try {
-      await this.handleLocalModelFile(file);
-    } catch (error) {
-      console.error('Failed to load model:', error);
-      this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
-    }
-  } else {
-    console.error('Unsupported file type:', file.name);
-    this.storageService.logToConsole('ERROR.UNSUPPORTED_FILE_TYPE');
-  }
+private initScene() {
+  const container = this.containerRef.nativeElement;
+  this.scene = new THREE.Scene();
+  this.scene.background = new THREE.Color(0x111111);
 
-  (document.querySelector('input[type="file"]') as HTMLInputElement).value = '';
+  this.camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+
+  this.camera.position.set(0, this.cameraHeight, 10);  // 10 units "behind" the center
+  this.camera.lookAt(0, this.cameraHeight, 0);        // look straight ahead at same height
+
+  this.renderer = new THREE.WebGLRenderer({ antialias: true });
+  this.renderer.setSize(container.clientWidth, container.clientHeight);
+  container.appendChild(this.renderer.domElement);
+
+  //******************************************************** */
+  //Lighting
+  this.ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+  this.scene.add(this.ambientLight);
+
+  this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  this.dirLight.position.set(5, 10, 7.5);
+  this.scene.add(this.dirLight);
+ // ******************************************************** */
+
+  // Controls with instruction for users
+  this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
+  this.scene.add(this.controls.getObject());
+
+  // User must press key to start – more intuitive for kids
+  const instructions = document.createElement('div');
+  instructions.innerText = "Click to start walking!";
+  instructions.style.position = "absolute";
+  instructions.style.top = "50%";
+  instructions.style.left = "50%";
+  instructions.style.transform = "translate(-50%, -50%)";
+  instructions.style.color = "white";
+  instructions.style.fontSize = "24px";
+  instructions.style.padding = "10px";
+  instructions.style.background = "rgba(0,0,0,0.5)";
+  instructions.style.borderRadius = "8px";
+  container.appendChild(instructions);
+
+  container.addEventListener('click', () => {
+    this.controls.lock();
+    container.removeChild(instructions);
+  });
+
+//******************************************************** */
+
+   // 🧰 GUI for kids
+  this.gui = new GUI({ width: 280 });
+  this.gui.domElement.style.display = 'none';  // 👈 Hides GUI but keeps functionality
+
+  // 🧱 Floor
+  const floorGeo = new THREE.PlaneGeometry(200, 200);
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  floor.userData['collidable'] = true;
+  this.scene.add(floor);
+  this.objects.push(floor);
+
+  // Helpers (optional for kids, could hide)
+  const gridHelper = new THREE.GridHelper(200, 200, 0xd453ff, 0x444ddd);
+  this.scene.add(gridHelper);
+
+  const axesHelper = new THREE.AxesHelper(5);
+  this.scene.add(axesHelper);
 }
 
-async loadJsonScene(file: File): Promise<void> {
+//************* Update/Model Transform ******************* */
+
+updateModelTransform(): void {
+  if (this.uploadedModel) {
+    this.uploadedModel.scale.setScalar(this.modelScale);
+    this.uploadedModel.position.y = this.modelHeight;
+  }
+}
+
+private setUploadedModel(model: THREE.Object3D): void {
+  this.uploadedModel = model;
+  this.modelScale = model.scale.x; // Sync GUI with actual values
+  this.modelHeight = model.position.y;
+}
+
+applyModelTransform(): void {
+    if (this.uploadedModel) {
+      this.uploadedModel.scale.setScalar(this.modelScale);
+      this.uploadedModel.position.y = this.modelHeight;
+    }
+  }
+
+//************* Update Ambient Light ******************* */
+
+  updateAmbientLight() {
+  this.ambientLight.intensity = this.ambientIntensity;
+}
+
+  updateCameraHeight() {
+  this.camera.position.y = this.cameraHeight;
+}
+
+//************* Loading Models ******************* */
+
+public triggerSceneUpload() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file) this.uploadSceneFromFile(file);
+    };
+    input.click();
+  }
+
+public loadGLB(file: File): void {
+  const loader = new GLTFLoader();
   const reader = new FileReader();
 
-  reader.onload = async () => {
+  reader.onload = () => {
     try {
-      const json = JSON.parse(reader.result as string);
+      loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
+        const model = gltf.scene;
+        model.userData['isLoadedModel'] = true;
+        model.userData['fileName'] = file.name;
+        model.userData['file'] = file;
+        model.scale.setScalar(this.modelScale);
+        model.position.y = this.modelHeight;
+        this.scene.add(model);
+        this.setUploadedModel(model);
+        this.sceneLoaded = true;
 
-      // Case 1: Native Three.js scene (from scene.toJSON())
-      if (json.object && json.metadata?.type === 'Object') {
-        this.clearScene();
-
-        const loader = new THREE.ObjectLoader();
-        const parsedScene = loader.parse(json.object);
-        this.scene.add(parsedScene);
-
-        this.storageService.logToConsole('Loaded native Three.js scene.');
-        this.renderer.render(this.scene, this.camera);
-        return;
-      }
-
-      // Case 2: Custom scene format (with "models" array)
-      if (json.models && Array.isArray(json.models)) {
-        this.clearScene();
-        this.restoreScene(json); // Setup camera, lighting, etc.
-
-        for (const model of json.models) {
-          const modelObj = await this.loadModelFromBase64(model);
-          this.scene.add(modelObj);
-        }
-
-        this.storageService.logToConsole('Loaded custom JSON scene.');
-        this.renderer.render(this.scene, this.camera);
-        return;
-      }
-
-      // Invalid structure
-      throw new Error('Unrecognized scene format');
-
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Error while loading JSON:', err);
-      this.snackBar.open('Error loading scene JSON: ' + message, 'OK', { duration: 4000 });
+      });
+    } catch {
+      alert('❌ Error loading model. Please try again with a proper GLB format.');
     }
+  };
+
+  reader.onerror = () => {
+    alert('❌ Failed to read file. Please try again.');
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+uploadSceneFromFile(file: File): void {
+  const reader = new FileReader();
+  reader.onload = async (event: ProgressEvent<FileReader>) => {
+    this.clearScene(); // ✅ Clear previous scene fully
+
+    const contents = event.target?.result as string;
+    const sceneData: SceneData = JSON.parse(contents);
+
+    // --- Restore lighting ---
+    if (sceneData.lighting) {
+      if (sceneData.lighting.ambient) {
+        this.ambientLight.color.setHex(sceneData.lighting.ambient.color);
+        this.ambientLight.intensity = sceneData.lighting.ambient.intensity;
+      }
+      if (sceneData.lighting.directional) {
+        this.dirLight.color.setHex(sceneData.lighting.directional.color);
+        this.dirLight.intensity = sceneData.lighting.directional.intensity;
+        this.dirLight.position.fromArray(sceneData.lighting.directional.position);
+      }
+    }
+
+    // --- Restore camera ---
+    if (sceneData.camera) {
+      this.camera.position.set(
+        sceneData.camera.position.x,
+        sceneData.camera.position.y,
+        sceneData.camera.position.z
+      );
+      this.camera.rotation.set(
+        sceneData.camera.rotation.x,
+        sceneData.camera.rotation.y,
+        sceneData.camera.rotation.z
+      );
+    }
+
+    // --- Restore models ---
+    for (const model of sceneData.models) {
+      const gltfLoader = new GLTFLoader();
+      const glbBinary = atob(model.glbBase64 ?? '');
+      const binaryArray = new Uint8Array(glbBinary.length);
+      for (let i = 0; i < glbBinary.length; i++) {
+        binaryArray[i] = glbBinary.charCodeAt(i);
+      }
+
+      const blob = new Blob([binaryArray], { type: 'model/gltf-binary' });
+      const url = URL.createObjectURL(blob);
+
+      try {
+        const gltf = await gltfLoader.loadAsync(url);
+        const loadedModel = gltf.scene;
+
+        loadedModel.name = model.name;
+        loadedModel.position.copy(model.position);
+        loadedModel.rotation.set(
+          model.rotation.x,
+          model.rotation.y,
+          model.rotation.z
+        );
+        loadedModel.scale.copy(model.scale);
+        loadedModel.userData['fileName'] = model.fileName;
+        loadedModel.userData['isLoadedModel'] = true;
+
+        this.objects = []; // Clear before restoring
+        loadedModel.traverse((child: THREE.Object3D) => {
+          if ((child as THREE.Mesh).isMesh) {
+            // Taking out the colliding physics for now
+            child.userData['collidable'] = false;
+            this.objects.push(child); // Add only once
+          }
+        });
+
+        this.uploadedModel = loadedModel;
+        this.applyModelTransform();
+        this.scene.add(loadedModel);
+        this.saveSceneToLocalStorage();
+
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error(`Failed to load model: ${model.fileName}`, error);
+      }
+    }
+
+    this.sceneLoaded = true;
   };
 
   reader.readAsText(file);
-}
+  }
 
-
-async loadModelFromBase64(data: SavedModel): Promise<THREE.Object3D> {
-  const binary = Uint8Array.from(atob(data.glbBase64), c => c.charCodeAt(0));
-  const blob = new Blob([binary], { type: 'model/gltf-binary' });
-  const url = URL.createObjectURL(blob);
+private loadSceneFromLocalStorage(): void {
+ const raw = localStorage.getItem('autosavedScene');
+  if (!raw) {
+    console.warn('No autosaved scene found in localStorage.');
+    return;
+  }
 
   try {
-    const gltf = await new GLTFLoader().loadAsync(url);
-    URL.revokeObjectURL(url);
+    const sceneData = JSON.parse(raw);
 
-    const model = gltf.scene;
-    model.position.set(data.position.x, data.position.y, data.position.z);
-    model.rotation.set(data.rotation.x, data.rotation.y, data.rotation.z);
-    model.scale.set(data.scale.x, data.scale.y, data.scale.z);
-    return model;
-  } catch (err) {
-    console.error('Failed to load model from base64:', err);
-    throw err;
-  }
-}
+    this.clearScene();
 
-
-adjustCameraPosition(): void {
-  const boundingBox = new THREE.Box3().setFromObject(this.scene);
-  const center = boundingBox.getCenter(new THREE.Vector3());
-  const size = boundingBox.getSize(new THREE.Vector3());
-  const maxDim = Math.max(size.x, size.y, size.z);
-  const cameraHeight = Math.max(maxDim * 1.5, 10);
-  this.camera.position.set(center.x, center.y + cameraHeight, center.z + maxDim * 1.5);
-  this.camera.lookAt(center);
-  this.camera.near = 0.1;
-  this.camera.updateProjectionMatrix();
-  console.log('Camera position:', this.camera.position);
-  console.log('Scene center:', center);
-}
-
-loadNewModel(file: File) {
-  const loader = new GLTFLoader();
-  loader.load(
-    URL.createObjectURL(file),
-    (gltf) => {
-      const model = gltf.scene;
-      this.uploadedModel = model;
-      this.sceneLoaded = true;
-      this.applyModelTransform();
-      this.logToConsole('MODEL_LOADED', { name: model.name });
-    },
-    undefined,
-    (error) => {
-      this.logToConsole('ERRORS.FAILED_LOAD_MODEL', { fileName: file.name });
+    // Restore camera
+    if (sceneData.camera) {
+      const { position, rotation } = sceneData.camera;
+      this.camera.position.set(position.x, position.y, position.z);
+      this.camera.rotation.set(rotation.x, rotation.y, rotation.z);
     }
-  );
-}
-  async loadGLTF(file: File): Promise<void> {
-    const loader = new GLTFLoader();
-    return new Promise((resolve, reject) => {
-      loader.load(URL.createObjectURL(file), (gltf) => {
-        if (gltf.scene) {
-          this.scene.add(gltf.scene);
-          this.uploadedModel = gltf.scene;
-          resolve();
-        }
-      }, undefined, reject);
-    });
-  }
-async loadJSON(file: File): Promise<void> {
-  const loader = new THREE.ObjectLoader();
-  const gltfLoader = new GLTFLoader();
 
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    // Restore lighting
+    if (sceneData.lighting) {
+      const { ambient, directional } = sceneData.lighting;
+      if (ambient) {
+        this.ambientLight.color.setHex(ambient.color);
+        this.ambientLight.intensity = ambient.intensity;
+      }
+      if (directional) {
+        this.dirLight.color.setHex(directional.color);
+        this.dirLight.intensity = directional.intensity;
+        this.dirLight.position.set(
+          directional.position.x,
+          directional.position.y,
+          directional.position.z
+        );
+      }
+    }
 
-    reader.onload = async (event) => {
-      try {
-        const json = event.target?.result;
-        if (!json) {
-          reject(new Error('Failed to read file contents.'));
+    // Load models from base64 glb
+    if (sceneData.models && Array.isArray(sceneData.models)) {
+      const loader = new GLTFLoader();
+
+      sceneData.models.forEach((modelData: any) => {
+        if (!modelData.glbBase64) {
+          console.warn(`Model ${modelData.name} missing base64 data`);
           return;
         }
-        console.log('File content:', json);
-        const parsedObject = JSON.parse(json as string);
-        if (parsedObject?.asset) {
 
-        gltfLoader.parse(json as string, '', (gltf: GLTF) => {
-          const object = gltf.scene;
-          this.scene.add(object);
-          this.uploadedModel = object;
-          resolve();
-        }, (event: ErrorEvent) => {
-          const error = event.error ?? new Error(event.message);
-          reject(new Error('Error loading GLTF JSON: ' + error.message));
-        });
-
-
-        } else if (parsedObject?.type) {
-          const object = loader.parse(parsedObject);
-          this.scene.add(object);
-          this.uploadedModel = object;
-          resolve();
-        } else {
-          reject(new Error('The parsed JSON is not valid GLTF or Object format.'));
+        // Decode base64 to ArrayBuffer
+        const binaryString = atob(modelData.glbBase64);
+        const len = binaryString.length;
+        const arrayBuffer = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+          arrayBuffer[i] = binaryString.charCodeAt(i);
         }
-      } catch (error) {
-        console.error('Error while loading JSON:', error);
-        reject(error);
+
+        loader.parse(arrayBuffer.buffer, '', (gltf) => {
+          const model = gltf.scene;
+          model.name = modelData.name || 'Loaded Model';
+          model.position.set(modelData.position.x, modelData.position.y, modelData.position.z);
+          model.rotation.set(modelData.rotation.x, modelData.rotation.y, modelData.rotation.z);
+          model.scale.set(modelData.scale.x, modelData.scale.y, modelData.scale.z);
+
+          model.userData['isLoadedModel'] = true;
+          model.userData['fileName'] = modelData.fileName || 'unknown.glb';
+
+          this.scene.add(model);
+          this.objects.push(model);
+        }, (error) => {
+          console.error('Error loading model from base64:', error);
+        });
+      });
+    }
+
+    console.log('Scene loaded from localStorage with base64 models.');
+  } catch (err) {
+    console.error('Failed to load scene from localStorage:', err);
+  }
+}
+
+//************* Save/Clear Scene ******************* */
+
+//Exporting your scene
+saveScene(): void {
+  const sceneData: SceneData = {
+    models: [],
+    camera: {
+      position: this.camera.position.clone(),
+      rotation: {
+        x: this.camera.rotation.x,
+        y: this.camera.rotation.y,
+        z: this.camera.rotation.z
+      }
+    },
+    lighting: {
+      ambient: {
+        color: this.ambientLight.color.getHex(),
+        intensity: this.ambientLight.intensity,
+      },
+      directional: {
+        color: this.dirLight.color.getHex(),
+        intensity: this.dirLight.intensity,
+        position: this.dirLight.position.toArray(),
+      },
+    },
+  };
+
+  const gltfExporter = new GLTFExporter();
+  const objectsToExport = this.scene.children.filter(
+    (obj) => obj.userData?.['isLoadedModel']
+  );
+
+  const exportNextModel = (index: number) => {
+    if (index >= objectsToExport.length) {
+      // All models processed, save the final scene JSON
+      const blob = new Blob([JSON.stringify(sceneData)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'scene.json';
+      link.click();
+      URL.revokeObjectURL(url);
+
+      this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
+      console.log('Scene export complete.');
+      return;
+    }
+
+    const obj = objectsToExport[index];
+
+    gltfExporter.parse(
+      obj,
+      (gltf) => {
+        let glbBlob: Blob;
+
+        if (gltf instanceof ArrayBuffer) {
+          glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
+        } else {
+          glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          const binary = new Uint8Array(reader.result as ArrayBuffer);
+          let binaryString = '';
+          for (let i = 0; i < binary.byteLength; i++) {
+            binaryString += String.fromCharCode(binary[i]);
+          }
+          const base64 = btoa(binaryString);
+
+          sceneData.models.push({
+            name: obj.name || 'Unnamed',
+            position: obj.position.clone(),
+            rotation: {
+              x: obj.rotation.x,
+              y: obj.rotation.y,
+              z: obj.rotation.z,
+            },
+            scale: obj.scale.clone(),
+            fileName: obj.userData['fileName'] || 'unknown.glb',
+            glbBase64: base64,
+          });
+
+          exportNextModel(index + 1);
+        };
+
+        reader.readAsArrayBuffer(glbBlob);
+      },
+      (error) => {
+        console.error('Error exporting model', error);
+        exportNextModel(index + 1); // Skip and continue with next model
+      },
+      { binary: true }
+    );
+  };
+
+  console.log('Scene export started...');
+  exportNextModel(0);
+}
+
+//autosave
+private saveSceneToLocalStorage(): void {
+  try {
+    const models = this.scene.children
+      .filter(obj => obj.userData?.['isLoadedModel'])
+      .map((obj) => ({
+        name: obj.name || '',
+        position: {
+          x: obj.position.x,
+          y: obj.position.y,
+          z: obj.position.z,
+        },
+        rotation: {
+          x: obj.rotation.x,
+          y: obj.rotation.y,
+          z: obj.rotation.z,
+        },
+        scale: {
+          x: obj.scale.x,
+          y: obj.scale.y,
+          z: obj.scale.z,
+        },
+        fileName: obj.userData['fileName'] || 'unknown.glb',
+      }));
+
+    const sceneData = {
+      models,
+      camera: {
+        position: {
+          x: this.camera.position.x,
+          y: this.camera.position.y,
+          z: this.camera.position.z,
+        },
+        rotation: {
+          x: this.camera.rotation.x,
+          y: this.camera.rotation.y,
+          z: this.camera.rotation.z,
+        }
+      },
+      lighting: {
+        ambient: {
+          color: this.ambientLight.color.getHex(),
+          intensity: this.ambientLight.intensity,
+        },
+        directional: {
+          color: this.dirLight.color.getHex(),
+          intensity: this.dirLight.intensity,
+          position: {
+            x: this.dirLight.position.x,
+            y: this.dirLight.position.y,
+            z: this.dirLight.position.z,
+          }
+        }
       }
     };
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error);
-      reject(error);
-    };
-    reader.readAsText(file);
-  });
-}
 
-
-private restoreSceneLighting(lightingData: any): void {
-  if (!lightingData) return;
-  if (lightingData.ambient) {
-    if (!this.scene.getObjectByName('ambientLight')) {
-      const ambientLight = new THREE.AmbientLight(lightingData.ambient.color, lightingData.ambient.intensity);
-      ambientLight.name = 'ambientLight';
-      this.scene.add(ambientLight);
-    }
-  }
-  if (lightingData.directional) {
-    if (!this.scene.getObjectByName('directionalLight')) {
-      const directionalLight = new THREE.DirectionalLight(lightingData.directional.color, lightingData.directional.intensity);
-      directionalLight.position.set(lightingData.directional.position.x, lightingData.directional.position.y, lightingData.directional.position.z);
-      directionalLight.name = 'directionalLight';
-      this.scene.add(directionalLight);
-    }
-  }
-}
-async handleLocalModelFile(file: File): Promise<void> {
-  const url = URL.createObjectURL(file);
-  const loader = new GLTFLoader();
-  try {
-    const gltf = await loader.loadAsync(url);
-    URL.revokeObjectURL(url);
-    const model = gltf.scene;
-    model.name = file.name;
-    model.userData['isLoadedModel'] = true;
-    model.userData['fileName'] = file.name;
-    this.scene.add(model);
-    this.sceneLoaded = true;
-    this.storageService.logToConsole(`Loaded model: ${file.name}`);
-  } catch (error) {
-    console.error('Failed to load model:', error);
-    this.storageService.logToConsole('ERRORS.FAILED_LOAD_MODEL');
+    localStorage.setItem('autosavedScene', JSON.stringify(sceneData));
+  } catch (err) {
+    console.error('Failed to save scene to localStorage:', err);
   }
 }
 
-  async onToggleFullscreen(): Promise<void> {
-  const container = this.sceneContainerRef?.nativeElement
-                 ?? this.renderer?.domElement as HTMLElement | undefined;
-  if (container) {
-    await toggleFullscreen(container);
+private isColliding(position: THREE.Vector3): boolean {
+  // Player height and half-height for collision box center calculation
+  const playerHeight = 1.6;
+  const playerHalfHeight = playerHeight / 2;
+
+  // Create collision box centered at player's current position adjusted vertically
+  const playerBox = new THREE.Box3().setFromCenterAndSize(
+    new THREE.Vector3(position.x, position.y - playerHalfHeight, position.z),
+    new THREE.Vector3(0.5, playerHeight, 0.5)
+  );
+
+  // Check collisions with all scene objects
+  for (const obj of this.objects) {
+    const box = new THREE.Box3().setFromObject(obj);
+    if (box.intersectsBox(playerBox)) return true;
   }
+
+  return false;
 }
 
 clearScene(): void {
-  const toRemove: THREE.Object3D[] = [];
+  // Dispose of existing background if it's a texture
+  if (this.scene.background instanceof THREE.Texture) {
+    this.scene.background.dispose?.();
+    this.scene.background = null;
+  }
 
-  this.scene.traverse((obj) => {
-    if (obj.userData?.['isLoadedModel']) {
-      toRemove.push(obj);
-    }
-  });
-
-  for (const obj of toRemove) {
+  // Remove all previously loaded models
+  const toRemove = this.scene.children.filter((obj: THREE.Object3D) => obj.userData?.['isLoadedModel']);
+  toRemove.forEach(obj => {
     this.scene.remove(obj);
-    this.disposeObject(obj);
+    obj.traverse((child: THREE.Object3D) => {
+      if ((child as THREE.Mesh).isMesh) {
+        const mesh = child as THREE.Mesh;
 
-    obj.traverse(child => {
-      if ((child as any).geometry) {
-        (child as any).geometry.dispose?.();
-      }
-      if ((child as any).material) {
-        const mat = (child as any).material;
-        if (Array.isArray(mat)) {
-          mat.forEach(m => m.dispose?.());
+        // Dispose geometry
+        mesh.geometry?.dispose?.();
+
+        // Dispose materials and textures
+        const disposeMaterial = (material: THREE.Material | undefined) => {
+          if (!material) return;
+
+          const mat = material as any;
+          ['map', 'lightMap', 'aoMap', 'emissiveMap', 'bumpMap', 'normalMap', 'displacementMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'envMap']
+            .forEach((prop) => {
+              if (mat[prop]?.dispose) mat[prop].dispose();
+            });
+
+          material.dispose?.();
+        };
+
+        if (Array.isArray(mesh.material)) {
+          mesh.material.forEach(disposeMaterial);
         } else {
-          mat.dispose?.();
+          disposeMaterial(mesh.material);
         }
       }
     });
+  });
+
+  // Clear interaction objects
+  this.objects = [];
+
+  // Reset camera position/rotation
+  this.camera.position.set(0, 0, 5);
+  this.camera.rotation.set(0, 0, 0);
+}
+
+// ************************************************************************
+resetView(): void {
+  this.camera.position.set(0, this.cameraHeight, 0);
+  this.camera.lookAt(0, 0, 0);
+  this.controls.unlock();
+  this.snackBar.open('View reset!', 'OK', { duration: 2000 });
+}
+// ************************************************************************
+toggleWireframe(): void {
+  if (!this.uploadedModel) return;
+
+  this.uploadedModel.traverse((child: any) => {
+    if (child.isMesh) {
+      child.material.wireframe = !child.material.wireframe;
+    }
+  });
+  this.snackBar.open('Wireframe toggled!', 'OK', { duration: 2000 });
+}
+
+clearModel(): void {
+  if (this.uploadedModel) {
+    this.scene.remove(this.uploadedModel);
+    this.uploadedModel = null;
+    this.snackBar.open('Model cleared!', 'OK', { duration: 2000 });
   }
-  this.createDefaultCamera();
 }
 
-private createDefaultCamera(): void {
-  const container = this.sceneContainerRef?.nativeElement;
-  const aspectRatio = container
-    ? container.clientWidth / container.clientHeight
-    : window.innerWidth / window.innerHeight;
+//************* Animation/ WSAD Keys ******************* */
 
-  this.sceneManager.camera = new THREE.PerspectiveCamera(60, aspectRatio, 0.1, 1000);
-  this.camera.position.set(0, this.cameraHeight || 2, 5);
-  this.camera.lookAt(new THREE.Vector3(0, this.cameraHeight || 0, 0));
+private animate = () => {
+  requestAnimationFrame(this.animate);
+
+  const delta = this.clock.getDelta();
+  const friction = 5.0;
+  this.velocity.x -= this.velocity.x * friction * delta;
+  this.velocity.z -= this.velocity.z * friction * delta;
+
+  this.direction.set(0, 0, 0);
+
+  if (this.keysPressed.forward) this.direction.z += 1;
+  if (this.keysPressed.backward) this.direction.z -= 1;
+  if (this.keysPressed.left) this.direction.x -= 1;
+  if (this.keysPressed.right) this.direction.x += 1;
+
+  this.direction.normalize();
+
+  if (this.direction.length() > 0) {
+    this.velocity.x += this.direction.x * this.speed * delta;
+    this.velocity.z += this.direction.z * this.speed * delta;
+  }
+
+const moveX = this.velocity.x * delta;
+const moveZ = this.velocity.z * delta;
+
+const playerObj = this.controls.getObject();
+const oldX = playerObj.position.x;
+const oldZ = playerObj.position.z;
+
+this.controls.moveRight(moveX);
+if (this.isColliding(playerObj.position)) {
+  playerObj.position.x = oldX;
 }
 
-restoreScene(sceneData: SceneData): void {
-  this.camera.position.set(
-    sceneData.camera.position.x,
-    sceneData.camera.position.y,
-    sceneData.camera.position.z
-  );
-  this.camera.rotation.set(
-    sceneData.camera.rotation.x,
-    sceneData.camera.rotation.y,
-    sceneData.camera.rotation.z
-  );
-
-  this.ambientLight.color.setHex(sceneData.lighting.ambient.color);
-  this.ambientLight.intensity = sceneData.lighting.ambient.intensity;
-  this.dirLight.color.setHex(sceneData.lighting.directional.color);
-  this.dirLight.intensity = sceneData.lighting.directional.intensity;
-  this.dirLight.position.set(
-    sceneData.lighting.directional.position[0],
-    sceneData.lighting.directional.position[1],
-    sceneData.lighting.directional.position[2]
-  );
+this.controls.moveForward(moveZ);
+if (this.isColliding(playerObj.position)) {
+  playerObj.position.z = oldZ;
 }
+
+this.velocity.y -= this.gravity * delta;
+
+const minY = this.cameraHeight;
+this.controls.getObject().position.y += this.velocity.y * delta;
+
+if (this.controls.getObject().position.y < minY) {
+  this.velocity.y = 0;
+  this.controls.getObject().position.y = minY;
+  this.canJump = true;
+}
+
+  this.renderer.render(this.scene, this.camera);
+};
+
+
+private onKeyDown = (event: KeyboardEvent) => {
+  switch (event.code) {
+    case 'ArrowUp':
+    case 'KeyW':
+      this.keysPressed.forward = true;
+      break;
+    case 'ArrowLeft':
+    case 'KeyA':
+      this.keysPressed.left = true;
+      break;
+    case 'ArrowDown':
+    case 'KeyS':
+      this.keysPressed.backward = true;
+      break;
+    case 'ArrowRight':
+    case 'KeyD':
+      this.keysPressed.right = true;
+      break;
+    case 'Space':
+      if (this.canJump) {
+        this.velocity.y = this.jumpStrength;
+        this.canJump = false;
+      }
+      break;
+  }
+};
+
+private onKeyUp = (event: KeyboardEvent) => {
+  switch (event.code) {
+    case 'ArrowUp':
+    case 'KeyW':
+      this.keysPressed.forward = false;
+      break;
+    case 'ArrowLeft':
+    case 'KeyA':
+      this.keysPressed.left = false;
+      break;
+    case 'ArrowDown':
+    case 'KeyS':
+      this.keysPressed.backward = false;
+      break;
+    case 'ArrowRight':
+    case 'KeyD':
+      this.keysPressed.right = false;
+      break;
+  }
+};
+
+//************* Screen Sizing ******************* */
+
+onResize(width: number, height: number) {
+  this.renderer.setSize(width, height);
+  this.camera.aspect = width / height;
+  this.camera.updateProjectionMatrix();
+}
+
+//************* Page Load Popup*************** */
+
+enterModelPlacementMode(): void {
+    this.isPlacingModel = true;
+    this.snackBar.open('Model placement mode active. Click to place.', 'OK', { duration: 3000 });
+  }
+
+//************* User Friendly UI Buttons ******************* */
+
+setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
+    this.selectedTool = mode;
+    if (this.transformControls) {
+      this.transformControls.setMode(mode);
+      this.snackBar.open(`${mode.charAt(0).toUpperCase() + mode.slice(1)} mode activated`, 'OK', {
+        duration: 2000,
+      });
+    }
+  }
+
+onAddModel(): void {
+  this.snackBar.open('Click anywhere to place a model!', 'OK', { duration: 3000 });
+  this.enterModelPlacementMode();
+}
+
+onToggleGrid(): void {
+  this.showGrid = !this.showGrid;
+  this.gridHelper.visible = this.showGrid;
+  this.snackBar.open(`Grid ${this.showGrid ? 'shown' : 'hidden'}`, 'OK', { duration: 2000 });
+}
+
+onClearScene(): void {
+  const confirmClear = confirm('Are you sure you want to remove all models?');
+  if (!confirmClear) return;
+
+  this.scene.children
+    .filter(obj => obj.userData?.['isLoadedModel'])
+    .forEach(obj => {
+      this.scene.remove(obj);
+    });
+
+  this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
+}
+
+// ********************************
+// ** NEW Fun Controls **
+
+toggleRoomLight() {
+  this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
+}
+
+toggleLightcolor() {
+  const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
+  const current = this.ambientLight.color.getHex();
+  const next = colors[(colors.indexOf(current) + 1) % colors.length];
+  this.ambientLight.color.setHex(next);
+}
+
+updateSunlight(value: number): void {
+  this.dirLight.intensity = value;
+}
+
+updateSpeed(value: number): void {
+  this.speed = value;
+}
+
+updateEyeLevel(value: number): void {
+  const minHeight = 2;
+  this.cameraHeight = Math.max(value, minHeight);
+  this.camera.position.y = this.cameraHeight;
+}
+
+updateModelSize(value: number): void {
+  const minScale = 30;
+  const maxScale = 100;
+  this.modelScale = Math.min(Math.max(value, minScale), maxScale);
+  this.updateModelTransform?.();
+}
+
+updateModelHeight(value: number): void {
+  this.modelHeight = value;
+  this.updateModelTransform?.();
+}
+
+save(): void {
+  this.saveScene?.();
+}
+
+load(): void {
+  this.triggerSceneUpload?.();
+}
+// ********************************
 
 }

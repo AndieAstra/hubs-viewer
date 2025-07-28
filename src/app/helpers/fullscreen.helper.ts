@@ -97,4 +97,34 @@ export async function toggleFullscreen(el: HTMLElement): Promise<void> {
     } catch {}
   }
   setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+
+
+async function toggleFullscreenUtil(el: HTMLElement): Promise<void> {
+  if (!el) return;
+
+  const isFull = document.fullscreenElement === el;
+
+  if (!isFull) {
+    const req =
+      el.requestFullscreen ||
+      (el as any).webkitRequestFullscreen ||
+      (el as any).msRequestFullscreen;
+    if (req) await req.call(el);
+    try {
+      await (screen.orientation as any)?.lock?.('landscape');
+    } catch {}
+  } else {
+    const exit =
+      document.exitFullscreen ||
+      (document as any).webkitExitFullscreen ||
+      (document as any).msExitFullscreen;
+    if (exit) await exit.call(document);
+    try {
+      (screen.orientation as any)?.unlock?.();
+    } catch {}
+  }
+
+  setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+}
+
 }
