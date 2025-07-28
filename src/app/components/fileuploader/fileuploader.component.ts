@@ -4,11 +4,11 @@ import { Component, Output, EventEmitter } from '@angular/core';
   selector: 'app-fileuploader',
   standalone: true,
   imports: [],
-  templateUrl: './fileuploader.component.html',
+  // Use either template or templateUrl, NOT both:
   template: `
     <input type="file" (change)="onFileSelected($event)" accept=".glb,.gltf" />
   `,
-  styleUrl: './fileuploader.component.scss'
+  styleUrls: ['./fileuploader.component.scss']  // plural!
 })
 export class FileuploaderComponent {
   @Output() fileLoaded = new EventEmitter<File>();

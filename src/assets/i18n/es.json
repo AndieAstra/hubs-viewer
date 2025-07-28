@@ -26,7 +26,7 @@
     "LOAD_SCENE": "Cargar",
     "SUNLIGHT_COLOR": "Color del Sol",
     "ROOM_LIGHT": "Luz de la Habitación",
-    "LOAD_GLB":"Cargar GLB",
+    "LOAD_GLB":"Elija su modelo 3D (glb), luego use las teclas WASD para moverse, ESC para salir del visor, ESPACIO para saltar.",
     "LOAD_JSON":"Cargar JSON"
   },
 

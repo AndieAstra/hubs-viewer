@@ -26,7 +26,7 @@
     "LOAD_SCENE": "Load",
     "SUNLIGHT_COLOR": "Sunlight Color",
     "ROOM_LIGHT": "Room Light",
-    "LOAD_GLB":"Load GLB/GLTF",
+    "LOAD_GLB":"Choose your 3D model (glb), then use the WASD keys to move around, ESC to exit viewer, SPACE to jump.",
     "LOAD_JSON":"Load JSON"
   },
 

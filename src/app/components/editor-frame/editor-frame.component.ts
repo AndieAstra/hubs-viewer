@@ -1,5 +1,4 @@
-
-  import {
+import {
   Component,
   ViewChild,
   ElementRef,
@@ -12,31 +11,27 @@ import { FormsModule } from '@angular/forms';
 import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { Router } from '@angular/router';
-import { ViewerComponent } from '../../components/viewer/viewer.component';
-import { TranslateModule } from '@ngx-translate/core';
-import { FileuploaderComponent } from '../../components/fileuploader/fileuploader.component';
+import { UploaderComponent } from '../../demo/test-editor/uploader/uploader.component';
+import { TestEditorComponent } from '../../demo/test-editor/test-editor.component';
 
 @Component({
-  selector: 'app-viewer-page',
+  selector: 'app-editor-frame',
   standalone: true,
   imports: [
     FormsModule,
     ApplicationModule,
-    ViewerComponent,
-    TranslateModule,
-    FileuploaderComponent
-  ],
-  templateUrl: './viewer-page.component.html',
-  styleUrls: ['./viewer-page.component.scss'],
+    UploaderComponent,
+    TestEditorComponent
+],
+  templateUrl: './editor-frame.component.html',
+  styleUrl: './editor-frame.component.scss'
 })
-export class ViewerPageComponent implements AfterViewInit {
+export class EditorFrameComponent implements AfterViewInit {
 
-  constructor(
-    private router: Router
-  ) {}
+  constructor(private router: Router) {}
 
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild(ViewerComponent) viewer!: ViewerComponent;
+  @ViewChild(TestEditorComponent) viewer!: TestEditorComponent;
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -91,21 +86,10 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-  // likes to be a specific button
   onFileLoaded(file: File): void {
     this.selectedFile = file;
     this.logToConsole(`File loaded: ${file.name}`);
   }
-
-  // tech duplicate, but works button style
-  onFileSelected(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    const file = input.files[0];
-    this.onFileLoaded(file);
-  }
-}
-
 
   handleFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
