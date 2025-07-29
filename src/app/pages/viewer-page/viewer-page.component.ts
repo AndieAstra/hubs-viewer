@@ -17,6 +17,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { FileuploaderComponent } from '../../components/fileuploader/fileuploader.component';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { FullscreenHelper } from '../../helpers/fullscreen.helper';
+import { StorageService } from '../../services/storage.service';
 
 @Component({
   selector: 'app-viewer-page',
@@ -35,7 +36,8 @@ export class ViewerPageComponent implements AfterViewInit {
 
   constructor(
     private router: Router,
-     private sceneControls: SceneControlsService
+     private sceneControls: SceneControlsService,
+     private storageService: StorageService,
   ) {}
 
   @HostListener('window:resize')
@@ -138,8 +140,16 @@ onFileLoaded(file: File): void {
     }
   }
 
+  // resetView(): void {
+  //   this.viewer?.resetView?.();
+  //   this.logToConsole('Reset camera view.');
+  // }
+
   resetView(): void {
-    this.viewer?.resetView?.();
+    if (!this.viewer) return;
+    const { camera, controls } = this.viewer;
+    this.sceneControls.resetCameraView(camera, controls);
+    this.storageService.logToConsole('VIEWER.RESET_VIEW');
     this.logToConsole('Reset camera view.');
   }
 
