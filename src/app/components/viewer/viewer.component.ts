@@ -10,6 +10,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
+import { SceneControlsService } from '../../services/scene-controls.service';
 
 export interface SavedModel {
   name: string;
@@ -58,9 +60,12 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
   @Input() glbFile?: File;
 
-  constructor(private snackBar: MatSnackBar) {}
+  constructor(
+    private snackBar: MatSnackBar,
+    private sceneControls: SceneControlsService
+  ) {}
 
-  sunlight = 1;
+  //sunlight = 1;
   movementSpeed = 50;
   modelSize = 30;
   modelScale = 1;
@@ -95,6 +100,10 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   transformControls!: TransformControls;
 
   selectedTool = '';
+
+  public get directional() { return this.dirLight; }
+  movementHelper!: PlayerMovementHelper;
+  public playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
 
   private keysPressed = {
     forward: false,
@@ -141,6 +150,8 @@ ngAfterViewInit() {
     this.renderer.domElement.addEventListener('dragover', (event) => {
     event.preventDefault();
     });
+
+    this.sceneControls.setDirectionalLight(this.dirLight);
 
     this.renderer.domElement.addEventListener('drop', (event) => {
       event.preventDefault();
@@ -934,12 +945,12 @@ toggleRoomLight() {
   this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
 }
 
-toggleLightcolor() {
-  const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
-  const current = this.ambientLight.color.getHex();
-  const next = colors[(colors.indexOf(current) + 1) % colors.length];
-  this.ambientLight.color.setHex(next);
-}
+// toggleLightcolor() {
+//   const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
+//   const current = this.ambientLight.color.getHex();
+//   const next = colors[(colors.indexOf(current) + 1) % colors.length];
+//   this.ambientLight.color.setHex(next);
+// }
 
 updateSunlight(value: number): void {
   this.dirLight.intensity = value;

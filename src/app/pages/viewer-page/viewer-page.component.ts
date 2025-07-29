@@ -15,6 +15,7 @@ import { Router } from '@angular/router';
 import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { FileuploaderComponent } from '../../components/fileuploader/fileuploader.component';
+import { SceneControlsService } from '../../services/scene-controls.service';
 
 @Component({
   selector: 'app-viewer-page',
@@ -32,16 +33,21 @@ import { FileuploaderComponent } from '../../components/fileuploader/fileuploade
 export class ViewerPageComponent implements AfterViewInit {
 
   constructor(
-    private router: Router
+    private router: Router,
+     private sceneControls: SceneControlsService
   ) {}
 
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
+  //@ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
 
   selectedFile?: File;
   sidebarCollapsed = false;
   showConsole = true;
   consoleMessages: string[] = [];
+
+  sunIntensity = 1;
+  sunlightColor = '#ffffff';
 
   ngAfterViewInit() {
     this.resizeCanvas();
@@ -92,20 +98,17 @@ export class ViewerPageComponent implements AfterViewInit {
   }
 
   // likes to be a specific button
-  onFileLoaded(file: File): void {
-    this.selectedFile = file;
-    this.logToConsole(`File loaded: ${file.name}`);
-  }
+onFileLoaded(file: File): void {
+  this.selectedFile = file;
+  this.logToConsole(`File loaded: ${file.name}`);
 
-  // tech duplicate, but works button style
-  onFileSelected(event: Event): void {
-  const input = event.target as HTMLInputElement;
-  if (input.files && input.files.length > 0) {
-    const file = input.files[0];
-    this.onFileLoaded(file);
+  // Assuming you have a loadGLB method in ViewerComponent
+  if (this.viewer?.loadGLB) {
+    this.viewer.loadGLB(file);
+  } else {
+    this.logToConsole('Error: loadGLB method not found.');
   }
 }
-
 
   handleFileInput(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -145,16 +148,30 @@ export class ViewerPageComponent implements AfterViewInit {
     this.logToConsole('Toggled room light.');
   }
 
-  toggleLightcolor(): void {
-    this.viewer?.toggleLightcolor?.();
-    this.logToConsole('Toggled sunlight color.');
-  }
+  // toggleLightcolor(): void {
+  //   this.viewer?.toggleLightcolor?.();
+  //   this.logToConsole('Toggled sunlight color.');
+  // }
 
-  onSunlightInput(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const value = input.valueAsNumber;
-    this.updateSunlight(value);
-  }
+  // onSunlightInput(event: Event): void {
+  //   const input = event.target as HTMLInputElement;
+  //   const value = input.valueAsNumber;
+  //   this.updateSunlight(value);
+  // }
+
+    onSunlightInput(evt: Event): void {
+      const val = +(evt.target as HTMLInputElement).value;
+      this.sunIntensity = val;
+      if (this.viewer?.directional) {
+        this.sceneControls.updateSunlightIntensity(this.viewer.directional, val);
+      }
+    }
+
+  onLightColorChange(evt: Event): void {
+  const hex = (evt.target as HTMLInputElement).value;
+  this.sceneControls.changeSunlightColor(hex);
+  this.logToConsole(`Sunlight colour → ${hex}`);
+}
 
   updateSunlight(value: number): void {
     this.viewer?.updateSunlight?.(value);
@@ -326,5 +343,11 @@ startTutorial(): void {
 
   tour.start();
 }
+
+// -------------------------------------------------
+
+toggleSidebar(): void {
+    this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
 
 }
