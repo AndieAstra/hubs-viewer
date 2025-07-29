@@ -13,6 +13,7 @@ import { TransformControls } from 'three/examples/jsm/controls/TransformControls
 import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
+import { FullscreenHelper } from '../../helpers/fullscreen.helper';
 
 export interface SavedModel {
   name: string;
@@ -61,6 +62,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
+
   @Input() glbFile?: File;
 
   constructor(
@@ -109,6 +111,9 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   public playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
 
   private stereoscope!: StereoscopeHelper;
+  stereoscopeHelper!: StereoscopeHelper;
+  fullscreenHelper!: FullscreenHelper;
+  public isVRMode = false;
 
   private keysPressed = {
     forward: false,
@@ -118,6 +123,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   };
 
 ngOnInit() {
+   this.scene = new THREE.Scene(); // initialize early
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
     this.loadSceneFromLocalStorage();
@@ -127,6 +133,7 @@ ngOnInit() {
 ngOnDestroy() {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+    this.fullscreenHelper?.dispose();
   }
 
 ngOnChanges(changes: SimpleChanges) {
@@ -148,45 +155,63 @@ ngOnChanges(changes: SimpleChanges) {
 }
 
 ngAfterViewInit() {
-    this.initScene();
-    if (this.glbFile) this.loadGLB(this.glbFile);
-    this.animate();
+  this.initScene();
+  if (this.glbFile) this.loadGLB(this.glbFile);
+  this.animate();
 
-    this.renderer.domElement.addEventListener('dragover', (event) => {
+  this.renderer.domElement.addEventListener('dragover', (event) => {
     event.preventDefault();
-    });
+  });
 
-    this.sceneControls.setDirectionalLight(this.dirLight);
+  this.sceneControls.setDirectionalLight(this.dirLight);
 
-    this.stereoscope = new StereoscopeHelper(this.renderer, this.scene, this.camera);
+  // Initialize stereoscope helper
+  this.stereoscopeHelper = new StereoscopeHelper(this.renderer, this.scene, this.camera);
 
-    this.renderer.domElement.addEventListener('drop', (event) => {
-      event.preventDefault();
-      const file = event.dataTransfer?.files?.[0];
-      if (file && file.name.endsWith('.glb')) {
-        if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
-        this.clearScene();
-        this.loadGLB(file);
-      }
-    });
+  // Initialize fullscreen helper on container element
+  this.fullscreenHelper = new FullscreenHelper(this.containerRef.nativeElement);
 
-    this.renderer.domElement.addEventListener('click', (event) => {
-      const mouse = new THREE.Vector2();
-      const rect = this.renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  // Listen for fullscreen changes to resize and rerender
+  this.fullscreenHelper.onChange((active) => {
+    console.log('Fullscreen active:', active);
+    const width = this.containerRef.nativeElement.clientWidth;
+    const height = this.containerRef.nativeElement.clientHeight;
+    this.onResize(width, height);
+    this.renderScene();
+  });
 
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-      const intersects = raycaster.intersectObjects(this.scene.children, true);
+  // Set initial size to container dimensions
+  const initialWidth = this.containerRef.nativeElement.clientWidth;
+  const initialHeight = this.containerRef.nativeElement.clientHeight;
+  this.onResize(initialWidth, initialHeight);
 
-      if (intersects.length > 0) {
-        const selected = intersects[0].object;
-        console.log('Selected object:', selected.name || selected.uuid);
-      }
-    });
+  this.renderer.domElement.addEventListener('drop', (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file && file.name.endsWith('.glb')) {
+      if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
+      this.clearScene();
+      this.loadGLB(file);
+    }
+  });
 
-    const canvas = this.renderer.domElement;
+  this.renderer.domElement.addEventListener('click', (event) => {
+    const mouse = new THREE.Vector2();
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    const intersects = raycaster.intersectObjects(this.scene.children, true);
+
+    if (intersects.length > 0) {
+      const selected = intersects[0].object;
+      console.log('Selected object:', selected.name || selected.uuid);
+    }
+  });
+
+  const canvas = this.renderer.domElement;
 
   const instructions = document.createElement('div');
   this.containerRef.nativeElement.appendChild(instructions);
@@ -210,10 +235,16 @@ ngAfterViewInit() {
     }
   });
 
-    this.gridHelper = new THREE.GridHelper(10, 10);
-    this.scene.add(this.gridHelper);
-    this.gridHelper.visible = this.showGrid;
-  }
+  this.gridHelper = new THREE.GridHelper(10, 10);
+  this.scene.add(this.gridHelper);
+  this.gridHelper.visible = this.showGrid;
+
+const width = this.containerRef.nativeElement.clientWidth;
+const height = this.containerRef.nativeElement.clientHeight;
+this.onResize(width, height);
+this.renderScene();  // render once before animation loop starts
+}
+
 
   //********* UI Controls for the ThreeJS Scene *********/
 
@@ -239,32 +270,8 @@ private initScene() {
   this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
   this.dirLight.position.set(5, 10, 7.5);
   this.scene.add(this.dirLight);
- // ******************************************************** */
-
-  // Controls with instruction for users
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
   this.scene.add(this.controls.getObject());
-
-  // // User must press key to start – more intuitive for kids
-  // const instructions = document.createElement('div');
-  // instructions.innerText = "Click to start walking!";
-  // instructions.style.position = "absolute";
-  // instructions.style.top = "50%";
-  // instructions.style.left = "50%";
-  // instructions.style.transform = "translate(-50%, -50%)";
-  // instructions.style.color = "white";
-  // instructions.style.fontSize = "24px";
-  // instructions.style.padding = "10px";
-  // instructions.style.background = "rgba(0,0,0,0.5)";
-  // instructions.style.borderRadius = "8px";
-  // container.appendChild(instructions);
-
-  // container.addEventListener('click', () => {
-  //   this.controls.lock();
-  //   container.removeChild(instructions);
-  // });
-
-//******************************************************** */
 
    // 🧰 GUI for kids
   this.gui = new GUI({ width: 280 });
@@ -533,7 +540,6 @@ private loadSceneFromLocalStorage(): void {
 
 //************* Save/Clear Scene ******************* */
 
-//Exporting your scene
 saveScene(): void {
   const sceneData: SceneData = {
     models: [],
@@ -633,7 +639,6 @@ saveScene(): void {
   exportNextModel(0);
 }
 
-//autosave
 private saveSceneToLocalStorage(): void {
   try {
     const models = this.scene.children
@@ -763,14 +768,13 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
-// ************************************************************************
 resetView(): void {
   this.camera.position.set(0, this.cameraHeight, 0);
   this.camera.lookAt(0, 0, 0);
   this.controls.unlock();
   this.snackBar.open('View reset!', 'OK', { duration: 2000 });
 }
-// ************************************************************************
+
 toggleWireframe(): void {
   if (!this.uploadedModel) return;
 
@@ -814,36 +818,35 @@ private animate = () => {
     this.velocity.z += this.direction.z * this.speed * delta;
   }
 
-const moveX = this.velocity.x * delta;
-const moveZ = this.velocity.z * delta;
+  const moveX = this.velocity.x * delta;
+  const moveZ = this.velocity.z * delta;
 
-const playerObj = this.controls.getObject();
-const oldX = playerObj.position.x;
-const oldZ = playerObj.position.z;
+  const playerObj = this.controls.getObject();
+  const oldX = playerObj.position.x;
+  const oldZ = playerObj.position.z;
 
-this.controls.moveRight(moveX);
-if (this.isColliding(playerObj.position)) {
-  playerObj.position.x = oldX;
-}
+  this.controls.moveRight(moveX);
+  if (this.isColliding(playerObj.position)) {
+    playerObj.position.x = oldX;
+  }
 
-this.controls.moveForward(moveZ);
-if (this.isColliding(playerObj.position)) {
-  playerObj.position.z = oldZ;
-}
+  this.controls.moveForward(moveZ);
+  if (this.isColliding(playerObj.position)) {
+    playerObj.position.z = oldZ;
+  }
 
-this.velocity.y -= this.gravity * delta;
+  this.velocity.y -= this.gravity * delta;
 
-const minY = this.cameraHeight;
-this.controls.getObject().position.y += this.velocity.y * delta;
+  const minY = this.cameraHeight;
+  this.controls.getObject().position.y += this.velocity.y * delta;
 
-if (this.controls.getObject().position.y < minY) {
-  this.velocity.y = 0;
-  this.controls.getObject().position.y = minY;
-  this.canJump = true;
-}
+  if (this.controls.getObject().position.y < minY) {
+    this.velocity.y = 0;
+    this.controls.getObject().position.y = minY;
+    this.canJump = true;
+  }
 
-// this.renderer.render(this.scene, this.camera);
-  this.stereoscope?.render();  // Will use stereo if active
+  this.renderScene();  // centralized rendering, stereo or normal
 };
 
 
@@ -897,32 +900,14 @@ private onKeyUp = (event: KeyboardEvent) => {
 
 //************* Screen Sizing ******************* */
 
-// onResize(width: number, height: number) {
-//   this.renderer.setSize(width, height);
-//   this.camera.aspect = width / height;
-//   this.camera.updateProjectionMatrix();
-// }
-
-onResize(width: number, height: number): void {
+onResize(width: number, height: number) {
   this.renderer.setSize(width, height);
-  this.camera.aspect = width / height;
-  this.camera.updateProjectionMatrix();
-
-  this.stereoscope?.resize(width, height);
+  (this.camera as THREE.PerspectiveCamera).aspect = width / height;
+  (this.camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+  if (this.stereoscopeHelper.isActive()) {
+    this.stereoscopeHelper.getStereoEffect().setSize(width, height);
+  }
 }
-
-// onResize(): void {
-//   const width = this.containerRef.nativeElement.clientWidth;
-//   const height = this.containerRef.nativeElement.clientHeight;
-
-//   if (this.stereoscope) {
-//     this.stereoscope.resize(width, height);
-//   } else {
-//     this.renderer.setSize(width, height);
-//     this.camera.aspect = width / height;
-//     this.camera.updateProjectionMatrix();
-//   }
-// }
 
 //************* Page Load Popup*************** */
 
@@ -1017,7 +1002,33 @@ load(): void {
 // ********************************
 
 toggleStereo(): void {
-  this.stereoscope.toggle();
+  this.isVRMode = !this.isVRMode;
+  if (this.isVRMode) {
+    this.stereoscopeHelper.enable();
+  } else {
+    this.stereoscopeHelper.disable();
+  }
+  const width = this.containerRef.nativeElement.clientWidth;
+  const height = this.containerRef.nativeElement.clientHeight;
+  this.onResize(width, height);
+  this.renderScene();
 }
 
+
+renderScene(): void {
+  if (this.stereoscopeHelper && this.stereoscopeHelper.isActive && this.stereoscopeHelper.isActive()) {
+    console.log("Stereo rendering");
+    this.stereoscopeHelper.render();
+  } else {
+    console.log("Normal rendering");
+    this.renderer.render(this.scene, this.camera);
+  }
+}
+
+
+  async onToggleFullscreen(): Promise<void> {
+    if (this.fullscreenHelper) {
+      await this.fullscreenHelper.toggle();
+    }
+  }
 }

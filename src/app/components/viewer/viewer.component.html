@@ -1,5 +1,22 @@
-<div #canvasContainer class="viewer-container"></div>
+<div #canvasContainer class="viewer-container">
 
-<button (click)="toggleStereo()" class="kid-button purple">
-  👓 Toggle Stereo
-</button>
+
+
+  @if (!isVRMode) {
+    <!-- Enter/Exit VR button -->
+    <button class="vr-btn" type="button" (click)="toggleStereo()">
+      🎮 Enter VR Mode
+    </button>
+  }
+  @if (isVRMode) {
+    <button class="vr-btn" type="button" (click)="toggleStereo()">
+      🕶️ Exit VR Mode
+    </button>
+  }
+
+    <button class="fullscreen-btn" type="button" (click)="onToggleFullscreen()">
+      ⛶ Enter/Exit Fullscreen
+    </button>
+
+
+</div>
