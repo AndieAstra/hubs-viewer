@@ -998,12 +998,24 @@ updateEyeLevel(value: number): void {
   this.camera.position.y = this.cameraHeight;
 }
 
+// updateModelSize(value: number): void {
+//   const minScale = 30;
+//   const maxScale = 100;
+//   this.modelScale = Math.min(Math.max(value, minScale), maxScale);
+//   this.updateModelTransform?.();
+// }
+
 updateModelSize(value: number): void {
-  const minScale = 30;
+  const minScale = 1;
   const maxScale = 100;
-  this.modelScale = Math.min(Math.max(value, minScale), maxScale);
-  this.updateModelTransform?.();
+  const scaleValue = Math.min(Math.max(value, minScale), maxScale);
+
+  if (this.uploadedModel) {
+    this.uploadedModel.scale.set(scaleValue, scaleValue, scaleValue);
+    console.log(`Model scale updated to: ${scaleValue}`);
+  }
 }
+
 
 updateModelHeight(value: number): void {
   this.modelHeight = value;
