@@ -24,3 +24,23 @@ html, body {
   display: block;
   height: 100%;
 }
+
+// ---------------------------
+
+  .mobile-only-buttons {
+    display: none;
+
+    @media (max-width: 768px) {
+      display: flex;
+      flex-direction: row;
+    }
+  }
+
+    .sidebar-button-row,
+  .mobile-only-buttons,
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }

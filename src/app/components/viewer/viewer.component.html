@@ -1,9 +1,8 @@
 <div #canvasContainer class="viewer-container">
 
-
+<div class="mobile-only-buttons">
 
   @if (!isVRMode) {
-    <!-- Enter/Exit VR button -->
     <button class="vr-btn" type="button" (click)="toggleStereo()">
       🎮 Enter VR Mode
     </button>
@@ -13,10 +12,10 @@
       🕶️ Exit VR Mode
     </button>
   }
+</div>
 
     <button class="fullscreen-btn" type="button" (click)="onToggleFullscreen()">
       ⛶ Enter/Exit Fullscreen
     </button>
-
 
 </div>

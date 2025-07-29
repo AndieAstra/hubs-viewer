@@ -16,6 +16,7 @@ import { ViewerComponent } from '../../components/viewer/viewer.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { FileuploaderComponent } from '../../components/fileuploader/fileuploader.component';
 import { SceneControlsService } from '../../services/scene-controls.service';
+import { FullscreenHelper } from '../../helpers/fullscreen.helper';
 
 @Component({
   selector: 'app-viewer-page',
@@ -37,9 +38,21 @@ export class ViewerPageComponent implements AfterViewInit {
      private sceneControls: SceneControlsService
   ) {}
 
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.resizeCanvas();
+  }
+
   @ViewChild('viewerCanvas', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild(ViewerComponent) viewer!: ViewerComponent;
-  //@ViewChild('viewer', { static: false }) viewer?: ViewerComponent;
+
+    get isPortrait(): boolean {
+    return window.matchMedia("(orientation: portrait)").matches;
+  }
+
+ showRotateWarning = false;
+
+ get fs(): FullscreenHelper | undefined { return this.fs; }
 
   selectedFile?: File;
   sidebarCollapsed = false;
@@ -73,9 +86,16 @@ export class ViewerPageComponent implements AfterViewInit {
     this.showConsole = !this.showConsole;
   }
 
-  @HostListener('window:resize')
-  onWindowResize() {
+    onResize(): void {
     this.resizeCanvas();
+
+    if (this.isPortrait) {
+      this.showRotateWarning = true;
+      if (this.fs?.isActive()) {
+      }
+    } else {
+      this.showRotateWarning = false;
+    }
   }
 
   resizeCanvas() {
@@ -349,5 +369,14 @@ startTutorial(): void {
 toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
   }
+
+enterVRMode() {
+  this.viewer?.toggleVRMode(true);
+}
+
+exitVRMode() {
+  this.viewer?.toggleVRMode(false);
+}
+
 
 }

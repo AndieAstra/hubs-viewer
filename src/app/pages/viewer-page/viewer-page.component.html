@@ -19,18 +19,6 @@
         <button class="kid-button danger small" (click)="openBugReport()">{{ 'BUTTONS.BUG_REPORT' | translate }}</button>
       </div>
 
-
-      <!-- Mobile VR -->
-      <div class="mobile-only-buttons">
-
-        <!-- <button class="kid-button green" (click)="enterVRMode()">{{ 'BUTTONS.ENTER_VR' | translate }}</button>
-
-        @if (viewer.isVRMode) {
-          <button class="kid-button danger" (click)="exitVRMode()">{{ 'BUTTONS.EXIT_VR' | translate }}</button>
-        } -->
-
-      </div>
-
       <!-- Scene Settings -->
       <section>
         <h4>{{ 'SECTIONS.SCENE_SETTINGS' | translate }}</h4>
@@ -169,25 +157,8 @@
 
      <app-viewer #viewer></app-viewer>
 
-      <!-- <canvas #viewerCanvas></canvas>
-      <app-viewer [glbFile]="selectedFile"></app-viewer> -->
-
       </div>
 
-
-      <!-- 👓 Exit VR Button -->
-      <!-- @if(viewer.isVRMode) {
-        <button class="vr-exit-button" (click)="exitVRMode()">
-          ✕ {{ 'BUTTONS.EXIT_VR' | translate }}
-        </button>
-      } -->
-
-      <!-- Exit Fullscreen Button -->
-      <!-- @if(viewer.isInFullscreen && !viewer.isVRMode) {
-        <button class="fullscreen-exit-button" (click)="exitFullscreen()">
-          ✕ {{ 'BUTTONS.EXIT_FULLSCREEN' | translate }}
-        </button>
-      } -->
     </section>
 
   </div>
@@ -214,10 +185,10 @@
   </footer>
 
 
-<!-- @if (isPortrait) {
+@if (isPortrait) {
 <div class="rotate-device-warning">
   Please rotate your device for full experience.
 </div>
-} -->
+}
 
 </div>

@@ -870,17 +870,6 @@ if (this.isVRMode && this.vrControllerHelper) {
   this.renderScene(); // handles stereo rendering if needed
 };
 
-toggleVRMode(enable: boolean): void {
-  this.isVRMode = enable;
-
-  if (this.isVRMode) {
-    this.controls.unlock(); // disable mouse lock
-    // Optional: hide HUD, adjust layout, etc.
-  } else {
-    // Optional: re-enable PointerLock on user interaction
-  }
-}
-
 private onKeyDown = (event: KeyboardEvent) => {
   switch (event.code) {
     case 'ArrowUp':
@@ -1060,4 +1049,35 @@ renderScene(): void {
       await this.fullscreenHelper.toggle();
     }
   }
+
+  public toggleVRMode(enable: boolean): void {
+  this.isVRMode = enable;
+
+  if (this.isVRMode) {
+    this.controls.unlock();
+  }
+}
+
+// toggleVRMode(enable: boolean): void {
+//   this.isVRMode = enable;
+
+//   if (this.isVRMode) {
+//     this.controls.unlock(); // disable mouse lock
+//     // Optional: hide HUD, adjust layout, etc.
+//   } else {
+//     // Optional: re-enable PointerLock on user interaction
+//   }
+
+enterVRMode() {
+    this.isVRMode = true;
+    // Your VR setup code here
+    console.log('Entered VR mode');
+  }
+
+  exitVRMode() {
+    this.isVRMode = false;
+    // Your VR teardown code here
+    console.log('Exited VR mode');
+  }
+
 }
