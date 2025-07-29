@@ -16,6 +16,7 @@
   },
 
   "BUTTONS": {
+    "FULLSCREEN":"Enter/Exit Fullscreen",
     "TOGGLE_WIREFRAME": "Toggle Mesh",
     "TUTORIAL": "🎓 Tutorial",
     "BUG_REPORT": "🐞 Something not working?",

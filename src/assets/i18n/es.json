@@ -16,6 +16,7 @@
   },
 
   "BUTTONS": {
+    "FULLSCREEN":"Entrar/Salir de pantalla completa",
     "TOGGLE_WIREFRAME": "Alternar Malla",
     "TUTORIAL": "🎓 Tutorial",
     "BUG_REPORT": "🐞 ¿Algo no funciona?",

@@ -15,6 +15,7 @@ import { SceneControlsService } from '../../services/scene-controls.service';
 import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
 import { FullscreenHelper } from '../../helpers/fullscreen.helper';
 import { VrControllerHelper } from '../../helpers/vr-controller.helper';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface SavedModel {
   name: string;
@@ -51,7 +52,8 @@ export interface SceneData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    TranslateModule,
   ],
   templateUrl: './viewer.component.html',
   styleUrls: ['./viewer.component.scss'],
@@ -68,7 +70,7 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   constructor(
     private snackBar: MatSnackBar,
-    private sceneControls: SceneControlsService
+    private sceneControls: SceneControlsService,
   ) {}
 
   //sunlight = 1;
