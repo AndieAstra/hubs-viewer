@@ -156,6 +156,15 @@
 
   "NOTICE":{
     "PORTRAIT": "Gira tu dispositivo para disfrutar de una experiencia completa."
+  },
+
+  "TEST":{
+    "TITLE":"Características de prueba",
+    "STEREOSCOPE":"Estereoscopio",
+    "FORESTVR":"Bosque VR",
+    "GYROSCOPE":"Giroscopio",
+    "EDITOR":"Editor de pruebas",
+    "VIEWER":"DEBUG:Visor"
   }
 
 }

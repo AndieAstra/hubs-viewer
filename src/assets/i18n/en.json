@@ -157,6 +157,15 @@
 
   "NOTICE":{
     "PORTRAIT": "Please rotate your device for full experience."
+  },
+
+    "TEST":{
+    "TITLE":"Test Features",
+    "STEREOSCOPE":"Stereoscope",
+    "FORESTVR":"Forest VR",
+    "GYROSCOPE":"Gyroscope",
+    "EDITOR":"Test Editor",
+    "VIEWER":"DEBUG:Viewer"
   }
 
 }

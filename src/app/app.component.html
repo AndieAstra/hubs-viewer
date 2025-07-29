@@ -18,12 +18,12 @@
         <!-- Test Features Section -->
         <div class="test-dropdown-mobile">
           <hr />
-          <strong>TEST FEATURES</strong>
-          <button (click)="goto('/demo/stereoscope')">Stereoscope</button>
-          <button (click)="goto('/demo/forest-vr')">Forest VR</button>
-          <button (click)="goto('/demo/gyroscope-test')">Gyroscope Test</button>
-          <button (click)="goto('/demo/editor-frame')">Test Editor</button>
-          <button (click)="goto('/viewer')">DEBUG: Viewer</button>
+          <strong>{{ 'TEST.TITLE' | translate }}</strong>
+          <button (click)="goto('/demo/stereoscope')">{{ 'TEST.STEREOSCOPE' | translate }}</button>
+          <button (click)="goto('/demo/forest-vr')">{{ 'TEST.FORESTVR' | translate }}</button>
+          <button (click)="goto('/demo/gyroscope-test')">{{ 'TEST.GYROSCOPE' | translate }}</button>
+          <button (click)="goto('/demo/editor-frame')">{{ 'TEST.EDITOR' | translate }}</button>
+          <button (click)="goto('/viewer')">{{ 'TEST.VIEWER' | translate }}</button>
         </div>
       </div>
     </div>
@@ -78,14 +78,14 @@
       <!-- Test Features dropdown -->
       <div class="test-dropdown desktop-only">
         <button class="test-dropdown-toggle" (click)="toggleTestDropdown()">
-          🧪 Test Features
+          {{ 'TEST.TITLE' | translate }}
         </button>
         <div class="test-dropdown-content" [class.show]="testDropdownOpen">
-          <button (click)="goto('/demo/stereoscope')">Stereoscope</button>
-          <button (click)="goto('/demo/forest-vr')">Forest VR</button>
-          <button (click)="goto('/demo/gyroscope-test')">Gyroscope Test</button>
-          <button (click)="goto('/demo/editor-frame')">Test Editor</button>
-          <button (click)="goto('/viewer')">DEBUG: Viewer</button>
+          <button (click)="goto('/demo/stereoscope')">     {{ 'TEST.STEREOSCOPE' | translate }}</button>
+          <button (click)="goto('/demo/forest-vr')">{{ 'TEST.FORESTVR' | translate }}</button>
+          <button (click)="goto('/demo/gyroscope-test')">{{ 'TEST.GYROSCOPE' | translate }}</button>
+          <button (click)="goto('/demo/editor-frame')"> {{ 'TEST.EDITOR' | translate }}</button>
+          <button (click)="goto('/viewer')">{{ 'TEST.VIEWER' | translate }}</button>
         </div>
       </div>
     </div>
