@@ -53,14 +53,44 @@ export class StereoscopeHelper {
   console.log("Stereo enabled");
 }
 
+// disable(): void {
+//   if (!this._active) return;
+//   this._active = false;
+//   this._emit(false);
+
+//   // Optionally log stereo status
+//   console.log("Stereo disabled");
+// }
+
 disable(): void {
   if (!this._active) return;
   this._active = false;
   this._emit(false);
 
-  // Optionally log stereo status
+  // Reset renderer state
+  this.renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
+  this.renderer.setScissorTest(false);
+  this.renderer.setRenderTarget(null);
+  this.renderer.clear();
+
   console.log("Stereo disabled");
 }
+
+resize(width: number, height: number): void {
+  this.renderer.setSize(width, height);
+  (this.camera as THREE.PerspectiveCamera).aspect = width / height;
+  (this.camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+  this.stereoEffect.setSize(width, height);
+}
+
+// resize(width: number, height: number): void {
+//   this.renderer.setSize(width, height);
+//   const perspectiveCamera = this.camera as THREE.PerspectiveCamera;
+//   perspectiveCamera.aspect = width / height;
+//   perspectiveCamera.updateProjectionMatrix();
+//   this.stereoEffect.setSize(width, height);
+// }
+
 
   toggle(): void {
     this.isActive() ? this.disable() : this.enable();
@@ -85,15 +115,6 @@ disable(): void {
     this._listeners.clear();
     this.disable();
   }
-
-resize(width: number, height: number): void {
-  this.renderer.setSize(width, height);
-  const perspectiveCamera = this.camera as THREE.PerspectiveCamera;
-  perspectiveCamera.aspect = width / height;
-  perspectiveCamera.updateProjectionMatrix();
-  this.stereoEffect.setSize(width, height);
-}
-
 
   private _emit(active: boolean): void {
     this._listeners.forEach((fn) => fn(active));

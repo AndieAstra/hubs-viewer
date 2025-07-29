@@ -1,154 +1,160 @@
 {
-  "hash": "eca34dc8",
-  "configHash": "82d11455",
+  "hash": "a762d63e",
+  "configHash": "547ef00e",
   "lockfileHash": "a879c4e0",
-  "browserHash": "cdd9361d",
+  "browserHash": "4ac7f694",
   "optimized": {
     "@angular/common": {
       "src": "../../../../../node_modules/@angular/common/fesm2022/common.mjs",
       "file": "@angular_common.js",
-      "fileHash": "255fc58e",
+      "fileHash": "eb143567",
       "needsInterop": false
     },
     "@angular/common/http": {
       "src": "../../../../../node_modules/@angular/common/fesm2022/http.mjs",
       "file": "@angular_common_http.js",
-      "fileHash": "3406c675",
+      "fileHash": "7c3bcabe",
       "needsInterop": false
     },
     "@angular/core": {
       "src": "../../../../../node_modules/@angular/core/fesm2022/core.mjs",
       "file": "@angular_core.js",
-      "fileHash": "63552116",
+      "fileHash": "37d0a051",
       "needsInterop": false
     },
     "@angular/forms": {
       "src": "../../../../../node_modules/@angular/forms/fesm2022/forms.mjs",
       "file": "@angular_forms.js",
-      "fileHash": "f0f9f4db",
+      "fileHash": "6170b00d",
       "needsInterop": false
     },
     "@angular/material/button": {
       "src": "../../../../../node_modules/@angular/material/fesm2022/button.mjs",
       "file": "@angular_material_button.js",
-      "fileHash": "3fd0ec16",
+      "fileHash": "3f281f1b",
       "needsInterop": false
     },
     "@angular/material/icon": {
       "src": "../../../../../node_modules/@angular/material/fesm2022/icon.mjs",
       "file": "@angular_material_icon.js",
-      "fileHash": "dbd75fd6",
+      "fileHash": "d003aec6",
       "needsInterop": false
     },
     "@angular/material/snack-bar": {
       "src": "../../../../../node_modules/@angular/material/fesm2022/snack-bar.mjs",
       "file": "@angular_material_snack-bar.js",
-      "fileHash": "17c7e644",
+      "fileHash": "74075579",
       "needsInterop": false
     },
     "@angular/material/tooltip": {
       "src": "../../../../../node_modules/@angular/material/fesm2022/tooltip.mjs",
       "file": "@angular_material_tooltip.js",
-      "fileHash": "14818a2e",
+      "fileHash": "4fc57a78",
       "needsInterop": false
     },
     "@angular/platform-browser": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/platform-browser.mjs",
       "file": "@angular_platform-browser.js",
-      "fileHash": "eaa77691",
+      "fileHash": "e73076e1",
       "needsInterop": false
     },
     "@angular/platform-browser/animations/async": {
       "src": "../../../../../node_modules/@angular/platform-browser/fesm2022/animations/async.mjs",
       "file": "@angular_platform-browser_animations_async.js",
-      "fileHash": "a57ec8c0",
+      "fileHash": "857ac27e",
       "needsInterop": false
     },
     "@angular/router": {
       "src": "../../../../../node_modules/@angular/router/fesm2022/router.mjs",
       "file": "@angular_router.js",
-      "fileHash": "2f9f5ddd",
+      "fileHash": "476ef447",
       "needsInterop": false
     },
     "@ngx-translate/core": {
       "src": "../../../../../node_modules/@ngx-translate/core/fesm2022/ngx-translate-core.mjs",
       "file": "@ngx-translate_core.js",
-      "fileHash": "0e6c2471",
+      "fileHash": "71cf547f",
       "needsInterop": false
     },
     "@ngx-translate/http-loader": {
       "src": "../../../../../node_modules/@ngx-translate/http-loader/fesm2022/ngx-translate-http-loader.mjs",
       "file": "@ngx-translate_http-loader.js",
-      "fileHash": "9a9e8699",
+      "fileHash": "2551bad6",
       "needsInterop": false
     },
     "lil-gui": {
       "src": "../../../../../node_modules/lil-gui/dist/lil-gui.esm.js",
       "file": "lil-gui.js",
-      "fileHash": "34279caf",
+      "fileHash": "8528802b",
       "needsInterop": false
     },
     "rxjs": {
       "src": "../../../../../node_modules/rxjs/dist/esm5/index.js",
       "file": "rxjs.js",
-      "fileHash": "cbaa0bd0",
+      "fileHash": "00d349b5",
       "needsInterop": false
     },
     "rxjs/operators": {
       "src": "../../../../../node_modules/rxjs/dist/esm5/operators/index.js",
       "file": "rxjs_operators.js",
-      "fileHash": "c6aa0248",
+      "fileHash": "50b41a2e",
       "needsInterop": false
     },
     "shepherd.js": {
       "src": "../../../../../node_modules/shepherd.js/dist/esm/shepherd.mjs",
       "file": "shepherd__js.js",
-      "fileHash": "76e97b23",
+      "fileHash": "7a8cf4cf",
       "needsInterop": false
     },
     "three": {
       "src": "../../../../../node_modules/three/build/three.module.js",
       "file": "three.js",
-      "fileHash": "b92ee63b",
+      "fileHash": "f63c31ec",
       "needsInterop": false
     },
     "three/examples/jsm/controls/DeviceOrientationControls.js": {
       "src": "../../../../../node_modules/three/examples/jsm/controls/DeviceOrientationControls.js",
       "file": "three_examples_jsm_controls_DeviceOrientationControls__js.js",
-      "fileHash": "88d648c3",
+      "fileHash": "1df7982f",
       "needsInterop": false
     },
     "three/examples/jsm/controls/PointerLockControls.js": {
       "src": "../../../../../node_modules/three/examples/jsm/controls/PointerLockControls.js",
       "file": "three_examples_jsm_controls_PointerLockControls__js.js",
-      "fileHash": "68c74d89",
+      "fileHash": "16e447e4",
       "needsInterop": false
     },
     "three/examples/jsm/exporters/GLTFExporter.js": {
       "src": "../../../../../node_modules/three/examples/jsm/exporters/GLTFExporter.js",
       "file": "three_examples_jsm_exporters_GLTFExporter__js.js",
-      "fileHash": "99799da2",
+      "fileHash": "c7b5d160",
       "needsInterop": false
     },
     "three/examples/jsm/loaders/GLTFLoader.js": {
       "src": "../../../../../node_modules/three/examples/jsm/loaders/GLTFLoader.js",
       "file": "three_examples_jsm_loaders_GLTFLoader__js.js",
-      "fileHash": "42634482",
+      "fileHash": "89196a69",
+      "needsInterop": false
+    },
+    "three/examples/jsm/effects/StereoEffect": {
+      "src": "../../../../../node_modules/three/examples/jsm/effects/StereoEffect.js",
+      "file": "three_examples_jsm_effects_StereoEffect.js",
+      "fileHash": "5cc96ad1",
       "needsInterop": false
     }
   },
   "chunks": {
-    "browser-WRAYLES6": {
-      "file": "browser-WRAYLES6.js"
-    },
-    "chunk-KHSIX47S": {
-      "file": "chunk-KHSIX47S.js"
+    "browser-XTKQCYSP": {
+      "file": "browser-XTKQCYSP.js"
     },
     "chunk-VHC5675Q": {
       "file": "chunk-VHC5675Q.js"
     },
-    "chunk-PNHY66DM": {
-      "file": "chunk-PNHY66DM.js"
+    "chunk-KHSIX47S": {
+      "file": "chunk-KHSIX47S.js"
+    },
+    "chunk-HHGZMS77": {
+      "file": "chunk-HHGZMS77.js"
     },
     "chunk-7OPKWHRN": {
       "file": "chunk-7OPKWHRN.js"
@@ -168,11 +174,11 @@
     "chunk-2DXLVW4Q": {
       "file": "chunk-2DXLVW4Q.js"
     },
-    "chunk-LFVCTHGI": {
-      "file": "chunk-LFVCTHGI.js"
-    },
     "chunk-4RMHXXWK": {
       "file": "chunk-4RMHXXWK.js"
+    },
+    "chunk-LFVCTHGI": {
+      "file": "chunk-LFVCTHGI.js"
     },
     "chunk-AJN3JCM6": {
       "file": "chunk-AJN3JCM6.js"

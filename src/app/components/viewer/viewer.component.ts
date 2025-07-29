@@ -1,4 +1,4 @@
-import {Component,ElementRef,Input,OnInit,OnChanges,SimpleChanges,AfterViewInit,ViewChild,OnDestroy} from '@angular/core';
+import {Component,ElementRef,Input,OnInit,OnChanges,SimpleChanges,AfterViewInit,ViewChild,OnDestroy, HostListener} from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
@@ -12,6 +12,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
 import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
 import { SceneControlsService } from '../../services/scene-controls.service';
+import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
 
 export interface SavedModel {
   name: string;
@@ -55,6 +56,8 @@ export interface SceneData {
 })
 
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
+
+  @HostListener('window:resize', ['$event'])
 
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
@@ -105,6 +108,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   movementHelper!: PlayerMovementHelper;
   public playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
 
+  private stereoscope!: StereoscopeHelper;
+
   private keysPressed = {
     forward: false,
     backward: false,
@@ -152,6 +157,8 @@ ngAfterViewInit() {
     });
 
     this.sceneControls.setDirectionalLight(this.dirLight);
+
+    this.stereoscope = new StereoscopeHelper(this.renderer, this.scene, this.camera);
 
     this.renderer.domElement.addEventListener('drop', (event) => {
       event.preventDefault();
@@ -835,7 +842,8 @@ if (this.controls.getObject().position.y < minY) {
   this.canJump = true;
 }
 
-  this.renderer.render(this.scene, this.camera);
+// this.renderer.render(this.scene, this.camera);
+  this.stereoscope?.render();  // Will use stereo if active
 };
 
 
@@ -889,11 +897,32 @@ private onKeyUp = (event: KeyboardEvent) => {
 
 //************* Screen Sizing ******************* */
 
-onResize(width: number, height: number) {
+// onResize(width: number, height: number) {
+//   this.renderer.setSize(width, height);
+//   this.camera.aspect = width / height;
+//   this.camera.updateProjectionMatrix();
+// }
+
+onResize(width: number, height: number): void {
   this.renderer.setSize(width, height);
   this.camera.aspect = width / height;
   this.camera.updateProjectionMatrix();
+
+  this.stereoscope?.resize(width, height);
 }
+
+// onResize(): void {
+//   const width = this.containerRef.nativeElement.clientWidth;
+//   const height = this.containerRef.nativeElement.clientHeight;
+
+//   if (this.stereoscope) {
+//     this.stereoscope.resize(width, height);
+//   } else {
+//     this.renderer.setSize(width, height);
+//     this.camera.aspect = width / height;
+//     this.camera.updateProjectionMatrix();
+//   }
+// }
 
 //************* Page Load Popup*************** */
 
@@ -986,5 +1015,9 @@ load(): void {
   this.triggerSceneUpload?.();
 }
 // ********************************
+
+toggleStereo(): void {
+  this.stereoscope.toggle();
+}
 
 }
