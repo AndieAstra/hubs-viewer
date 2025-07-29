@@ -14,6 +14,7 @@ import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
 import { FullscreenHelper } from '../../helpers/fullscreen.helper';
+import { VrControllerHelper } from '../../helpers/vr-controller.helper';
 
 export interface SavedModel {
   name: string;
@@ -115,6 +116,8 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   fullscreenHelper!: FullscreenHelper;
   public isVRMode = false;
 
+  private vrControllerHelper!: VrControllerHelper;
+
   private keysPressed = {
     forward: false,
     backward: false,
@@ -133,6 +136,7 @@ ngOnInit() {
 ngOnDestroy() {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+    this.vrControllerHelper?.stop();
     this.fullscreenHelper?.dispose();
   }
 
@@ -156,6 +160,8 @@ ngOnChanges(changes: SimpleChanges) {
 
 ngAfterViewInit() {
   this.initScene();
+  this.vrControllerHelper = new VrControllerHelper(this.movementSpeed);
+  this.vrControllerHelper.enableInteractions();
   if (this.glbFile) this.loadGLB(this.glbFile);
   this.animate();
 
@@ -800,17 +806,29 @@ private animate = () => {
   requestAnimationFrame(this.animate);
 
   const delta = this.clock.getDelta();
+
+if (this.isVRMode && this.vrControllerHelper) {
+  this.vrControllerHelper.update();
+  this.vrControllerHelper.applyRotation(this.camera, 0.1);
+
+    // Move camera based on gamepad stick
+    const move = this.vrControllerHelper.movementVector.clone()
+      .applyQuaternion(this.camera.quaternion)
+      .multiplyScalar(delta * this.movementSpeed);
+
+    this.camera.position.add(move);
+  }
+
+  // 🧍 Desktop-style movement with keys
   const friction = 5.0;
   this.velocity.x -= this.velocity.x * friction * delta;
   this.velocity.z -= this.velocity.z * friction * delta;
 
   this.direction.set(0, 0, 0);
-
   if (this.keysPressed.forward) this.direction.z += 1;
   if (this.keysPressed.backward) this.direction.z -= 1;
   if (this.keysPressed.left) this.direction.x -= 1;
   if (this.keysPressed.right) this.direction.x += 1;
-
   this.direction.normalize();
 
   if (this.direction.length() > 0) {
@@ -835,6 +853,7 @@ private animate = () => {
     playerObj.position.z = oldZ;
   }
 
+  // Gravity and jump logic
   this.velocity.y -= this.gravity * delta;
 
   const minY = this.cameraHeight;
@@ -846,9 +865,21 @@ private animate = () => {
     this.canJump = true;
   }
 
-  this.renderScene();  // centralized rendering, stereo or normal
+  // Render scene
+  this.renderer.render(this.scene, this.camera);
+  this.renderScene(); // handles stereo rendering if needed
 };
 
+toggleVRMode(enable: boolean): void {
+  this.isVRMode = enable;
+
+  if (this.isVRMode) {
+    this.controls.unlock(); // disable mouse lock
+    // Optional: hide HUD, adjust layout, etc.
+  } else {
+    // Optional: re-enable PointerLock on user interaction
+  }
+}
 
 private onKeyDown = (event: KeyboardEvent) => {
   switch (event.code) {
@@ -875,6 +906,11 @@ private onKeyDown = (event: KeyboardEvent) => {
       }
       break;
   }
+
+  if (event.key === 'v') {
+  this.toggleVRMode(!this.isVRMode);
+}
+
 };
 
 private onKeyUp = (event: KeyboardEvent) => {
@@ -952,19 +988,12 @@ onClearScene(): void {
   this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
 }
 
-// ********************************
-// ** NEW Fun Controls **
+// ** NEW Controls **
 
 toggleRoomLight() {
   this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
 }
 
-// toggleLightcolor() {
-//   const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
-//   const current = this.ambientLight.color.getHex();
-//   const next = colors[(colors.indexOf(current) + 1) % colors.length];
-//   this.ambientLight.color.setHex(next);
-// }
 
 updateSunlight(value: number): void {
   this.dirLight.intensity = value;
