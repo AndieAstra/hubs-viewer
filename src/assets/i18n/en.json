@@ -153,6 +153,10 @@
 
   "UPLOADER": {
     "BUTTON_LABEL": "Upload your model"
+  },
+
+  "NOTICE":{
+    "PORTRAIT": "Please rotate your device for full experience."
   }
 
 }
