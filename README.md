@@ -1,6 +1,6 @@
 # Virtual Farming System Viewer
 
-An educational, mobile-friendly 3D scene editor and viewer built with **Angular**, **Three.js**, and **WebXR**. It allows for model uploads, panorama viewing, note annotations, lighting customization, and Google Cardboard-style VR support.
+An educational, mobile-friendly 3D scene editor and viewer built with **Angular**, **Three.js**, and **WebXR**. It allows for model uploads, panorama viewing, note annotations, lighting customization, and Google Cardboard-style VR support (stereoscope vision).
 
 ---
 
@@ -25,6 +25,9 @@ An educational, mobile-friendly 3D scene editor and viewer built with **Angular*
 
 Virtual Farming System Viewer is an educational tool designed to help users upload and visualize 3D models in a virtual environment. The app supports various features such as interactive lighting, note annotations, panoramic scene viewing, and VR integration. It is built with **Angular 17**, **Three.js**, and **WebXR**, ensuring compatibility with mobile and desktop platforms.
 
+
+<strong>***UPDATE: This site is still under work. The backend is currently being cleaned up. Most of the threejs content for the latest editor lies in the "viewer.component".</strong>
+
 ---
 
 ## Technology Stack
@@ -35,7 +38,7 @@ Virtual Farming System Viewer is an educational tool designed to help users uplo
 * **File Uploads**: Supports `.glb`/`.gltf` file formats via drag-and-drop and uploader UI
 * **Offline Storage**: Local scene saving/loading
 * **User Interface**: Mobile-first design with responsive support for tablets and desktops
-* **VR Mode**: Cardboard-style split screen with `deviceorientation`, fullscreen, and stereo rendering
+* **VR (Stereoscope) Mode**: Cardboard-style split screen with `deviceorientation`, fullscreen, and stereo rendering
 
 ## Folder Structure
 
@@ -74,6 +77,7 @@ Virtual Farming System Viewer is an educational tool designed to help users uplo
 * Docker container added
 * User tutorial added
 * Error messages to user console to help users with troubleshooting
+* Test scenes added to website
 
 ---
 
@@ -83,8 +87,8 @@ Virtual Farming System Viewer is an educational tool designed to help users uplo
 * Update UI to match National 4-H brand
 * Expand language selection
 * Add screen reader capability for text
-* Connect bug report to database
-* Connect contact form to database
+* Connect bug report form
+* Connect contact form
 * Make a mobile VR viewer for the Panorama screen for mobile and tablet
 * Add Pano Notes to the 3D viewer
 * Update Pano Notes so users can upload and look at multiple panoramic scenes as users upload images
@@ -101,11 +105,6 @@ Virtual Farming System Viewer is an educational tool designed to help users uplo
 
 ## Bug List
 
-* Stereoscope button sometimes sticks; requires multiple presses to activate
-* Fullscreen button sometimes sticks; requires multiple presses to activate
-* WASD + arrow keys are tied to axis, need to allow user rotation (turning)
-* Stereoscopic view: left side appears darker
-* Error loading saved JSON scenes
 * Pano Notes: When user clicks to generate a note, it resets to the center of the sphere; needs fixing to spawn at the user’s clicked position
 
 ---
