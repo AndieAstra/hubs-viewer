@@ -548,104 +548,223 @@ private loadSceneFromLocalStorage(): void {
 
 //************* Save/Clear Scene ******************* */
 
+// saveScene(): void {
+//   const sceneData: SceneData = {
+//     models: [],
+//     camera: {
+//       position: this.camera.position.clone(),
+//       rotation: {
+//         x: this.camera.rotation.x,
+//         y: this.camera.rotation.y,
+//         z: this.camera.rotation.z
+//       }
+//     },
+//     lighting: {
+//       ambient: {
+//         color: this.ambientLight.color.getHex(),
+//         intensity: this.ambientLight.intensity,
+//       },
+//       directional: {
+//         color: this.dirLight.color.getHex(),
+//         intensity: this.dirLight.intensity,
+//         position: this.dirLight.position.toArray(),
+//       },
+//     },
+//   };
+
+//   const gltfExporter = new GLTFExporter();
+//   const objectsToExport = this.scene.children.filter(
+//     (obj) => obj.userData?.['isLoadedModel']
+//   );
+
+//   const exportNextModel = (index: number) => {
+//     if (index >= objectsToExport.length) {
+//       // All models processed, save the final scene JSON
+//       const blob = new Blob([JSON.stringify(sceneData)], {
+//         type: 'application/json',
+//       });
+//       const url = URL.createObjectURL(blob);
+//       const link = document.createElement('a');
+//       link.href = url;
+//       link.download = 'scene.json';
+//       link.click();
+//       URL.revokeObjectURL(url);
+
+//       this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
+//       console.log('Scene export complete.');
+//       return;
+//     }
+
+//     const obj = objectsToExport[index];
+
+//     gltfExporter.parse(
+//       obj,
+//       (gltf) => {
+//         let glbBlob: Blob;
+
+//         if (gltf instanceof ArrayBuffer) {
+//           glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
+//         } else {
+//           glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+//         }
+
+//         const reader = new FileReader();
+//         reader.onload = () => {
+//           const binary = new Uint8Array(reader.result as ArrayBuffer);
+//           let binaryString = '';
+//           for (let i = 0; i < binary.byteLength; i++) {
+//             binaryString += String.fromCharCode(binary[i]);
+//           }
+//           const base64 = btoa(binaryString);
+
+//           sceneData.models.push({
+//             name: obj.name || 'Unnamed',
+//             position: obj.position.clone(),
+//             rotation: {
+//               x: obj.rotation.x,
+//               y: obj.rotation.y,
+//               z: obj.rotation.z,
+//             },
+//             scale: obj.scale.clone(),
+//             fileName: obj.userData['fileName'] || 'unknown.glb',
+//             glbBase64: base64,
+//           });
+
+//           exportNextModel(index + 1);
+//         };
+
+//         reader.readAsArrayBuffer(glbBlob);
+//       },
+//       (error) => {
+//         console.error('Error exporting model', error);
+//         exportNextModel(index + 1); // Skip and continue with next model
+//       },
+//       { binary: true }
+//     );
+//   };
+
+//   console.log('Scene export started...');
+//   exportNextModel(0);
+// }
+
 saveScene(): void {
-  const sceneData: SceneData = {
-    models: [],
-    camera: {
-      position: this.camera.position.clone(),
-      rotation: {
-        x: this.camera.rotation.x,
-        y: this.camera.rotation.y,
-        z: this.camera.rotation.z
-      }
-    },
-    lighting: {
-      ambient: {
-        color: this.ambientLight.color.getHex(),
-        intensity: this.ambientLight.intensity,
-      },
-      directional: {
-        color: this.dirLight.color.getHex(),
-        intensity: this.dirLight.intensity,
-        position: this.dirLight.position.toArray(),
-      },
-    },
-  };
+  try {
+    const filename = prompt('Enter filename to save your scene:', 'scene.json');
+    if (!filename) return;
 
-  const gltfExporter = new GLTFExporter();
-  const objectsToExport = this.scene.children.filter(
-    (obj) => obj.userData?.['isLoadedModel']
-  );
+    const safeFilename = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`;
 
-  const exportNextModel = (index: number) => {
-    if (index >= objectsToExport.length) {
-      // All models processed, save the final scene JSON
-      const blob = new Blob([JSON.stringify(sceneData)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'scene.json';
-      link.click();
-      URL.revokeObjectURL(url);
-
-      this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
-      console.log('Scene export complete.');
-      return;
-    }
-
-    const obj = objectsToExport[index];
-
-    gltfExporter.parse(
-      obj,
-      (gltf) => {
-        let glbBlob: Blob;
-
-        if (gltf instanceof ArrayBuffer) {
-          glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
-        } else {
-          glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+    // Construct the scene data directly without using exportScene
+    const sceneData: SceneData = {
+      models: [],
+      camera: {
+        position: this.camera.position.clone(),
+        rotation: {
+          x: this.camera.rotation.x,
+          y: this.camera.rotation.y,
+          z: this.camera.rotation.z
         }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          const binary = new Uint8Array(reader.result as ArrayBuffer);
-          let binaryString = '';
-          for (let i = 0; i < binary.byteLength; i++) {
-            binaryString += String.fromCharCode(binary[i]);
-          }
-          const base64 = btoa(binaryString);
-
-          sceneData.models.push({
-            name: obj.name || 'Unnamed',
-            position: obj.position.clone(),
-            rotation: {
-              x: obj.rotation.x,
-              y: obj.rotation.y,
-              z: obj.rotation.z,
-            },
-            scale: obj.scale.clone(),
-            fileName: obj.userData['fileName'] || 'unknown.glb',
-            glbBase64: base64,
-          });
-
-          exportNextModel(index + 1);
-        };
-
-        reader.readAsArrayBuffer(glbBlob);
       },
-      (error) => {
-        console.error('Error exporting model', error);
-        exportNextModel(index + 1); // Skip and continue with next model
+      lighting: {
+        ambient: {
+          color: this.ambientLight.color.getHex(),
+          intensity: this.ambientLight.intensity,
+        },
+        directional: {
+          color: this.dirLight.color.getHex(),
+          intensity: this.dirLight.intensity,
+          position: this.dirLight.position.toArray(),
+        },
       },
-      { binary: true }
+    };
+
+    const gltfExporter = new GLTFExporter();
+    const objectsToExport = this.scene.children.filter(
+      (obj) => obj.userData?.['isLoadedModel']
     );
-  };
 
-  console.log('Scene export started...');
-  exportNextModel(0);
+    const exportNextModel = (index: number) => {
+      if (index >= objectsToExport.length) {
+        // All models processed, save the final scene JSON
+        const blob = new Blob([JSON.stringify(sceneData)], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = safeFilename;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
+        console.log('Scene export complete.');
+        return;
+      }
+
+      const obj = objectsToExport[index];
+
+      // Prompt for the model name before exporting
+      // const modelName = prompt(`Enter a name for the model "${obj.name}"`, obj.name);
+      // if (!modelName) {
+      //   alert('Model name is required. Skipping model export.');
+      //   exportNextModel(index + 1); // Skip this model and continue with the next one
+      //   return;
+      // }
+
+      gltfExporter.parse(
+        obj,
+        (gltf) => {
+          let glbBlob: Blob;
+
+          if (gltf instanceof ArrayBuffer) {
+            glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
+          } else {
+            glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+          }
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            const binary = new Uint8Array(reader.result as ArrayBuffer);
+            let binaryString = '';
+            for (let i = 0; i < binary.byteLength; i++) {
+              binaryString += String.fromCharCode(binary[i]);
+            }
+            const base64 = btoa(binaryString);
+
+            sceneData.models.push({
+              name: 'model',
+              position: obj.position.clone(),
+              rotation: {
+                x: obj.rotation.x,
+                y: obj.rotation.y,
+                z: obj.rotation.z,
+              },
+              scale: obj.scale.clone(),
+              fileName: obj.userData['fileName'] || 'unknown.glb',
+              glbBase64: base64,
+            });
+
+            exportNextModel(index + 1);
+          };
+
+          reader.readAsArrayBuffer(glbBlob);
+        },
+        (error) => {
+          console.error('Error exporting model', error);
+          exportNextModel(index + 1); // Skip and continue with next model
+        },
+        { binary: true }
+      );
+    };
+
+    console.log('Scene export started...');
+    exportNextModel(0);
+
+  } catch (error) {
+    console.error('Error during scene export', error);
+  }
 }
+
 
 private saveSceneToLocalStorage(): void {
   try {
