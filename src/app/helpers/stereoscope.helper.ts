@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect';
+import { StereoEffect } from 'three/examples/jsm/effects/StereoEffect.js';
 
 type StereoChangeCallback = (active: boolean) => void;
 

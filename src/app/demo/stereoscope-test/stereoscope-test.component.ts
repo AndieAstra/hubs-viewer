@@ -16,7 +16,6 @@ export class StereoscopeTestComponent implements AfterViewInit, OnDestroy {
   private cameraRight!: THREE.PerspectiveCamera;
   private monoCamera!: THREE.PerspectiveCamera;
   public useStereo: boolean = true;
-
   private controls!: DeviceOrientationControls;
 
   private suzanne!: THREE.Mesh;

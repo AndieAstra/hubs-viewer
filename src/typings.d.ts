@@ -9,3 +9,5 @@ declare module 'three/examples/jsm/controls/DeviceOrientationControls.js' {
     enabled: boolean;
   }
 }
+
+declare var DeviceOrientationControls: any;

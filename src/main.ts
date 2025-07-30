@@ -13,6 +13,8 @@ export function HttpLoaderFactory(http: HttpClient) {
   return new TranslateHttpLoader(http, 'assets/i18n/', '.json');
 }
 
+declare var DeviceOrientationControls: any;
+
 bootstrapApplication(AppComponent, {
   providers: [
     importProvidersFrom(
