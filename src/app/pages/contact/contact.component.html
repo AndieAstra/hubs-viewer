@@ -1,11 +1,15 @@
 <div class="contact-container" [class.submitted]="submitted">
 
-  @if(!submitted) {
+    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeyhoVlgBKgtvQHMuF6jblYQX5yQU3DFUzUOBxy33M32aoP1g/viewform?embedded=true" width="640" height="582" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+
+  <!-- @if(!submitted) {
 
   <h2>{{ 'CONTACT.TITLE' | translate }}</h2>
   <p class="info-text">{{ 'CONTACT.INFO_TEXT' | translate }}</p>
+ -->
 
-  <form (ngSubmit)="submitForm()">
+
+  <!-- <form (ngSubmit)="submitForm()">
     <label for="email">{{ 'CONTACT.EMAIL_LABEL' | translate }}</label>
     <input
       type="email"
@@ -28,14 +32,14 @@
 
     <button type="submit">{{ 'CONTACT.SEND_BUTTON' | translate }}</button>
   </form>
-}
+} -->
 
-  @if(submitted) {
+  <!-- @if(submitted) {
 
   <div class="thank-you">
     <h3>{{ 'CONTACT.THANK_YOU_TITLE' | translate }}</h3>
     <p [innerHTML]="'CONTACT.THANK_YOU_TEXT' | translate: { email: email }"></p>
     <button (click)="resetForm()">{{ 'CONTACT.SEND_ANOTHER_BUTTON' | translate }}</button>
   </div>
-}
+} -->
 </div>
