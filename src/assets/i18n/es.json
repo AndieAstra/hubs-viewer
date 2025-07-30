@@ -3,7 +3,7 @@
 
   "NAV": {
     "MENU": "Menú",
-    "VIEWER": "Visor 3D",
+    "VIEWER": "Visor 3D v.2",
     "PANORAMA": "Panorama",
     "CONTACT": "Contacto",
     "BUG": "Reporte de Error",
@@ -164,7 +164,7 @@
     "STEREOSCOPE":"Estereoscopio",
     "FORESTVR":"Bosque VR",
     "GYROSCOPE":"Giroscopio",
-    "EDITOR":"Editor de pruebas",
+    "EDITOR":"Visor 3D v.1",
     "VIEWER":"DEBUG:Visor"
   }
 
