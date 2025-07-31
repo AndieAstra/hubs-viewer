@@ -13,7 +13,7 @@ import Shepherd from 'shepherd.js';
 import 'shepherd.js/dist/css/shepherd.css';
 import { Router } from '@angular/router';
 import { ViewerComponent } from '../../components/viewer/viewer.component';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { FileuploaderComponent } from '../../components/fileuploader/fileuploader.component';
 import { SceneControlsService } from '../../services/scene-controls.service';
 import { FullscreenHelper } from '../../helpers/fullscreen.helper';
@@ -38,7 +38,13 @@ export class ViewerPageComponent implements AfterViewInit {
     private router: Router,
      private sceneControls: SceneControlsService,
      private storageService: StorageService,
-  ) {}
+     private translate: TranslateService
+  ) {
+    const savedLang = (localStorage.getItem('preferredLang') as 'en' | 'es') || 'en';
+    this.currentLang = savedLang;
+    this.translate.setDefaultLang('en');
+    this.translate.use(this.currentLang);
+  }
 
   @HostListener('window:resize')
   onWindowResize() {
@@ -63,6 +69,8 @@ export class ViewerPageComponent implements AfterViewInit {
 
   sunIntensity = 1;
   sunlightColor = '#ffffff';
+
+  currentLang: 'en' | 'es' = 'en';
 
   ngAfterViewInit() {
     this.resizeCanvas();
@@ -119,12 +127,9 @@ export class ViewerPageComponent implements AfterViewInit {
     }
   }
 
-  // likes to be a specific button
 onFileLoaded(file: File): void {
   this.selectedFile = file;
   this.logToConsole(`File loaded: ${file.name}`);
-
-  // Assuming you have a loadGLB method in ViewerComponent
   if (this.viewer?.loadGLB) {
     this.viewer.loadGLB(file);
   } else {
@@ -139,11 +144,6 @@ onFileLoaded(file: File): void {
       this.onFileLoaded(file);
     }
   }
-
-  // resetView(): void {
-  //   this.viewer?.resetView?.();
-  //   this.logToConsole('Reset camera view.');
-  // }
 
   resetView(): void {
     if (!this.viewer) return;
@@ -177,17 +177,6 @@ onFileLoaded(file: File): void {
     this.viewer?.toggleRoomLight?.();
     this.logToConsole('Toggled room light.');
   }
-
-  // toggleLightcolor(): void {
-  //   this.viewer?.toggleLightcolor?.();
-  //   this.logToConsole('Toggled sunlight color.');
-  // }
-
-  // onSunlightInput(event: Event): void {
-  //   const input = event.target as HTMLInputElement;
-  //   const value = input.valueAsNumber;
-  //   this.updateSunlight(value);
-  // }
 
     onSunlightInput(evt: Event): void {
       const val = +(evt.target as HTMLInputElement).value;
@@ -251,14 +240,18 @@ onFileLoaded(file: File): void {
 // ************* Bug Report **********************
 
 openBugReport() {
-  // Navigate to the bug report page or open a modal
-  this.router.navigate(['/bug-report']); // Make sure route exists
+  this.router.navigate(['/bug-report']);
 }
 
 // ============================
 // Shepherd Tutorial
 // ============================
 startTutorial(): void {
+
+    const t = (k: string) => this.translate.instant(k);
+    const next = { text: t('BUTTONS_NEXT') || 'Next', action: () => tour.next() };
+    const back = { text: t('BUTTONS_BACK') || 'Back', action: () => tour.back() };
+
   const tour = new Shepherd.Tour({
     useModalOverlay: true,
     defaultStepOptions: {
@@ -282,21 +275,8 @@ startTutorial(): void {
 
   tour.addStep({
     id: 'welcome',
-    text: 'Welcome! Let’s take a quick tour of this 3D playground.',
+    text: t('START_TUTORIAL'),
     buttons: [{ text: 'Next', action: tour.next }]
-  });
-
-  tour.addStep({
-    id: 'upload',
-    attachTo: {
-      element: '.upload-instructions',
-      on: 'bottom'
-    },
-    text: 'Start by uploading a 3D model here.',
-    buttons: [
-      { text: 'Back', action: tour.back },
-      { text: 'Next', action: tour.next }
-    ]
   });
 
   tour.addStep({
@@ -305,7 +285,7 @@ startTutorial(): void {
       element: '.sidebar-left',
       on: 'right'
     },
-    text: 'Use these buttons to save, load, and reset your scene.',
+    text: t('SCENE_SETTINGS'),
     buttons: [
       { text: 'Back', action: tour.back },
       { text: 'Next', action: tour.next }
@@ -318,7 +298,7 @@ startTutorial(): void {
       element: '.canvas-container',
       on: 'top'
     },
-    text: 'Here’s where your 3D model will appear.',
+    text: t('MODEL_SETTINGS'),
     buttons: [
       { text: 'Back', action: tour.back },
       { text: 'Next', action: tour.next }
@@ -331,7 +311,7 @@ startTutorial(): void {
       element: '.bottom-bar',
       on: 'top'
     },
-    text: 'Console logs and messages appear here.',
+    text: t('CONSOLE_SHEPHARD'),
     buttons: [
       { text: 'Back', action: tour.back },
       { text: 'Next', action: tour.next }
@@ -344,19 +324,17 @@ startTutorial(): void {
       element: '.sidebar-right',
       on: 'left'
     },
-    text: 'Change your model and camera settings here.',
+    text: t('FINISH_TUTORIAL'),
     buttons: [
       { text: 'Back', action: tour.back },
       { text: 'Done', action: tour.complete }
     ]
   });
 
-  // Set localStorage when the tour completes or is cancelled
   const markTutorialSeen = () => localStorage.setItem('hasSeenTutorial', 'true');
   tour.on('complete', markTutorialSeen);
   tour.on('cancel', markTutorialSeen);
 
-  // Highlight the current step's target element
   tour.on('show', () => {
     const currentStep = tour.getCurrentStep();
     const el = currentStep?.options.attachTo?.element;
@@ -365,7 +343,6 @@ startTutorial(): void {
     }
   });
 
-  // Remove highlight from all elements
   tour.on('hide', () => {
     document.querySelectorAll('.shepherd-highlight')
       .forEach(el => el.classList.remove('shepherd-highlight'));
@@ -373,8 +350,6 @@ startTutorial(): void {
 
   tour.start();
 }
-
-// -------------------------------------------------
 
 toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;

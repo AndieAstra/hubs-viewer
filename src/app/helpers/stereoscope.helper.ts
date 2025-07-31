@@ -5,7 +5,7 @@ type StereoChangeCallback = (active: boolean) => void;
 
 export class StereoscopeHelper {
   private _listeners = new Set<StereoChangeCallback>();
-  private _active = false;  // To track if stereo is active or not
+  private _active = false;
   private stereoEffect: StereoEffect;
   private _enabled = false;
 
@@ -33,46 +33,26 @@ export class StereoscopeHelper {
     return this._active;
   }
 
-  // enable(): void {
-  //   if (this._active) return;
-  //   this._active = true;
-  //   this._emit(true);
-  // }
-
   enable(): void {
   if (this._active) return;
   this._active = true;
   this._emit(true);
 
-  // Ensure the camera's aspect ratio is properly set for stereo
   const perspectiveCamera = this.camera as THREE.PerspectiveCamera;
   perspectiveCamera.aspect = window.innerWidth / window.innerHeight;
   perspectiveCamera.updateProjectionMatrix();
 
-  // Optionally log stereo status
   console.log("Stereo enabled");
 }
-
-// disable(): void {
-//   if (!this._active) return;
-//   this._active = false;
-//   this._emit(false);
-
-//   // Optionally log stereo status
-//   console.log("Stereo disabled");
-// }
 
 disable(): void {
   if (!this._active) return;
   this._active = false;
   this._emit(false);
-
-  // Reset renderer state
   this.renderer.setViewport(0, 0, window.innerWidth, window.innerHeight);
   this.renderer.setScissorTest(false);
   this.renderer.setRenderTarget(null);
   this.renderer.clear();
-
   console.log("Stereo disabled");
 }
 
@@ -83,25 +63,14 @@ resize(width: number, height: number): void {
   this.stereoEffect.setSize(width, height);
 }
 
-// resize(width: number, height: number): void {
-//   this.renderer.setSize(width, height);
-//   const perspectiveCamera = this.camera as THREE.PerspectiveCamera;
-//   perspectiveCamera.aspect = width / height;
-//   perspectiveCamera.updateProjectionMatrix();
-//   this.stereoEffect.setSize(width, height);
-// }
-
-
   toggle(): void {
     this.isActive() ? this.disable() : this.enable();
   }
 
   render(): void {
     if (this._active) {
-      // Render using stereo effect
       this.stereoEffect.render(this.scene, this.camera);
     } else {
-      // Render in mono mode
       this.renderer.render(this.scene, this.camera);
     }
   }
