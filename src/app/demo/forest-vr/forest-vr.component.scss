@@ -1,0 +1,125 @@
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #e00a0a;
+
+  .stereo-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    outline: 5px solid #666;
+    box-sizing: border-box;
+    z-index: 1;
+  }
+
+  // Left and right eye viewfinder masks
+  .viewfinder-mask-left,
+  .viewfinder-mask-right {
+    position: fixed;
+    top: 0;
+    width: 50vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 2;
+    background: black;
+    mask-repeat: no-repeat;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+  }
+
+.viewfinder-mask-left {
+  left: 0;
+  mask-image: radial-gradient(circle at 60% 50%, transparent 50%, black 51%);
+  -webkit-mask-image: radial-gradient(circle at 60% 50%, transparent 50%, black 51%);
+}
+
+.viewfinder-mask-right {
+  right: 0;
+  mask-image: radial-gradient(circle at 40% 50%, transparent 50%, black 51%);
+  -webkit-mask-image: radial-gradient(circle at 40% 50%, transparent 50%, black 51%);
+}
+
+.center-divider {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100vh;
+  background: black; // full black to mask center
+  z-index: 4;
+  pointer-events: none;
+}
+
+
+
+  .controls {
+    position: fixed;
+    bottom: 1rem;
+    left: 1rem;
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+
+    button {
+      background: rgba(0, 0, 0, 0.6);
+      border: none;
+      border-radius: 0.3rem;
+      padding: 0.4rem 0.8rem;
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+    }
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    color: #ddd;
+    padding: 0.6rem 1rem;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+
+    kbd {
+      background: #333;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  }
+}
+
+.enable-gyro-button {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 0.7rem 1.4rem;
+  font-size: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 0.4rem;
+  color: white;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}

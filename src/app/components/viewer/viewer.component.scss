@@ -1,0 +1,46 @@
+.viewer-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Position the button inside viewer-container */
+.kid-button {
+  position: absolute;
+  top: 10px;     /* adjust as needed */
+  right: 10px;   /* adjust as needed */
+  z-index: 10;   /* ensure it’s above the canvas */
+}
+
+/* Reset default margin/padding for full height */
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+:host {
+  display: block;
+  height: 100%;
+}
+
+// ---------------------------
+
+  .mobile-only-buttons {
+    display: none;
+
+    @media (max-width: 768px) {
+      display: flex;
+      flex-direction: row;
+    }
+  }
+
+    .sidebar-button-row,
+  .mobile-only-buttons,
+  .button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }

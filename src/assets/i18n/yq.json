@@ -1,0 +1,156 @@
+{
+  "TITLE": "Etleo (farmer) / Etwame (agriculture) / kiavea hiapsa (imagination) / komputadora (computer) / hu'unakte (create)",
+
+  "NAV": {
+    "MENU": "",
+    "VIEWER": "",
+    "PANORAMA": "",
+    "CONTACT": "Nattemai",
+    "BUG": "",
+    "LANGUAGE": "Nooki"
+  },
+
+  "INSTRUCTION_THREE": {
+    "START_WALKING": "Weama / kaate "
+  },
+
+  "BUTTONS": {
+    "TOGGLE_WIREFRAME": "",
+    "TUTORIAL": "",
+    "BUG_REPORT": "Haisempaula?",
+    "ENTER_VR": "",
+    "EXIT_VR": "",
+    "RESET_CAMERA": "",
+    "SAVE_SCENE": "",
+    "LOAD_SCENE": "",
+    "SUNLIGHT_COLOR": "",
+    "ROOM_LIGHT": "",
+    "LOAD_GLB":"",
+    "LOAD_JSON":""
+  },
+
+  "SECTIONS": {
+    "SCENE_SETTINGS": "",
+    "LIGHTING": "",
+    "MODEL_SETTINGS": "",
+    "CAMERA_MOVEMENT": ""
+  },
+
+  "SLIDERS": {
+    "SUNLIGHT": "💡 Fooko / Machiria",
+    "MODEL_SIZE": "",
+    "MODEL_HEIGHT": "",
+    "SPEED": "🏃 Uttea weye",
+    "EYE_LEVEL": ""
+  },
+
+  "CONSOLE": {
+    "TOGGLE": ""
+  },
+
+
+  "START_TUTORIAL": "",
+
+  "UPLOAD_INSTRUCTION": "",
+
+  "SCENE_SETTINGS": "",
+
+  "MODEL_SETTINGS": "",
+
+  "CONSOLE_SHEPHARD": "",
+
+  "FINISH_TUTORIAL": "",
+
+  "BUTTONS_NEXT": "",
+  "BUTTONS_BACK": "",
+  "BUTTONS_DONE": "",
+
+  "CONTACT": {
+    "TITLE": "",
+    "INFO_TEXT": "",
+    "EMAIL_LABEL": "",
+    "EMAIL_PLACEHOLDER": "",
+    "MESSAGE_LABEL": "",
+    "MESSAGE_PLACEHOLDER": "",
+    "SEND_BUTTON": "",
+    "THANK_YOU_TITLE": "",
+    "THANK_YOU_TEXT": "<strong>{{ email }}</strong>.",
+    "SEND_ANOTHER_BUTTON": ""
+  },
+
+  "BUG_REPORT": {
+    "TITLE": "",
+    "LABEL_TITLE": "",
+    "LABEL_DESCRIPTION": "",
+    "LABEL_STEPS": "",
+    "LABEL_BROWSER": "",
+    "LABEL_SCREENSHOT": "",
+    "BUTTON_SUBMIT": "",
+    "SUCCESS_MESSAGE": ""
+  },
+
+  "ERRORS": {
+    "RENDERER_NOT_AVAILABLE": "",
+    "DROP_REPLACE_CONFIRM": "",
+    "WEBGL_CREATION_FAILED": "",
+    "WEBGL_INIT_FAIL_ALERT": "",
+    "MODEL_LOAD_ERROR_ALERT": "",
+    "FILE_READ_FAIL_ALERT": "",
+    "MODEL_LOAD_FAIL": "",
+    "NO_AUTOSAVED_SCENE": "",
+    "MODEL_MISSING_BASE64": "",
+    "MODEL_LOAD_BASE64_ERROR": "",
+    "SCENE_LOAD_LOCALSTORAGE_ERROR": "",
+    "SCENE_SAVE_LOCALSTORAGE_ERROR": "",
+    "FULLSCREEN_FAILED": "",
+    "ORIENTATION_LOCK_FAILED": "",
+    "ORIENTATION_LOCK_UNAVAILABLE": "",
+    "EXIT_FULLSCREEN_FAILED": "",
+    "UNLOCK_ORIENTATION_FAILED": "",
+     "FAILED_LOAD_MODEL": "{{fileName}}",
+    "MODEL_EXPORT_ERROR": ""
+  },
+
+ "MESSAGES": {
+    "SCENE_LOADED_LOCALSTORAGE": "",
+    "SCENE_EXPORTED": "",
+    "SCENE_EXPORT_STARTED": "",
+    "VIEW_RESET": "",
+    "WIREFRAME_TOGGLED": "",
+    "MODEL_CLEARED": "",
+    "VR_MOBILE_ONLY": "",
+    "ENTER_VR_CONFIRM": "",
+    "MODEL_PLACEMENT_MODE_ACTIVE": "",
+    "TRANSLATE_MODE_ACTIVATED": "",
+    "ROTATE_MODE_ACTIVATED": "",
+    "SCALE_MODE_ACTIVATED": "",
+    "CLICK_PLACE_MODEL": "",
+    "GRID_SHOWN": "",
+    "GRID_HIDDEN": "",
+    "SCENE_CLEARED_CONFIRM": "",
+    "SCENE_CLEARED": "",
+    "SCENE_EXPORT_COMPLETE": "",
+     "REPLACE_MODEL_CONFIRM": ""
+  },
+
+   "VIEWER": {
+    "INIT_LOG": "{{viewerRef}}",
+    "FILE_LOADED": "{{fileName}}",
+    "RESET_VIEW": "",
+    "TOGGLE_WIREFRAME": "",
+    "CLEAR_MODEL": "",
+    "SAVE_SCENE": "",
+    "LOAD_SCENE": "",
+    "TOGGLE_ROOM_LIGHT": "",
+    "TOGGLE_SUNLIGHT_COLOR": "",
+    "UPDATED_SUNLIGHT_VALUE": "{{value}}",
+    "UPDATED_CAMERA_SPEED": "{{value}}",
+    "UPDATED_MODEL_SIZE": "{{value}}",
+    "UPDATED_MODEL_HEIGHT": "{{value}}"
+  },
+
+   "UPLOADER": {
+    "BUTTON_LABEL": ""
+  }
+
+}

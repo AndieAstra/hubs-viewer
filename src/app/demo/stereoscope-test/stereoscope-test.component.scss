@@ -1,0 +1,129 @@
+body, html {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background-color: #04d800;
+}
+
+canvas {
+  cursor: default !important;
+}
+
+/* ========== Canvas Container ========== */
+.stereo-wrapper,
+.container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background-color: #e00a0a;
+  overflow: hidden;
+}
+
+/* ========== Canvas ========== */
+.stereo-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: block;
+  object-fit: cover;
+  outline: 5px solid #666;
+  box-sizing: border-box;
+  z-index: 1;
+}
+
+/* ========== Viewfinder Masks ========== */
+.viewfinder-mask-left,
+.viewfinder-mask-right {
+  position: fixed;
+  top: 0;
+  width: 50vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 2;
+  background: black;
+  mask-repeat: no-repeat;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+}
+
+.viewfinder-mask-left {
+  left: 0;
+  mask-image: radial-gradient(circle at 65% 50%, transparent 40%, black 41%);
+  -webkit-mask-image: radial-gradient(circle at 65% 50%, transparent 40%, black 41%);
+}
+
+.viewfinder-mask-right {
+  right: 0;
+  mask-image: radial-gradient(circle at 35% 50%, transparent 40%, black 41%);
+  -webkit-mask-image: radial-gradient(circle at 35% 50%, transparent 40%, black 41%);
+}
+
+/* ========== Divider Line ========== */
+.center-divider {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* ========== Buttons ========== */
+
+/* Generic button styles */
+button,
+.fullscreen-btn,
+.debug-btn,
+.toggle-stereo-btn {
+  position: fixed;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 0.3rem;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s ease;
+}
+
+button:hover,
+.fullscreen-btn:hover,
+.debug-btn:hover,
+.toggle-stereo-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Toggle stereo button – bottom right */
+.toggle-stereo-btn {
+  bottom: 1rem;
+  right: 1rem;
+}
+
+/* Fullscreen – top right */
+.fullscreen-btn {
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  padding: 0.4rem 0.6rem;
+}
+
+/* Debug – top left */
+.debug-btn {
+  top: 1rem;
+  left: 1rem;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+}
+
+/* Optional alternate debug – bottom left */
+.debug-btn.bottom {
+  top: auto;
+  bottom: 1rem;
+}

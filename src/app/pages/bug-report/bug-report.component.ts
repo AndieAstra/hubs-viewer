@@ -1,11 +1,15 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-bug-report',
   templateUrl: './bug-report.component.html',
   standalone: true,
-  imports:[FormsModule],
+  imports:[
+    FormsModule,
+    TranslateModule
+  ],
   styleUrls: ['./bug-report.component.scss']
 })
 export class BugReportComponent {
@@ -35,8 +39,6 @@ export class BugReportComponent {
     if (this.bug.screenshot) {
       formData.append('screenshot', this.bug.screenshot);
     }
-
-    // TODO: Replace with real HTTP request to backend or bug tracking system
     console.log('Bug Submitted:', this.bug);
 
     this.successMessage = 'Thank you! Your bug has been submitted.';

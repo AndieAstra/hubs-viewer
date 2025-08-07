@@ -1,0 +1,21 @@
+<div class="container" style="font-family: Arial, sans-serif; padding: 1rem; text-align: center; background-color: #9cb8ee;">
+  <h1>Gyroscope Check</h1>
+  <p>Rotate your device to see real-time gyroscope data.</p>
+
+  @if (supported) {
+    @if (!listening) {
+      <button (click)="start()">Enable Gyroscope</button>
+    } @else {
+      <div class="info">Alpha: {{ alpha | number:'1.2-2' }}</div>
+      <div class="info">Beta:  {{ beta  | number:'1.2-2' }}</div>
+      <div class="info">Gamma: {{ gamma | number:'1.2-2' }}</div>
+      <button class="stop" (click)="stop()">Stop Gyroscope</button>
+    }
+  } @else {
+    <p class="unsupported">Your device does not support the gyroscope.</p>
+  }
+
+  @if (errorMsg) {
+    <p class="error">{{ errorMsg }}</p>
+  }
+</div>

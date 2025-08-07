@@ -1,0 +1,17 @@
+<!-- Need to update and add menu top -->
+
+<div class="container">
+
+<canvas #stereoCanvas class="stereo-canvas"></canvas>
+
+@if(useStereo){
+<div class="viewfinder-mask"></div>
+<div class="center-divider"></div>
+}
+
+<button class="toggle-stereo-btn" (click)="toggleStereo()">
+  {{ useStereo ? 'Mono View' : 'Stereo View' }}
+</button>
+
+
+</div>

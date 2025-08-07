@@ -1,0 +1,26 @@
+<div class="container" (click)="canvasRef.nativeElement.requestPointerLock()">
+
+  <canvas #forestCanvas class="stereo-canvas"></canvas>
+
+@if (useStereo) {
+  <ng-container>
+    <div class="viewfinder-mask-left"></div>
+    <div class="viewfinder-mask-right"></div>
+    <div class="center-divider"></div>
+  </ng-container>
+}
+
+  <div class="controls">
+    <button (click)="toggleStereo()">
+      {{ useStereo ? '[space] Switch to Mono View' : '[space]  Switch to Stereo View' }}
+    </button>
+  </div>
+
+<div class="hint">
+  💡 Hint: Press <kbd>ESC</kbd> to release the mouse
+</div>
+
+@if (!gyroEnabled) {
+<button (click)="enableGyro()" class="enable-gyro-button">Enable Gyroscope</button>
+}
+</div>

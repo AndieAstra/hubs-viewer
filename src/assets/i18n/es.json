@@ -1,0 +1,171 @@
+{
+  "TITLE": "DEMO del sistema de agricultura virtual",
+
+  "NAV": {
+    "MENU": "Menú",
+    "VIEWER": "Visor 3D v.2",
+    "PANORAMA": "Panorama",
+    "CONTACT": "Contacto",
+    "BUG": "Reporte de Error",
+    "LANGUAGE": "Seleccionar Idioma",
+    "MOVE": "Haz clic para empezar a caminar"
+  },
+
+  "INSTRUCTION_THREE": {
+    "START_WALKING": "¡Haz clic para empezar a caminar!"
+  },
+
+  "BUTTONS": {
+    "FULLSCREEN":"Entrar/Salir de pantalla completa",
+    "TOGGLE_WIREFRAME": "Alternar Malla",
+    "TUTORIAL": "🎓 Tutorial",
+    "BUG_REPORT": "🐞 ¿Algo no funciona?",
+    "ENTER_VR": "🕶 Entrar en VR",
+    "EXIT_VR": "🚪 Salir de VR",
+    "RESET_CAMERA": "Restablecer Cámara",
+    "SAVE_SCENE": "Guardar JSON",
+    "LOAD_SCENE": "Cargar",
+    "SUNLIGHT_COLOR": "Color del Sol",
+    "ROOM_LIGHT": "Luz de la Habitación",
+    "LOAD_GLB":"Elija su modelo 3D (glb), luego use las teclas WASD para moverse, ESC para salir del visor, ESPACIO para saltar.",
+    "LOAD_JSON":"Cargar JSON"
+  },
+
+  "SECTIONS": {
+    "SCENE_SETTINGS": "Configuración de Escena",
+    "LIGHTING": "Iluminación",
+    "MODEL_SETTINGS": "Configuración del Modelo",
+    "CAMERA_MOVEMENT": "Movimiento de Cámara"
+  },
+
+  "SLIDERS": {
+    "SUNLIGHT": "☀️ Luz Solar",
+    "MODEL_SIZE": "📏 Tamaño",
+    "MODEL_HEIGHT": "⬆️ Altura",
+    "SPEED": "🏃 Velocidad",
+    "EYE_LEVEL": "👁️ Nivel de Vista"
+  },
+
+  "CONSOLE": {
+    "TOGGLE": "Consola"
+  },
+
+
+  "START_TUTORIAL": "¡Bienvenido al editor! Vamos a hacer un recorrido rápido.",
+
+  "UPLOAD_INSTRUCTION": "Comienza subiendo un modelo 3D (glb) aquí. Luego usa las teclas WASD para moverte y ESPACIO para saltar.",
+
+  "SCENE_SETTINGS": "Usa estos botones para guardar, cargar y restablecer tu escena.",
+
+  "MODEL_SETTINGS": "Aquí es donde aparecerá tu modelo 3D.",
+
+  "CONSOLE_SHEPHARD": "Los registros y mensajes de la consola aparecen aquí.",
+
+  "FINISH_TUTORIAL": "¡Felicidades! Este es el final del tutorial. Vamos a crear tu sistema de agricultura virtual.",
+
+  "BUTTONS_NEXT": "Próxima",
+  "BUTTONS_BACK": "Atras",
+  "BUTTONS_DONE": "Terminar",
+
+  "CONTACT": {
+    "TITLE": "📬 Envíanos un Mensaje",
+    "INFO_TEXT": "¡Hola! Nos encantaría saber de ti. Por favor, pide a un adulto que te ayude a llenar esto. 🧑‍🤝‍🧑",
+    "EMAIL_LABEL": "📧 Tu correo electrónico (con un adulto):",
+    "EMAIL_PLACEHOLDER": "tú@ejemplo.com",
+    "MESSAGE_LABEL": "💡 ¿Qué quieres compartir?",
+    "MESSAGE_PLACEHOLDER": "¡Cuéntanos tus ideas, preguntas o errores!",
+    "SEND_BUTTON": "Enviar Mensaje 🚀",
+    "THANK_YOU_TITLE": "🎉 ¡Genial! ¡Mensaje enviado!",
+    "THANK_YOU_TEXT": "Gracias por contactarnos. Te responderemos pronto a <strong>{{ email }}</strong>.",
+    "SEND_ANOTHER_BUTTON": "Enviar otro mensaje"
+  },
+
+  "BUG_REPORT": {
+    "TITLE": "🐞 Reportar un Error",
+    "LABEL_TITLE": "Título del Error:",
+    "LABEL_DESCRIPTION": "Descripción:",
+    "LABEL_STEPS": "Pasos para Reproducir:",
+    "LABEL_BROWSER": "Información del Navegador:",
+    "LABEL_SCREENSHOT": "Captura de Pantalla:",
+    "BUTTON_SUBMIT": "Enviar Error",
+    "SUCCESS_MESSAGE": "¡Gracias! Tu reporte de error ha sido enviado."
+  },
+
+  "ERRORS": {
+    "RENDERER_NOT_AVAILABLE": "Renderizador no disponible — posiblemente falló al crear el contexto WebGL",
+    "DROP_REPLACE_CONFIRM": "¿Reemplazar la escena actual con el nuevo modelo?",
+    "WEBGL_CREATION_FAILED": "Falló la creación de WebGLRenderer:",
+    "WEBGL_INIT_FAIL_ALERT": "No se pudo inicializar WebGL. Intenta reiniciar tu navegador o cambiar a Chrome.",
+    "MODEL_LOAD_ERROR_ALERT": "❌ Error al cargar el modelo. Por favor intenta de nuevo con un formato GLB correcto.",
+    "FILE_READ_FAIL_ALERT": "❌ No se pudo leer el archivo. Por favor intenta de nuevo.",
+    "MODEL_LOAD_FAIL": "Error al cargar el modelo:",
+    "NO_AUTOSAVED_SCENE": "No se encontró una escena guardada automáticamente en localStorage.",
+    "MODEL_MISSING_BASE64": "El modelo {{modelName}} no tiene datos base64",
+    "MODEL_LOAD_BASE64_ERROR": "Error al cargar el modelo desde base64:",
+    "SCENE_LOAD_LOCALSTORAGE_ERROR": "Error al cargar la escena desde localStorage:",
+    "SCENE_SAVE_LOCALSTORAGE_ERROR": "Error al guardar la escena en localStorage:",
+    "FULLSCREEN_FAILED": "Error al activar pantalla completa:",
+    "ORIENTATION_LOCK_FAILED": "Error al bloquear la orientación:",
+    "ORIENTATION_LOCK_UNAVAILABLE": "Bloqueo de orientación no disponible:",
+    "EXIT_FULLSCREEN_FAILED": "Error al salir de pantalla completa",
+    "UNLOCK_ORIENTATION_FAILED": "Error al desbloquear la orientación",
+     "FAILED_LOAD_MODEL": "Error al cargar el modelo: {{fileName}}",
+    "MODEL_EXPORT_ERROR": "Error al exportar el modelo"
+  },
+
+ "MESSAGES": {
+    "SCENE_LOADED_LOCALSTORAGE": "Escena cargada desde localStorage con modelos base64.",
+    "SCENE_EXPORTED": "¡Escena exportada con éxito!",
+    "SCENE_EXPORT_STARTED": "Exportación de escena iniciada...",
+    "VIEW_RESET": "¡Vista restablecida!",
+    "WIREFRAME_TOGGLED": "¡Alambre activado/desactivado!",
+    "MODEL_CLEARED": "¡Modelo borrado!",
+    "VR_MOBILE_ONLY": "El modo VR solo está disponible en dispositivos móviles.",
+    "ENTER_VR_CONFIRM": "¿Entrar en modo VR? Coloca tu teléfono en un visor como Google Cardboard.",
+    "MODEL_PLACEMENT_MODE_ACTIVE": "Modo de colocación de modelo activo. Haz clic para colocar.",
+    "TRANSLATE_MODE_ACTIVATED": "Modo de traslación activado",
+    "ROTATE_MODE_ACTIVATED": "Modo de rotación activado",
+    "SCALE_MODE_ACTIVATED": "Modo de escala activado",
+    "CLICK_PLACE_MODEL": "¡Haz clic en cualquier lugar para colocar un modelo!",
+    "GRID_SHOWN": "Cuadrícula mostrada",
+    "GRID_HIDDEN": "Cuadrícula oculta",
+    "SCENE_CLEARED_CONFIRM": "¿Seguro que quieres eliminar todos los modelos?",
+    "SCENE_CLEARED": "¡Escena limpiada!",
+    "SCENE_EXPORT_COMPLETE": "Exportación de escena completada.",
+     "REPLACE_MODEL_CONFIRM": "¿Le gustaría reemplazar su modelo?"
+  },
+
+   "VIEWER": {
+    "INIT_LOG": "ViewerComponent inicializado: {{viewerRef}}",
+    "FILE_LOADED": "Archivo cargado: {{fileName}}",
+    "RESET_VIEW": "Vista de cámara reiniciada.",
+    "TOGGLE_WIREFRAME": "Modo alambre activado/desactivado.",
+    "CLEAR_MODEL": "Modelo limpiado.",
+    "SAVE_SCENE": "Escena guardada.",
+    "LOAD_SCENE": "Escena cargada.",
+    "TOGGLE_ROOM_LIGHT": "Luz de habitación activada/desactivada.",
+    "TOGGLE_SUNLIGHT_COLOR": "Color de luz solar activado/desactivado.",
+    "UPDATED_SUNLIGHT_VALUE": "Valor de luz solar actualizado: {{value}}",
+    "UPDATED_CAMERA_SPEED": "Velocidad de cámara actualizada a {{value}}",
+    "UPDATED_MODEL_SIZE": "Tamaño del modelo actualizado a {{value}}",
+    "UPDATED_MODEL_HEIGHT": "Altura del modelo actualizada a {{value}}"
+  },
+
+   "UPLOADER": {
+    "BUTTON_LABEL": "Sube tu modelo"
+  },
+
+  "NOTICE":{
+    "PORTRAIT": "Gira tu dispositivo para disfrutar de una experiencia completa."
+  },
+
+  "TEST":{
+    "TITLE":"Características de prueba",
+    "STEREOSCOPE":"Estereoscopio",
+    "FORESTVR":"Bosque VR",
+    "GYROSCOPE":"Giroscopio",
+    "EDITOR":"Visor 3D v.1",
+    "VIEWER":"DEBUG:Visor"
+  }
+
+}

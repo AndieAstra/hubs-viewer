@@ -1,19 +1,240 @@
+/* ------------- RESET ------------- */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------- TITLE BAR ------------- */
+.title-bar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #bde8f8;
+  padding: 1rem;
+  text-align: center;
+
+  h1 {
+    margin-bottom: 0.5rem;
+    font-size: 1.6rem;
+  }
+
+  .language-select {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+
+    button {
+      background: #008CBA;
+      color: #fff;
+      border: 0;
+      padding: 0.4rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.25s;
+
+      &:hover {
+        background: #005f73;
+      }
+    }
+  }
+}
+
+/* ------------- NAV BAR ------------- */
 nav {
+  margin: 1rem 0;
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  justify-content: center;
+  position: relative;
 
   button {
     background: #4caf50;
-    color: white;
-    border: none;
-    padding: 0.6rem 1.2rem;
+    color: #fff;
+    border: 0;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
     cursor: pointer;
-    border-radius: 4px;
+    margin: 0.25rem;
     font-size: 1rem;
+    transition: background-color 0.25s;
 
     &:hover {
-      background-color: #45a049;
+      background: #388e3c;
     }
   }
+
+  /* MOBILE */
+  @media (max-width: 768px) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-top: 50px;
+
+    .mobile-nav {
+      display: block;
+    }
+
+    .mobile-dropdown-toggle {
+      font-size: 1.1rem;
+      padding: 0.6rem 1.2rem;
+    }
+
+    .mobile-dropdown-content {
+      display: none;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      background: #e8f5e9;
+      padding: 0.5rem;
+      border-radius: 8px;
+      margin-top: 0.5rem;
+      width: 100%;
+      max-width: 100%;
+
+      button {
+        flex: 1 0 auto;
+        width: auto;
+        white-space: nowrap;
+        margin: 0;
+      }
+
+      &.show {
+        display: flex;
+      }
+    }
+  }
+
+  /* DESKTOP */
+  @media (min-width: 769px) {
+    .desktop-nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+
+  .desktop-dropdown {
+    position: relative;
+    display: inline-block;
+
+    .desktop-dropdown-content {
+      position: absolute;
+      right: 0;
+      top: 100%;
+      background-color: #e8f5e9;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+  }
+
+  .sub-dropdown {
+    margin-top: 0.5rem;
+  }
+}
+
+/* ------------- LANGUAGE DROPDOWN ------------- */
+.language-dropdown {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  margin-bottom: 1rem;
+
+  .language-dropdown-toggle {
+    background: #2196f3;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.25s;
+
+    &:hover {
+      background: #1565c0;
+    }
+  }
+
+  .language-dropdown-content {
+    display: none;
+    flex-direction: column;
+    background: #023050;
+    padding: 0.5rem;
+    border-radius: 6px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 0.4rem;
+    position: absolute;
+    top: 100%;
+    z-index: 999;
+
+    button {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border: none;
+      background: none;
+      cursor: pointer;
+
+      &:hover {
+        background: #bbdefb;
+        border-radius: 4px;
+      }
+    }
+
+    &.show {
+      display: flex;
+    }
+  }
+}
+
+/* ------------- RESPONSIVE VISIBILITY ------------- */
+.desktop-only {
+  display: block;
+
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.mobile-only {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block !important;
+  }
+}
+
+/* ------------- OPTIONAL: GLOBAL BG ------------- */
+body {
+  background: #f9f9f9;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Remove scrollbars in fullscreen VR */
+:fullscreen {
+  overflow: hidden;
+}
+
+// --------------------------------------
+
+.test-dropdown,
+.test-dropdown-mobile {
+  margin-top: 0.5rem;
+}
+
+.test-dropdown-content,
+.language-dropdown-content {
+  position: absolute;
+  display: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  z-index: 1000;
+}
+
+.test-dropdown-content.show {
+  display: block;
 }

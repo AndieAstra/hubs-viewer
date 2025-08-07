@@ -1,0 +1,21 @@
+<div #canvasContainer class="viewer-container">
+
+<div class="mobile-only-buttons">
+
+  @if (!isVRMode) {
+    <button class="vr-btn" type="button" (click)="toggleStereo()">
+      🎮 {{ 'BUTTONS.ENTER_VR'| translate }}
+    </button>
+  }
+  @if (isVRMode) {
+    <button class="vr-btn" type="button" (click)="toggleStereo()">
+      🕶️ {{ 'BUTTONS.EXIT_VR'| translate }}
+    </button>
+  }
+
+    <button class="fullscreen-btn" type="button" (click)="onToggleFullscreen()">
+      ⛶ {{ 'BUTTONS.FULLSCREEN'| translate }}
+    </button>
+</div>
+
+</div>

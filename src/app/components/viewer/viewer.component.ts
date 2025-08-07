@@ -1,14 +1,4 @@
-import {
-  Component,
-  ElementRef,
-  Input,
-  OnInit,
-  OnChanges,
-  SimpleChanges,
-  AfterViewInit,
-  ViewChild,
-  OnDestroy,
-} from '@angular/core';
+import {Component,ElementRef,Input,OnInit,OnChanges,SimpleChanges,AfterViewInit,ViewChild,OnDestroy, HostListener} from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
@@ -20,6 +10,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls';
+import { PlayerMovementHelper } from '../../helpers/player-movement.helper';
+import { SceneControlsService } from '../../services/scene-controls.service';
+import { StereoscopeHelper } from '../../helpers/stereoscope.helper';
+import { FullscreenHelper } from '../../helpers/fullscreen.helper';
+import { VrControllerHelper } from '../../helpers/vr-controller.helper';
+import { TranslateModule } from '@ngx-translate/core';
 
 export interface SavedModel {
   name: string;
@@ -56,31 +52,33 @@ export interface SceneData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
-    MatSnackBarModule,],
-
-  template: `<div #canvasContainer class="viewer-container"></div>`,
+    MatSnackBarModule,
+    TranslateModule,
+  ],
+  templateUrl: './viewer.component.html',
+  styleUrls: ['./viewer.component.scss'],
 })
 
 export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 
+  @HostListener('window:resize', ['$event'])
+
   @ViewChild('canvas', { static: true }) canvasRef!: ElementRef;
   @ViewChild('canvasContainer', { static: true }) containerRef!: ElementRef<HTMLDivElement>;
+
   @Input() glbFile?: File;
 
-  constructor(private snackBar: MatSnackBar) {}
+  constructor(
+    private snackBar: MatSnackBar,
+    private sceneControls: SceneControlsService,
+  ) {}
 
-  //
-  //
-  sunlight = 1;
+  //sunlight = 1;
   movementSpeed = 50;
   modelSize = 30;
-  //
-  //
-
   modelScale = 1;
   modelHeight = 0;
   uploadedModel: THREE.Object3D | null = null;
-
 
   private velocity = new THREE.Vector3();
   private direction = new THREE.Vector3();
@@ -92,18 +90,15 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   speed = 50;
   cameraHeight = 2;
 
-  // State flags
   showGrid = true;
   isPlacingModel = false;
 
-
-  // References
   gridHelper!: THREE.GridHelper;
 
-  private scene!: THREE.Scene;
-  private camera!: THREE.PerspectiveCamera;
+  public scene!: THREE.Scene;
+  public camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
-  private controls!: PointerLockControls;
+  public controls!: PointerLockControls;
   private clock = new THREE.Clock();
   private objects: THREE.Object3D[] = [];
   private ambientLight!: THREE.AmbientLight;
@@ -114,6 +109,17 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
 
   selectedTool = '';
 
+  public get directional() { return this.dirLight; }
+  movementHelper!: PlayerMovementHelper;
+  public playerMovementHelper = new PlayerMovementHelper(10, 9.8, 10, 1.6);
+
+  private stereoscope!: StereoscopeHelper;
+  stereoscopeHelper!: StereoscopeHelper;
+  fullscreenHelper!: FullscreenHelper;
+  public isVRMode = false;
+
+  private vrControllerHelper!: VrControllerHelper;
+
   private keysPressed = {
     forward: false,
     backward: false,
@@ -122,26 +128,25 @@ export class ViewerComponent implements OnInit, OnChanges, AfterViewInit, OnDest
   };
 
 ngOnInit() {
+   this.scene = new THREE.Scene(); // initialize early
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
     this.loadSceneFromLocalStorage();
     this.canJump = true;
-    //this.initThree();
   }
 
 ngOnDestroy() {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
+    this.vrControllerHelper?.stop();
+    this.fullscreenHelper?.dispose();
   }
 
 ngOnChanges(changes: SimpleChanges) {
   if (changes['glbFile'] && changes['glbFile'].currentValue) {
-    // Skip loading if this is the very first change (initial binding)
     if (changes['glbFile'].isFirstChange()) {
-      // Optionally, do nothing on first load or set a flag here
       return;
     }
-
     if (this.sceneLoaded) {
       const confirmReplace = confirm('A scene is already loaded. Do you want to replace it with a new model?');
       if (!confirmReplace) return;
@@ -150,52 +155,72 @@ ngOnChanges(changes: SimpleChanges) {
     this.loadGLB(changes['glbFile'].currentValue);
   }
 
-  // Optionally handle no model loaded only after initial load
   else if (!this.glbFile && !this.sceneLoaded && !changes['glbFile']?.isFirstChange()) {
     alert('⚠️ No model file loaded or scene is empty. Please load a valid GLB model.');
   }
 }
 
-
 ngAfterViewInit() {
-    this.initScene();
-    if (this.glbFile) this.loadGLB(this.glbFile);
-    this.animate();
+  this.initScene();
+  this.vrControllerHelper = new VrControllerHelper(this.movementSpeed);
+  this.vrControllerHelper.enableInteractions();
+  if (this.glbFile) this.loadGLB(this.glbFile);
+  this.animate();
 
-    this.renderer.domElement.addEventListener('dragover', (event) => {
+  this.renderer.domElement.addEventListener('dragover', (event) => {
     event.preventDefault();
-    });
+  });
 
-    this.renderer.domElement.addEventListener('drop', (event) => {
-      event.preventDefault();
-      const file = event.dataTransfer?.files?.[0];
-      if (file && file.name.endsWith('.glb')) {
-        if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
-        this.clearScene();
-        this.loadGLB(file);
-      }
-    });
+  this.sceneControls.setDirectionalLight(this.dirLight);
 
-    this.renderer.domElement.addEventListener('click', (event) => {
-      const mouse = new THREE.Vector2();
-      const rect = this.renderer.domElement.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  // Initialize stereoscope helper
+  this.stereoscopeHelper = new StereoscopeHelper(this.renderer, this.scene, this.camera);
 
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, this.camera);
-      const intersects = raycaster.intersectObjects(this.scene.children, true);
+  // Initialize fullscreen helper on container element
+  this.fullscreenHelper = new FullscreenHelper(this.containerRef.nativeElement);
 
-      if (intersects.length > 0) {
-        const selected = intersects[0].object;
-        console.log('Selected object:', selected.name || selected.uuid);
-        // Optional: highlight or transform
-      }
-    });
+  // Listen for fullscreen changes to resize and rerender
+  this.fullscreenHelper.onChange((active) => {
+    console.log('Fullscreen active:', active);
+    const width = this.containerRef.nativeElement.clientWidth;
+    const height = this.containerRef.nativeElement.clientHeight;
+    this.onResize(width, height);
+    this.renderScene();
+  });
 
-    const canvas = this.renderer.domElement;
+  // Set initial size to container dimensions
+  const initialWidth = this.containerRef.nativeElement.clientWidth;
+  const initialHeight = this.containerRef.nativeElement.clientHeight;
+  this.onResize(initialWidth, initialHeight);
 
-  // Click inside to start walking (existing logic)
+  this.renderer.domElement.addEventListener('drop', (event) => {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file && file.name.endsWith('.glb')) {
+      if (this.sceneLoaded && !confirm('Replace current scene with new model?')) return;
+      this.clearScene();
+      this.loadGLB(file);
+    }
+  });
+
+  this.renderer.domElement.addEventListener('click', (event) => {
+    const mouse = new THREE.Vector2();
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, this.camera);
+    const intersects = raycaster.intersectObjects(this.scene.children, true);
+
+    if (intersects.length > 0) {
+      const selected = intersects[0].object;
+      console.log('Selected object:', selected.name || selected.uuid);
+    }
+  });
+
+  const canvas = this.renderer.domElement;
+
   const instructions = document.createElement('div');
   this.containerRef.nativeElement.appendChild(instructions);
 
@@ -205,7 +230,6 @@ ngAfterViewInit() {
       instructions.parentNode.removeChild(instructions);
     }
 
-    // 👶 Automatically unlock after 10 seconds
     setTimeout(() => {
       if (this.controls.isLocked) {
         this.controls.unlock();
@@ -213,19 +237,22 @@ ngAfterViewInit() {
     }, 1000);
   });
 
-  // 👆 Click *outside* canvas to unlock
   document.addEventListener('click', (e) => {
     if (!canvas.contains(e.target as Node) && this.controls.isLocked) {
       this.controls.unlock();
     }
   });
 
-    this.gridHelper = new THREE.GridHelper(10, 10);
-    this.scene.add(this.gridHelper);
-    this.gridHelper.visible = this.showGrid;
+  this.gridHelper = new THREE.GridHelper(10, 10);
+  this.scene.add(this.gridHelper);
+  this.gridHelper.visible = this.showGrid;
 
-    // Auto save TBA NOT FUNCTIONAL YET
-  }
+const width = this.containerRef.nativeElement.clientWidth;
+const height = this.containerRef.nativeElement.clientHeight;
+this.onResize(width, height);
+this.renderScene();  // render once before animation loop starts
+}
+
 
   //********* UI Controls for the ThreeJS Scene *********/
 
@@ -251,32 +278,8 @@ private initScene() {
   this.dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
   this.dirLight.position.set(5, 10, 7.5);
   this.scene.add(this.dirLight);
- // ******************************************************** */
-
-  // Controls with instruction for users
   this.controls = new PointerLockControls(this.camera, this.renderer.domElement);
   this.scene.add(this.controls.getObject());
-
-  // User must press key to start – more intuitive for kids
-  const instructions = document.createElement('div');
-  instructions.innerText = "Click to start walking!";
-  instructions.style.position = "absolute";
-  instructions.style.top = "50%";
-  instructions.style.left = "50%";
-  instructions.style.transform = "translate(-50%, -50%)";
-  instructions.style.color = "white";
-  instructions.style.fontSize = "24px";
-  instructions.style.padding = "10px";
-  instructions.style.background = "rgba(0,0,0,0.5)";
-  instructions.style.borderRadius = "8px";
-  container.appendChild(instructions);
-
-  container.addEventListener('click', () => {
-    this.controls.lock();
-    container.removeChild(instructions);
-  });
-
-//******************************************************** */
 
    // 🧰 GUI for kids
   this.gui = new GUI({ width: 280 });
@@ -354,33 +357,14 @@ public loadGLB(file: File): void {
     try {
       loader.parse(reader.result as ArrayBuffer, '', (gltf) => {
         const model = gltf.scene;
-
-        // Traverse the model and set collidable properties
-        // model.traverse((child) => {
-        //   if ((child as THREE.Mesh).isMesh) {
-        //     (child as THREE.Mesh).geometry.computeBoundingBox();
-        //     this.objects.push(child);
-        //     child.userData['collidable'] = true;
-        //   }
-        // });
-
-        // Set metadata
         model.userData['isLoadedModel'] = true;
         model.userData['fileName'] = file.name;
         model.userData['file'] = file;
-
-        // Add model to the scene
         model.scale.setScalar(this.modelScale);
         model.position.y = this.modelHeight;
         this.scene.add(model);
-
-        // ✅ Track this as the active model for GUI control
         this.setUploadedModel(model);
-
-        // Mark scene state and persist it
         this.sceneLoaded = true;
-
-        // Auto Save - TBA NOT FUNCTIONAL YET
 
       });
     } catch {
@@ -564,107 +548,224 @@ private loadSceneFromLocalStorage(): void {
 
 //************* Save/Clear Scene ******************* */
 
-//Exporting your scene
+// saveScene(): void {
+//   const sceneData: SceneData = {
+//     models: [],
+//     camera: {
+//       position: this.camera.position.clone(),
+//       rotation: {
+//         x: this.camera.rotation.x,
+//         y: this.camera.rotation.y,
+//         z: this.camera.rotation.z
+//       }
+//     },
+//     lighting: {
+//       ambient: {
+//         color: this.ambientLight.color.getHex(),
+//         intensity: this.ambientLight.intensity,
+//       },
+//       directional: {
+//         color: this.dirLight.color.getHex(),
+//         intensity: this.dirLight.intensity,
+//         position: this.dirLight.position.toArray(),
+//       },
+//     },
+//   };
+
+//   const gltfExporter = new GLTFExporter();
+//   const objectsToExport = this.scene.children.filter(
+//     (obj) => obj.userData?.['isLoadedModel']
+//   );
+
+//   const exportNextModel = (index: number) => {
+//     if (index >= objectsToExport.length) {
+//       // All models processed, save the final scene JSON
+//       const blob = new Blob([JSON.stringify(sceneData)], {
+//         type: 'application/json',
+//       });
+//       const url = URL.createObjectURL(blob);
+//       const link = document.createElement('a');
+//       link.href = url;
+//       link.download = 'scene.json';
+//       link.click();
+//       URL.revokeObjectURL(url);
+
+//       this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
+//       console.log('Scene export complete.');
+//       return;
+//     }
+
+//     const obj = objectsToExport[index];
+
+//     gltfExporter.parse(
+//       obj,
+//       (gltf) => {
+//         let glbBlob: Blob;
+
+//         if (gltf instanceof ArrayBuffer) {
+//           glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
+//         } else {
+//           glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+//         }
+
+//         const reader = new FileReader();
+//         reader.onload = () => {
+//           const binary = new Uint8Array(reader.result as ArrayBuffer);
+//           let binaryString = '';
+//           for (let i = 0; i < binary.byteLength; i++) {
+//             binaryString += String.fromCharCode(binary[i]);
+//           }
+//           const base64 = btoa(binaryString);
+
+//           sceneData.models.push({
+//             name: obj.name || 'Unnamed',
+//             position: obj.position.clone(),
+//             rotation: {
+//               x: obj.rotation.x,
+//               y: obj.rotation.y,
+//               z: obj.rotation.z,
+//             },
+//             scale: obj.scale.clone(),
+//             fileName: obj.userData['fileName'] || 'unknown.glb',
+//             glbBase64: base64,
+//           });
+
+//           exportNextModel(index + 1);
+//         };
+
+//         reader.readAsArrayBuffer(glbBlob);
+//       },
+//       (error) => {
+//         console.error('Error exporting model', error);
+//         exportNextModel(index + 1); // Skip and continue with next model
+//       },
+//       { binary: true }
+//     );
+//   };
+
+//   console.log('Scene export started...');
+//   exportNextModel(0);
+// }
+
 saveScene(): void {
-  const sceneData: SceneData = {
-    models: [],
-    camera: {
-      position: this.camera.position.clone(),
-      rotation: {
-        x: this.camera.rotation.x,
-        y: this.camera.rotation.y,
-        z: this.camera.rotation.z
-      }
-    },
-    lighting: {
-      ambient: {
-        color: this.ambientLight.color.getHex(),
-        intensity: this.ambientLight.intensity,
-      },
-      directional: {
-        color: this.dirLight.color.getHex(),
-        intensity: this.dirLight.intensity,
-        position: this.dirLight.position.toArray(),
-      },
-    },
-  };
+  try {
+    const filename = prompt('Enter filename to save your scene:', 'scene.json');
+    if (!filename) return;
 
-  const gltfExporter = new GLTFExporter();
-  const objectsToExport = this.scene.children.filter(
-    (obj) => obj.userData?.['isLoadedModel']
-  );
+    const safeFilename = filename.toLowerCase().endsWith('.json') ? filename : `${filename}.json`;
 
-  const exportNextModel = (index: number) => {
-    if (index >= objectsToExport.length) {
-      // All models processed, save the final scene JSON
-      const blob = new Blob([JSON.stringify(sceneData)], {
-        type: 'application/json',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'scene.json';
-      link.click();
-      URL.revokeObjectURL(url);
-
-      this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
-      console.log('Scene export complete.');
-      return;
-    }
-
-    const obj = objectsToExport[index];
-
-    gltfExporter.parse(
-      obj,
-      (gltf) => {
-        let glbBlob: Blob;
-
-        if (gltf instanceof ArrayBuffer) {
-          glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
-        } else {
-          glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+    // Construct the scene data directly without using exportScene
+    const sceneData: SceneData = {
+      models: [],
+      camera: {
+        position: this.camera.position.clone(),
+        rotation: {
+          x: this.camera.rotation.x,
+          y: this.camera.rotation.y,
+          z: this.camera.rotation.z
         }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          const binary = new Uint8Array(reader.result as ArrayBuffer);
-          let binaryString = '';
-          for (let i = 0; i < binary.byteLength; i++) {
-            binaryString += String.fromCharCode(binary[i]);
-          }
-          const base64 = btoa(binaryString);
-
-          sceneData.models.push({
-            name: obj.name || 'Unnamed',
-            position: obj.position.clone(),
-            rotation: {
-              x: obj.rotation.x,
-              y: obj.rotation.y,
-              z: obj.rotation.z,
-            },
-            scale: obj.scale.clone(),
-            fileName: obj.userData['fileName'] || 'unknown.glb',
-            glbBase64: base64,
-          });
-
-          exportNextModel(index + 1);
-        };
-
-        reader.readAsArrayBuffer(glbBlob);
       },
-      (error) => {
-        console.error('Error exporting model', error);
-        exportNextModel(index + 1); // Skip and continue with next model
+      lighting: {
+        ambient: {
+          color: this.ambientLight.color.getHex(),
+          intensity: this.ambientLight.intensity,
+        },
+        directional: {
+          color: this.dirLight.color.getHex(),
+          intensity: this.dirLight.intensity,
+          position: this.dirLight.position.toArray(),
+        },
       },
-      { binary: true }
+    };
+
+    const gltfExporter = new GLTFExporter();
+    const objectsToExport = this.scene.children.filter(
+      (obj) => obj.userData?.['isLoadedModel']
     );
-  };
 
-  console.log('Scene export started...');
-  exportNextModel(0);
+    const exportNextModel = (index: number) => {
+      if (index >= objectsToExport.length) {
+        // All models processed, save the final scene JSON
+        const blob = new Blob([JSON.stringify(sceneData)], {
+          type: 'application/json',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = safeFilename;
+        link.click();
+        URL.revokeObjectURL(url);
+
+        this.snackBar.open('Scene exported successfully!', 'OK', { duration: 3000 });
+        console.log('Scene export complete.');
+        return;
+      }
+
+      const obj = objectsToExport[index];
+
+      // Prompt for the model name before exporting
+      // const modelName = prompt(`Enter a name for the model "${obj.name}"`, obj.name);
+      // if (!modelName) {
+      //   alert('Model name is required. Skipping model export.');
+      //   exportNextModel(index + 1); // Skip this model and continue with the next one
+      //   return;
+      // }
+
+      gltfExporter.parse(
+        obj,
+        (gltf) => {
+          let glbBlob: Blob;
+
+          if (gltf instanceof ArrayBuffer) {
+            glbBlob = new Blob([gltf], { type: 'model/gltf-binary' });
+          } else {
+            glbBlob = new Blob([JSON.stringify(gltf)], { type: 'application/json' });
+          }
+
+          const reader = new FileReader();
+          reader.onload = () => {
+            const binary = new Uint8Array(reader.result as ArrayBuffer);
+            let binaryString = '';
+            for (let i = 0; i < binary.byteLength; i++) {
+              binaryString += String.fromCharCode(binary[i]);
+            }
+            const base64 = btoa(binaryString);
+
+            sceneData.models.push({
+              name: 'model',
+              position: obj.position.clone(),
+              rotation: {
+                x: obj.rotation.x,
+                y: obj.rotation.y,
+                z: obj.rotation.z,
+              },
+              scale: obj.scale.clone(),
+              fileName: obj.userData['fileName'] || 'unknown.glb',
+              glbBase64: base64,
+            });
+
+            exportNextModel(index + 1);
+          };
+
+          reader.readAsArrayBuffer(glbBlob);
+        },
+        (error) => {
+          console.error('Error exporting model', error);
+          exportNextModel(index + 1); // Skip and continue with next model
+        },
+        { binary: true }
+      );
+    };
+
+    console.log('Scene export started...');
+    exportNextModel(0);
+
+  } catch (error) {
+    console.error('Error during scene export', error);
+  }
 }
 
-//autosave
+
 private saveSceneToLocalStorage(): void {
   try {
     const models = this.scene.children
@@ -794,19 +895,13 @@ clearScene(): void {
   this.camera.rotation.set(0, 0, 0);
 }
 
-// ************************************************************************
-// Need to update to current camera view straight ahead. NOT the floor!
-// Resets camera or scene view
 resetView(): void {
-  // Implement your reset logic here (e.g., reset camera position)
   this.camera.position.set(0, this.cameraHeight, 0);
   this.camera.lookAt(0, 0, 0);
-  this.controls.unlock();  // Or however you want to reset controls
+  this.controls.unlock();
   this.snackBar.open('View reset!', 'OK', { duration: 2000 });
 }
-// ************************************************************************
 
-// Toggles wireframe mode on loaded models
 toggleWireframe(): void {
   if (!this.uploadedModel) return;
 
@@ -818,7 +913,6 @@ toggleWireframe(): void {
   this.snackBar.open('Wireframe toggled!', 'OK', { duration: 2000 });
 }
 
-// Clears the loaded model(s)
 clearModel(): void {
   if (this.uploadedModel) {
     this.scene.remove(this.uploadedModel);
@@ -834,65 +928,68 @@ private animate = () => {
 
   const delta = this.clock.getDelta();
 
-  // Friction (XZ plane)
+if (this.isVRMode && this.vrControllerHelper) {
+  this.vrControllerHelper.update();
+  this.vrControllerHelper.applyRotation(this.camera, 0.1);
+
+    // Move camera based on gamepad stick
+    const move = this.vrControllerHelper.movementVector.clone()
+      .applyQuaternion(this.camera.quaternion)
+      .multiplyScalar(delta * this.movementSpeed);
+
+    this.camera.position.add(move);
+  }
+
+  // 🧍 Desktop-style movement with keys
   const friction = 5.0;
   this.velocity.x -= this.velocity.x * friction * delta;
   this.velocity.z -= this.velocity.z * friction * delta;
 
-  // Reset direction
   this.direction.set(0, 0, 0);
-
-  // ✅ REVERSED: Z is flipped
-  if (this.keysPressed.forward) this.direction.z += 1;   // forward = +Z
-  if (this.keysPressed.backward) this.direction.z -= 1;  // backward = -Z
-  if (this.keysPressed.left) this.direction.x -= 1;      // left = -X
-  if (this.keysPressed.right) this.direction.x += 1;     // right = +X
-
+  if (this.keysPressed.forward) this.direction.z += 1;
+  if (this.keysPressed.backward) this.direction.z -= 1;
+  if (this.keysPressed.left) this.direction.x -= 1;
+  if (this.keysPressed.right) this.direction.x += 1;
   this.direction.normalize();
 
-  // Apply movement
   if (this.direction.length() > 0) {
     this.velocity.x += this.direction.x * this.speed * delta;
     this.velocity.z += this.direction.z * this.speed * delta;
   }
 
-const moveX = this.velocity.x * delta;
-const moveZ = this.velocity.z * delta;
+  const moveX = this.velocity.x * delta;
+  const moveZ = this.velocity.z * delta;
 
-const playerObj = this.controls.getObject();
-const oldX = playerObj.position.x;
-const oldZ = playerObj.position.z;
+  const playerObj = this.controls.getObject();
+  const oldX = playerObj.position.x;
+  const oldZ = playerObj.position.z;
 
-// Try move right/left (X)
-this.controls.moveRight(moveX);
-if (this.isColliding(playerObj.position)) {
-  playerObj.position.x = oldX; // only undo X movement
-}
+  this.controls.moveRight(moveX);
+  if (this.isColliding(playerObj.position)) {
+    playerObj.position.x = oldX;
+  }
 
-// Try move forward/backward (Z)
-this.controls.moveForward(moveZ);
-if (this.isColliding(playerObj.position)) {
-  playerObj.position.z = oldZ; // only undo Z movement
-}
+  this.controls.moveForward(moveZ);
+  if (this.isColliding(playerObj.position)) {
+    playerObj.position.z = oldZ;
+  }
 
-
-// Gravity
+  // Gravity and jump logic
   this.velocity.y -= this.gravity * delta;
 
+  const minY = this.cameraHeight;
+  this.controls.getObject().position.y += this.velocity.y * delta;
 
-// Prevent falling below ground level
-const minY = this.cameraHeight; // or hardcode 2 if preferred
-this.controls.getObject().position.y += this.velocity.y * delta;
+  if (this.controls.getObject().position.y < minY) {
+    this.velocity.y = 0;
+    this.controls.getObject().position.y = minY;
+    this.canJump = true;
+  }
 
-if (this.controls.getObject().position.y < minY) {
-  this.velocity.y = 0;
-  this.controls.getObject().position.y = minY;
-  this.canJump = true;
-}
-
+  // Render scene
   this.renderer.render(this.scene, this.camera);
+  this.renderScene(); // handles stereo rendering if needed
 };
-
 
 private onKeyDown = (event: KeyboardEvent) => {
   switch (event.code) {
@@ -919,6 +1016,11 @@ private onKeyDown = (event: KeyboardEvent) => {
       }
       break;
   }
+
+  if (event.key === 'v') {
+  this.toggleVRMode(!this.isVRMode);
+}
+
 };
 
 private onKeyUp = (event: KeyboardEvent) => {
@@ -946,8 +1048,11 @@ private onKeyUp = (event: KeyboardEvent) => {
 
 onResize(width: number, height: number) {
   this.renderer.setSize(width, height);
-  this.camera.aspect = width / height;
-  this.camera.updateProjectionMatrix();
+  (this.camera as THREE.PerspectiveCamera).aspect = width / height;
+  (this.camera as THREE.PerspectiveCamera).updateProjectionMatrix();
+  if (this.stereoscopeHelper.isActive()) {
+    this.stereoscopeHelper.getStereoEffect().setSize(width, height);
+  }
 }
 
 //************* Page Load Popup*************** */
@@ -993,19 +1098,12 @@ onClearScene(): void {
   this.snackBar.open('Scene cleared!', 'OK', { duration: 2000 });
 }
 
-// ********************************
-// ** NEW Fun Controls **
+// ** NEW Controls **
 
 toggleRoomLight() {
   this.ambientLight.intensity = this.ambientLight.intensity > 0 ? 0 : 0.5;
 }
 
-toggleLightcolor() {
-  const colors = [0xffffff, 0xffcc00, 0x00ccff, 0xff66cc];
-  const current = this.ambientLight.color.getHex();
-  const next = colors[(colors.indexOf(current) + 1) % colors.length];
-  this.ambientLight.color.setHex(next);
-}
 
 updateSunlight(value: number): void {
   this.dirLight.intensity = value;
@@ -1021,12 +1119,24 @@ updateEyeLevel(value: number): void {
   this.camera.position.y = this.cameraHeight;
 }
 
+// updateModelSize(value: number): void {
+//   const minScale = 30;
+//   const maxScale = 100;
+//   this.modelScale = Math.min(Math.max(value, minScale), maxScale);
+//   this.updateModelTransform?.();
+// }
+
 updateModelSize(value: number): void {
-  const minScale = 30;
+  const minScale = 1;
   const maxScale = 100;
-  this.modelScale = Math.min(Math.max(value, minScale), maxScale);
-  this.updateModelTransform?.();
+  const scaleValue = Math.min(Math.max(value, minScale), maxScale);
+
+  if (this.uploadedModel) {
+    this.uploadedModel.scale.set(scaleValue, scaleValue, scaleValue);
+    console.log(`Model scale updated to: ${scaleValue}`);
+  }
 }
+
 
 updateModelHeight(value: number): void {
   this.modelHeight = value;
@@ -1041,5 +1151,66 @@ load(): void {
   this.triggerSceneUpload?.();
 }
 // ********************************
+
+toggleStereo(): void {
+  this.isVRMode = !this.isVRMode;
+  if (this.isVRMode) {
+    this.stereoscopeHelper.enable();
+  } else {
+    this.stereoscopeHelper.disable();
+  }
+  const width = this.containerRef.nativeElement.clientWidth;
+  const height = this.containerRef.nativeElement.clientHeight;
+  this.onResize(width, height);
+  this.renderScene();
+}
+
+
+renderScene(): void {
+  if (this.stereoscopeHelper && this.stereoscopeHelper.isActive && this.stereoscopeHelper.isActive()) {
+    console.log("Stereo rendering");
+    this.stereoscopeHelper.render();
+  } else {
+    console.log("Normal rendering");
+    this.renderer.render(this.scene, this.camera);
+  }
+}
+
+
+  async onToggleFullscreen(): Promise<void> {
+    if (this.fullscreenHelper) {
+      await this.fullscreenHelper.toggle();
+    }
+  }
+
+  public toggleVRMode(enable: boolean): void {
+  this.isVRMode = enable;
+
+  if (this.isVRMode) {
+    this.controls.unlock();
+  }
+}
+
+// toggleVRMode(enable: boolean): void {
+//   this.isVRMode = enable;
+
+//   if (this.isVRMode) {
+//     this.controls.unlock(); // disable mouse lock
+//     // Optional: hide HUD, adjust layout, etc.
+//   } else {
+//     // Optional: re-enable PointerLock on user interaction
+//   }
+
+enterVRMode() {
+    this.isVRMode = true;
+    // Your VR setup code here
+    console.log('Entered VR mode');
+  }
+
+  exitVRMode() {
+    this.isVRMode = false;
+    // Your VR teardown code here
+    console.log('Exited VR mode');
+  }
 
 }

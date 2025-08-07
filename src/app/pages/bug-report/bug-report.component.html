@@ -1,28 +1,36 @@
-<div class="bug-form-container">
-  <h2>🐞 Report a Bug</h2>
-  <form (ngSubmit)="submitBug()" #bugForm="ngForm">
+<!-- Placeholder Bug Report -->
 
-    <label for="title">Bug Title:</label>
-    <input id="title" name="title" [(ngModel)]="bug.title" required>
+ <div class="bug-form-container">
+  <h2>{{ 'BUG_REPORT.TITLE' | translate }}</h2>
 
-    <label for="description">Description:</label>
+  <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSeBs88JKcmZ-A7a3Hzkkd2Kh6XM1dPQgAmRjAuF1588weTmhQ/viewform?embedded=true" width="640" height="953" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
+
+
+<!--
+  @if(!successMessage) {
+
+  <form (ngSubmit)="submitBug()" #bugForm="ngForm" novalidate>
+    <label for="title">{{ 'BUG_REPORT.LABEL_TITLE' | translate }}</label>
+    <input id="title" name="title" [(ngModel)]="bug.title" required />
+
+    <label for="description">{{ 'BUG_REPORT.LABEL_DESCRIPTION' | translate }}</label>
     <textarea id="description" name="description" [(ngModel)]="bug.description" required></textarea>
 
-    <label for="steps">Steps to Reproduce:</label>
-    <textarea id="steps" name="steps" [(ngModel)]="bug.stepsToReproduce"></textarea>
+    <label for="steps">{{ 'BUG_REPORT.LABEL_STEPS' | translate }}</label>
+    <textarea id="steps" name="stepsToReproduce" [(ngModel)]="bug.stepsToReproduce"></textarea>
 
-    <label for="browser">Browser Info:</label>
-    <input id="browser" name="browser" [(ngModel)]="bug.browserInfo">
+    <label for="browser">{{ 'BUG_REPORT.LABEL_BROWSER' | translate }}</label>
+    <input id="browser" name="browser" [(ngModel)]="bug.browserInfo" />
 
-    <label for="screenshot">Screenshot:</label>
-    <input type="file" (change)="onFileChange($event)" accept="image/*">
+    <label for="screenshot">{{ 'BUG_REPORT.LABEL_SCREENSHOT' | translate }}</label>
+    <input type="file" (change)="onFileChange($event)" accept="image/*" />
 
-    <button type="submit" [disabled]="!bugForm.form.valid">Submit Bug</button>
+    <button type="submit" [disabled]="!bugForm.form.valid">{{ 'BUG_REPORT.BUTTON_SUBMIT' | translate }}</button>
   </form>
-
-@if (successMessage) {
-  <p class="success">
-    {{ successMessage }}
-  </p>
 }
-</div>
+
+@if(successMessage) {
+
+<p class="success">{{ 'BUG_REPORT.SUCCESS_MESSAGE' | translate }}</p>
+
+} -->
