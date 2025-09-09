@@ -3,7 +3,7 @@
 
   "NAV": {
     "MENU": "Menú",
-    "VIEWER": "Visor 3D v.2",
+    "VIEWER": "Epectador 3D v.2",
     "PANORAMA": "Panorama",
     "CONTACT": "Contacto",
     "BUG": "Reporte de Error",
@@ -26,8 +26,8 @@
     "SAVE_SCENE": "Guardar JSON",
     "LOAD_SCENE": "Cargar",
     "SUNLIGHT_COLOR": "Color del Sol",
-    "ROOM_LIGHT": "Luz de la Habitación",
-    "LOAD_GLB":"Elija su modelo 3D (glb), luego use las teclas WASD para moverse, ESC para salir del visor, ESPACIO para saltar.",
+    "ROOM_LIGHT": "Luz del cuarto",
+    "LOAD_GLB":"Elija su modelo 3D (glb), luego use las teclas WASD para moverse, ESC para salir de espectador, ESPACIO para saltar.",
     "LOAD_JSON":"Cargar JSON"
   },
 
@@ -43,7 +43,7 @@
     "MODEL_SIZE": "📏 Tamaño",
     "MODEL_HEIGHT": "⬆️ Altura",
     "SPEED": "🏃 Velocidad",
-    "EYE_LEVEL": "👁️ Nivel de Vista"
+    "EYE_LEVEL": "👁️ Altura de los ojos"
   },
 
   "CONSOLE": {
@@ -63,13 +63,13 @@
 
   "FINISH_TUTORIAL": "¡Felicidades! Este es el final del tutorial. Vamos a crear tu sistema de agricultura virtual.",
 
-  "BUTTONS_NEXT": "Próxima",
+  "BUTTONS_NEXT": "Próximo",
   "BUTTONS_BACK": "Atras",
   "BUTTONS_DONE": "Terminar",
 
   "CONTACT": {
     "TITLE": "📬 Envíanos un Mensaje",
-    "INFO_TEXT": "¡Hola! Nos encantaría saber de ti. Por favor, pide a un adulto que te ayude a llenar esto. 🧑‍🤝‍🧑",
+    "INFO_TEXT": "¡Hola! Nos encantaría saber de ti. Por favor, pide a un adulto que te ayude a llenar esta información. 🧑‍🤝‍🧑",
     "EMAIL_LABEL": "📧 Tu correo electrónico (con un adulto):",
     "EMAIL_PLACEHOLDER": "tú@ejemplo.com",
     "MESSAGE_LABEL": "💡 ¿Qué quieres compartir?",
@@ -136,7 +136,7 @@
   },
 
    "VIEWER": {
-    "INIT_LOG": "ViewerComponent inicializado: {{viewerRef}}",
+    "INIT_LOG": "Component del Espectador inicializado: {{viewerRef}}",
     "FILE_LOADED": "Archivo cargado: {{fileName}}",
     "RESET_VIEW": "Vista de cámara reiniciada.",
     "TOGGLE_WIREFRAME": "Modo alambre activado/desactivado.",
@@ -156,7 +156,7 @@
   },
 
   "NOTICE":{
-    "PORTRAIT": "Gira tu dispositivo para disfrutar de una experiencia completa."
+    "PORTRAIT": "Favor de Girar tu dispositivo para disfrutar de una experiencia completa."
   },
 
   "TEST":{
@@ -164,7 +164,7 @@
     "STEREOSCOPE":"Estereoscopio",
     "FORESTVR":"Bosque VR",
     "GYROSCOPE":"Giroscopio",
-    "EDITOR":"Visor 3D v.1",
+    "EDITOR":"Editor de pruebas v.1",
     "VIEWER":"DEBUG:Visor"
   }
 
